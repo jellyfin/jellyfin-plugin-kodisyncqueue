@@ -49,6 +49,15 @@
     <Reference Include="MoreLinq">
       <HintPath>..\packages\morelinq.1.1.0\lib\net45\MoreLinq.dll</HintPath>
     </Reference>
+    <Reference Include="ServiceStack">
+      <HintPath>..\ThirdParty\ServiceStack\ServiceStack.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.Common">
+      <HintPath>..\ThirdParty\ServiceStack\ServiceStack.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.Interfaces">
+      <HintPath>..\ThirdParty\ServiceStack\ServiceStack.Interfaces.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.SQLite">
