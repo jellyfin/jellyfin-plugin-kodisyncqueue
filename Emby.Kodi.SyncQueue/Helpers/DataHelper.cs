@@ -252,13 +252,13 @@ namespace Emby.Kodi.SyncQueue.Helpers
                 if (_reader.HasRows)
                 {
                     // Must update the Value
-                    sSQL = String.Format("UPDATE {0} SET lastModified = '{1:yyyy-MM-ddThh:mm:ssZ}' WHERE itemId = '{2}' and  userId = '{3}'", tableName, DateTime.UtcNow, item, user);
+                    sSQL = String.Format("UPDATE {0} SET lastModified = '{1:yyyy-MM-ddTHH:mm:ssZ}' WHERE itemId = '{2}' and  userId = '{3}'", tableName, DateTime.UtcNow, item, user);
                     _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Updating ItemId: '{0}' for UserId: '{1}' in table: '{2}' using SQL Statement: '{3}'", item, user, tableName, sSQL));
                 }
                 else
                 {
                     // Must Insert the value
-                    sSQL = String.Format("INSERT INTO {0} VALUES ('{1}','{2}','{3:yyyy-MM-ddThh:mm:ssZ}')", tableName, item, user, DateTime.UtcNow);
+                    sSQL = String.Format("INSERT INTO {0} VALUES ('{1}','{2}','{3:yyyy-MM-ddTHH:mm:ssZ}')", tableName, item, user, DateTime.UtcNow);
                     _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Adding ItemId: '{0}' for UserID: '{1}' to table: '{2}' using SQL Statement '{3}'", item, user, tableName, sSQL));
                 }
                 _reader.Close();
@@ -289,13 +289,13 @@ namespace Emby.Kodi.SyncQueue.Helpers
                 if (_reader.HasRows)
                 {
                     // Must update the Value
-                    sSQL = String.Format("UPDATE {0} SET lastModified = '{1:yyyy-MM-ddThh:mm:ssZ}', json = '{2}' WHERE itemId = '{3}' and  userId = '{4}'", tableName, DateTime.UtcNow, _json, item, user);
+                    sSQL = String.Format("UPDATE {0} SET lastModified = '{1:yyyy-MM-ddTHH:mm:ssZ}', json = '{2}' WHERE itemId = '{3}' and  userId = '{4}'", tableName, DateTime.UtcNow, _json, item, user);
                     _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Updating ItemId: '{0}' for UserId: '{1}' in table: '{2}' using SQL Statement: '{3}'", item, user, tableName, sSQL));
                 }
                 else
                 {
                     // Must Insert the value
-                    sSQL = String.Format("INSERT INTO {0} VALUES ('{1}','{2}','{3}','{4:yyyy-MM-ddThh:mm:ssZ}')", tableName, item, user, _json, DateTime.UtcNow);
+                    sSQL = String.Format("INSERT INTO {0} VALUES ('{1}','{2}','{3}','{4:yyyy-MM-ddTHH:mm:ssZ}')", tableName, item, user, _json, DateTime.UtcNow);
                     _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Adding ItemId: '{0}' for UserID: '{1}' to table: '{2}' using SQL Statement '{3}'", item, user, tableName, sSQL));
                 }
                 _reader.Close();
@@ -357,7 +357,7 @@ namespace Emby.Kodi.SyncQueue.Helpers
         public List<string> FillItemsAdded(string userId, string lastDT)
         {
             var sSQL = String.Format("SELECT a.itemId FROM ItemsAddedQueue a WHERE a.lastModified >= '{0}' AND a.userId = '{1}' AND NOT EXISTS " +
-                "( SELECT b.itemId FROM ItemsRemovedQueue b WHERE b.lastModified >= '{0}' AND a.userId = '{1}' AND b.itemId = a.itemId ) " +
+                "( SELECT b.itemId FROM ItemsRemovedQueue b WHERE b.lastModified > a.lastModified AND a.userId = '{1}' AND b.itemId = a.itemId ) " +
                 "ORDER BY a.lastModified", lastDT, userId);
             var info = new List<string>();
             SQLiteDataReader _reader;
@@ -379,7 +379,7 @@ namespace Emby.Kodi.SyncQueue.Helpers
         public List<string> FillItemsUpdated(string userId, string lastDT)
         {
             var sSQL = String.Format("SELECT a.itemId FROM ItemsUpdatedQueue a WHERE a.lastModified >= '{0}' AND a.userId = '{1}' AND NOT EXISTS " +
-                "( SELECT b.itemId FROM ItemsRemovedQueue b WHERE b.lastModified >= '{0}' AND a.userId = '{1}' AND b.itemId = a.itemId ) AND NOT EXISTS " +
+                "( SELECT b.itemId FROM ItemsRemovedQueue b WHERE b.lastModified > a.lastModified AND a.userId = '{1}' AND b.itemId = a.itemId ) AND NOT EXISTS " +
                 "( SELECT c.itemId FROM ItemsAddedQueue c WHERE c.lastModified >= '{0}' AND c.userId = '{1}' AND c.itemId = a.itemId ) " + 
                 "ORDER BY a.lastModified", lastDT, userId);
             var info = new List<string>();
@@ -402,8 +402,8 @@ namespace Emby.Kodi.SyncQueue.Helpers
         public List<string> FillItemsRemoved(string userId, string lastDT)
         {
             var sSQL = String.Format("SELECT a.itemId FROM ItemsRemovedQueue a WHERE a.lastModified >= '{0}' AND a.userId = '{1}' AND NOT EXISTS " +
-                "( SELECT b.itemId FROM ItemsAddedQueue b WHERE b.lastModified >= '{0}' AND a.userId = '{1}' AND b.itemId = a.itemId ) " +
-                "OREDER BY a.lastModified", lastDT, userId);
+                "( SELECT b.itemId FROM ItemsAddedQueue b WHERE b.lastModified > a.lastModified AND a.userId = '{1}' AND b.itemId = a.itemId ) " +
+                "ORDER BY a.lastModified", lastDT, userId);
             var info = new List<string>();
             SQLiteDataReader _reader;
 
@@ -422,7 +422,7 @@ namespace Emby.Kodi.SyncQueue.Helpers
         public List<string> FillFoldersAddedTo(string userId, string lastDT)
         {
             var sSQL = String.Format("SELECT a.itemId FROM FoldersAddedQueue a WHERE a.lastModified >= '{0}' AND a.userId = '{1}' AND NOT EXISTS " +
-                "( SELECT b.itemId FROM FoldersRemovedQueue b WHERE b.lastModified >= '{0}' AND a.userId = '{1}' AND b.itemId = a.itemId ) " + 
+                "( SELECT b.itemId FROM FoldersRemovedQueue b WHERE b.lastModified > a.lastModified AND a.userId = '{1}' AND b.itemId = a.itemId ) " + 
                 "ORDER BY a.lastModified", lastDT, userId);
             var info = new List<string>();
             SQLiteDataReader _reader;
@@ -442,7 +442,7 @@ namespace Emby.Kodi.SyncQueue.Helpers
         public List<string> FillFoldersRemovedFrom(string userId, string lastDT)
         {
             var sSQL = String.Format("SELECT a.itemId FROM FoldersRemovedQueue a WHERE a.lastModified >= '{0}' AND a.userId = '{1}' AND NOT EXISTS " +
-                "( SELECT b.itemId FROM FoldersAddedQueue b WHERE b.lastModified >= '{0}' AND a.userId = '{1}' AND b.itemId = a.itemId ) " + 
+                "( SELECT b.itemId FROM FoldersAddedQueue b WHERE b.lastModified > a.lastModified AND a.userId = '{1}' AND b.itemId = a.itemId ) " + 
                 "ORDER BY a.lastModified", lastDT, userId);
             var info = new List<string>();
             SQLiteDataReader _reader;

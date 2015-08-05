@@ -22,16 +22,16 @@ namespace Emby.Kodi.SyncQueue.API
     public class GetLibraryItems : IReturn<SyncUpdateInfo>
     {
         [ApiMember(Name = "UserID", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
-        [ApiMember(Name = "LastUpdateDT", Description = "UTC DateTime of Last Update, Format yyyy-MM-ddThh:mm:ssZ", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
+        [ApiMember(Name = "LastUpdateDT", Description = "UTC DateTime of Last Update, Format yyyy-MM-ddTHH:mm:ssZ", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
         public string UserID { get; set; }
         public string LastUpdateDT { get; set; }
     }
 
-    [Route("/Emby.Kodi.SyncQueue/{UserID}/GetItems", "GET", Summary = "Gets Items for {UserID} from {UTC DATETIME} formatted as yyyy-MM-ddThh:mm:ssZ using queryString LastUpdateDT")]
+    [Route("/Emby.Kodi.SyncQueue/{UserID}/GetItems", "GET", Summary = "Gets Items for {UserID} from {UTC DATETIME} formatted as yyyy-MM-ddTHH:mm:ssZ using queryString LastUpdateDT")]
     public class GetLibraryItemsQuery : IReturn<SyncUpdateInfo>
     {
         [ApiMember(Name = "UserID", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
-        [ApiMember(Name = "LastUpdateDT", Description = "UTC DateTime of Last Update, Format yyyy-MM-ddThh:mm:ssZ", IsRequired = false, DataType = "string", ParameterType = "query", Verb = "GET")]
+        [ApiMember(Name = "LastUpdateDT", Description = "UTC DateTime of Last Update, Format yyyy-MM-ddTHH:mm:ssZ", IsRequired = false, DataType = "string", ParameterType = "query", Verb = "GET")]
         public string UserID { get; set; }
         public string LastUpdateDT { get; set; }
     }
@@ -86,7 +86,7 @@ namespace Emby.Kodi.SyncQueue.API
             {
                 throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
             }
-            _logger.Debug("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/{LastDT}/GetItems?format=json\" - {LastDT} must be a UTC DateTime formatted as yyyy-MM-ddThh:mm:ssZ");
+            _logger.Debug("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/{LastDT}/GetItems?format=json\" - {LastDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
         }
 
         public SyncUpdateInfo Get(GetLibraryItems request)
