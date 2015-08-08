@@ -253,13 +253,15 @@ namespace Emby.Kodi.SyncQueue.Helpers
                 {
                     // Must update the Value
                     sSQL = String.Format("UPDATE {0} SET lastModified = '{1:yyyy-MM-ddTHH:mm:ssZ}' WHERE itemId = '{2}' and  userId = '{3}'", tableName, DateTime.UtcNow, item, user);
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Updating ItemId: '{0}' for UserId: '{1}' in table: '{2}' using SQL Statement: '{3}'", item, user, tableName, sSQL));
+                    _logger.Info(String.Format("Enby.Kdoi.SyncQueue:  Updating ItemId: '{0}' for UserId: '{1}' in table: '{2}'", item, user, tableName));
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using SQL Statement: '{0}'", sSQL));
                 }
                 else
                 {
                     // Must Insert the value
                     sSQL = String.Format("INSERT INTO {0} VALUES ('{1}','{2}','{3:yyyy-MM-ddTHH:mm:ssZ}')", tableName, item, user, DateTime.UtcNow);
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Adding ItemId: '{0}' for UserID: '{1}' to table: '{2}' using SQL Statement '{3}'", item, user, tableName, sSQL));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Adding ItemId: '{0}' for UserID: '{1}' to table: '{2}'", item, user, tableName));
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using SQL Statement '{0}'", sSQL));
                 }
                 _reader.Close();
                 _command.CommandText = sSQL;
@@ -290,13 +292,15 @@ namespace Emby.Kodi.SyncQueue.Helpers
                 {
                     // Must update the Value
                     sSQL = String.Format("UPDATE {0} SET lastModified = '{1:yyyy-MM-ddTHH:mm:ssZ}', json = '{2}' WHERE itemId = '{3}' and  userId = '{4}'", tableName, DateTime.UtcNow, _json, item, user);
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Updating ItemId: '{0}' for UserId: '{1}' in table: '{2}' using SQL Statement: '{3}'", item, user, tableName, sSQL));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Updating ItemId: '{0}' for UserId: '{1}' in table: '{2}'", item, user, tableName));
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using SQL Statement: '{0}'", sSQL));
                 }
                 else
                 {
                     // Must Insert the value
                     sSQL = String.Format("INSERT INTO {0} VALUES ('{1}','{2}','{3}','{4:yyyy-MM-ddTHH:mm:ssZ}')", tableName, item, user, _json, DateTime.UtcNow);
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Adding ItemId: '{0}' for UserID: '{1}' to table: '{2}' using SQL Statement '{3}'", item, user, tableName, sSQL));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Adding ItemId: '{0}' for UserID: '{1}' to table: '{2}'", item, user, tableName));
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using SQL Statement '{0}'", sSQL));
                 }
                 _reader.Close();
                 _command.CommandText = sSQL;
@@ -371,8 +375,12 @@ namespace Emby.Kodi.SyncQueue.Helpers
                     info.Add(_reader["itemId"].ToString());
                 }
                 _reader.Close();
+                if (info.Count > 0)
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Added Items Found: {0}", string.Join(",", info.ToArray())));
+                else
+                    _logger.Info("Emby.Kodi.SyncQueue:  No Added Items Found!");
             }
-            else { _logger.Debug("Emby.Kodi.SyncQueue:  FillItemsAdded: No Items Returned!"); }
+            else { _logger.Info("Emby.Kodi.SyncQueue:  No Added Items Returned Due to SQL Error!"); }
             return info;
         }
 
@@ -394,8 +402,12 @@ namespace Emby.Kodi.SyncQueue.Helpers
                     info.Add(_reader["itemId"].ToString());
                 }
                 _reader.Close();
+                if (info.Count > 0)
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Updated Items Found: {0}", string.Join(",", info.ToArray())));
+                else
+                    _logger.Info("Emby.Kodi.SyncQueue:  No Updated Items Found!");
             }
-            else { _logger.Debug("Emby.Kodi.SyncQueue:  FillItemsUpdated: No Items Returned!"); }
+            else { _logger.Info("Emby.Kodi.SyncQueue:  No Updated Items Returned Due to SQL Error!"); }
             return info;
         }
 
@@ -414,8 +426,12 @@ namespace Emby.Kodi.SyncQueue.Helpers
                 while (_reader.Read())
                     info.Add(_reader["itemId"].ToString());
                 _reader.Close();
+                if (info.Count > 0)
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Removed Items Found: {0}", string.Join(",", info.ToArray())));
+                else
+                    _logger.Info("Emby.Kodi.SyncQueue:  No Removed Items Found!");
             }
-            else { _logger.Debug("Emby.Kodi.SyncQueue:  FillItemsRemoved: No Items Returned!"); }
+            else { _logger.Info("Emby.Kodi.SyncQueue:  No Removed Items Returned Due to SQL Error!"); }
             return info;
         }
 
@@ -434,8 +450,12 @@ namespace Emby.Kodi.SyncQueue.Helpers
                 while (_reader.Read())
                     info.Add(_reader["itemId"].ToString());
                 _reader.Close();
+                if (info.Count > 0)
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Added Folders Found: {0}", string.Join(",", info.ToArray())));
+                else
+                    _logger.Info("Emby.Kodi.SyncQueue:  No Added Folders Found!");
             }
-            else { _logger.Debug("Emby.Kodi.SyncQueue:  FillFoldersAddedTo: No Items Returned!"); }
+            else { _logger.Info("Emby.Kodi.SyncQueue:  No Added Folders Returned Due to SQL Error!"); }
             return info;
         }
 
@@ -454,15 +474,20 @@ namespace Emby.Kodi.SyncQueue.Helpers
                 while (_reader.Read())
                     info.Add(_reader["itemId"].ToString());
                 _reader.Close();
+                if (info.Count > 0)
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Removed Folders Found: {0}", string.Join(",", info.ToArray())));
+                else
+                    _logger.Info("Emby.Kodi.SyncQueue:  No Removed Folders Found!");
             }
-            else { _logger.Debug("Emby.Kodi.SyncQueue:  FillItemsRemoved: No Items Returned!"); }
+            else { _logger.Info("Emby.Kodi.SyncQueue:  No Removed Folders Returned Due to SQL Error!"); }
             return info;
         }
 
         public List<string> FillUserDataChanged(string userId, string lastDT)
         {
-            var sSQL = String.Format("SELECT json FROM UserInfoChangedQueue WHERE lastModified >= '{0}' AND userId = '{1}' ORDER BY lastModified", lastDT, userId);
+            var sSQL = String.Format("SELECT itemId, json FROM UserInfoChangedQueue WHERE lastModified >= '{0}' AND userId = '{1}' ORDER BY lastModified", lastDT, userId);
             var info = new List<string>();
+            var info2 = new List<string>();
             SQLiteDataReader _reader;
 
             bool result = SQLReader(sSQL, out _reader);
@@ -470,10 +495,17 @@ namespace Emby.Kodi.SyncQueue.Helpers
             if (result)
             {
                 while (_reader.Read())
+                {
                     info.Add(_reader["json"].ToString());
+                    info2.Add(_reader["itemId"].ToString());
+                }
                 _reader.Close();
+                if (info2.Count > 0)
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  User Items Found: {0}", string.Join(",", info2.ToArray())));
+                else
+                    _logger.Info("Emby.Kodi.SyncQueue:  No User Items Found!");
             }
-            else { _logger.Debug("Emby.Kodi.SyncQueue:  FillUserDataChanged: No Items Returned!"); }
+            else { _logger.Info("Emby.Kodi.SyncQueue:  No User Items Returned Due to SQL Error!"); }
             return info;
         }
 

@@ -86,12 +86,14 @@ namespace Emby.Kodi.SyncQueue.API
             {
                 throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
             }
-            _logger.Debug("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/{LastDT}/GetItems?format=json\" - {LastDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
+            _logger.Debug("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/{LastUpdateDT}/GetItems?format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
+            _logger.Debug("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/GetItems?LastUpdateDT={LastUpdateDT}&format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
         }
 
         public SyncUpdateInfo Get(GetLibraryItems request)
         {
-            _logger.Debug("Emby.Kodi.SyncQueue:  Request received... Processing message...");
+            _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
+            _logger.Debug("Emby.Kodi.SyncQueue:  Processing message...");
             var info = new SyncUpdateInfo();
             
             var result = PopulateLibraryInfo(request.UserID, request.LastUpdateDT, out info);
@@ -102,7 +104,8 @@ namespace Emby.Kodi.SyncQueue.API
 
         public SyncUpdateInfo Get(GetLibraryItemsQuery request)
         {
-            _logger.Debug("Emby.Kodi.SyncQueue:  Request received... Processing message...");
+            _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
+            _logger.Debug("Emby.Kodi.SyncQueue:  Processing message...");
             var info = new SyncUpdateInfo();
             if (request.LastUpdateDT == null || request.LastUpdateDT == "")
                 request.LastUpdateDT = "2010-01-01T00:00:00Z";
