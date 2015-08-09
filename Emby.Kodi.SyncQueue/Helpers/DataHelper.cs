@@ -486,7 +486,8 @@ namespace Emby.Kodi.SyncQueue.Helpers
         public List<string> FillUserDataChanged(string userId, string lastDT)
         {
             var sSQL = String.Format("SELECT a.itemId, a.json FROM UserInfoChangedQueue a WHERE a.lastModified >= '{0}' AND a.userId = '{1}' AND NOT EXISTS " +
-                "( SELECT b.itemId FROM ItemsRemovedQueue b WHERE b.lastModified > a.lastModified AND a.userId = '{1}' AND b.itemId = a.itemId ) " + 
+                "( SELECT b.itemId FROM FoldersRemovedQueue b WHERE b.lastModified >= a.lastModified AND b.userId = '{1}' AND b.itemId = a.itemId AND NOT EXISTS " +
+                "( SELECT c.itemId FROM FoldersAddedQueue c WHERE c.lastModified > b.lastModified AND c.userId = '{1}' AND c.itemId = a.itemId ) ) " + 
                 "ORDER BY lastModified", lastDT, userId);
             var info = new List<string>();
             var info2 = new List<string>();
