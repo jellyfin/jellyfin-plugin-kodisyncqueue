@@ -253,7 +253,7 @@ namespace Emby.Kodi.SyncQueue.Helpers
                 {
                     // Must update the Value
                     sSQL = String.Format("UPDATE {0} SET lastModified = '{1:yyyy-MM-ddTHH:mm:ssZ}' WHERE itemId = '{2}' and  userId = '{3}'", tableName, DateTime.UtcNow, item, user);
-                    _logger.Info(String.Format("Enby.Kdoi.SyncQueue:  Updating ItemId: '{0}' for UserId: '{1}' in table: '{2}'", item, user, tableName));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Updating ItemId: '{0}' for UserId: '{1}' in table: '{2}'", item, user, tableName));
                     _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using SQL Statement: '{0}'", sSQL));
                 }
                 else
