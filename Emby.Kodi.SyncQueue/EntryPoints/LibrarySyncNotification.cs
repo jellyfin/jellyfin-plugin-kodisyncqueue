@@ -308,8 +308,16 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
         private bool FilterItem(BaseItem item)
         {
+            _logger.Debug("Emby.Kodi.SyncQueue:  GetClientTypeName: " + item.GetClientTypeName());
+
             if (item.LocationType == LocationType.Virtual)
             {
+                return false;
+            }
+            else if (String.IsNullOrEmpty(item.GetClientTypeName()) == false && 
+                item.GetClientTypeName().Equals("Person", StringComparison.InvariantCultureIgnoreCase))
+            {
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Ignorning item type Person"));
                 return false;
             }
 
