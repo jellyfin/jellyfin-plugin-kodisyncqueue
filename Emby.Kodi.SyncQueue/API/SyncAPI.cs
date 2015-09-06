@@ -36,6 +36,22 @@ namespace Emby.Kodi.SyncQueue.API
         public string LastUpdateDT { get; set; }
     }
 
+    [Route("/Emby.Kodi.SyncQueue/GetServerDateTime", "GET", Summary = "Gets The Server Time in UTC format as yyyy-MM-ddTHH:mm:ssZ")]
+    public class GetServerTime : IReturn<ServerTimeInfo>
+    {
+        
+    }
+
+    public class ServerTimeInfo
+    {
+        public String ServerDateTime { get; set; }
+
+        public ServerTimeInfo()
+        {
+            ServerDateTime = String.Format("{0:yyyy-MM-ddTHH:mm:ssZ}", DateTime.UtcNow);
+        }
+    }
+
     public class SyncUpdateInfo
     {
         public List<string> FoldersAddedTo { get; set; }
@@ -53,6 +69,25 @@ namespace Emby.Kodi.SyncQueue.API
             ItemsRemoved = new List<string>();
             ItemsUpdated = new List<string>();
             UserDataChanged = new List<UserItemDataDto>();
+        }
+    }
+
+    class ServerTimeAPI: IRestfulService
+    {
+        private readonly ILogger _logger;
+        public ServerTimeAPI(ILogger logger)
+        {
+            _logger = logger;
+            
+        }
+
+        public ServerTimeInfo Get(GetServerTime request)
+        {
+            _logger.Info("Emby.Kodi.SyncQueue: Server Time Requested...");
+            var info = new ServerTimeInfo();
+            _logger.Info("Emby.Kodi.SyncQueue: Returned Value: {0}", info.ServerDateTime);
+
+            return info;
         }
     }
 
