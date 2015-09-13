@@ -8,7 +8,6 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
-using MoreLinq;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -142,14 +141,15 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 var user = _userManager.GetUserById(userId);
 
                 var dtoList = pair.Value
-                       .DistinctBy(i => i.Id)
-                       .Select(i =>
-                       {
-                           var dto = _userDataManager.GetUserDataDto(i, user);
-                           dto.ItemId = i.Id.ToString("N");
-                           return dto;
-                       })
-                       .ToList();
+                        .GroupBy(i => i.Id)
+                        .Select(i => i.First())
+                        .Select(i =>
+                        {
+                            var dto = _userDataManager.GetUserDataDto(i, user);
+                            dto.ItemId = i.Id.ToString("N");
+                            return dto;
+                        })
+                        .ToList();
 
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
 
