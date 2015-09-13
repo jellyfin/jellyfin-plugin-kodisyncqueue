@@ -8,7 +8,6 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
-using MoreLinq;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -141,8 +140,16 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
                 var user = _userManager.GetUserById(userId);
 
+                var distinctItems = new List<IHasUserData>();
+                foreach(var item in pair.Value)
+                {
+                    if (distinctItems.Find(x => x.Id == item.Id) == null)
+                    {
+                        distinctItems.Add(item);
+                    }
+                }
+
                 var dtoList = pair.Value
-                       .DistinctBy(i => i.Id)
                        .Select(i =>
                        {
                            var dto = _userDataManager.GetUserDataDto(i, user);

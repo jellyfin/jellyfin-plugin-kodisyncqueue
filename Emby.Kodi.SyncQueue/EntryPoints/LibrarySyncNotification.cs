@@ -8,7 +8,6 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
-using MoreLinq;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -201,17 +200,35 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         {
             lock (_libraryChangedSyncLock)
             {
-                // Remove dupes in case some were saved multiple times
-                var foldersAddedTo = _foldersAddedTo.DistinctBy(i => i.Id).ToList();
+                var foldersAddedTo = new List<Folder>();
+                foreach (var item in _foldersAddedTo)
+                {
+                    if (foldersAddedTo.Find(x => x.Id == item.Id) == null)
+                    {
+                        foldersAddedTo.Add(item);
+                    }
+                }
 
-                var foldersRemovedFrom = _foldersRemovedFrom.DistinctBy(i => i.Id).ToList();
+                var foldersRemovedFrom = new List<Folder>();
+                foreach (var item in _foldersRemovedFrom)
+                {
+                    if (foldersRemovedFrom.Find(x => x.Id == item.Id) == null)
+                    {
+                        foldersRemovedFrom.Add(item);
+                    }
+                }
 
-                var itemsUpdated = _itemsUpdated
-                    .Where(i => !_itemsAdded.Contains(i))
-                    .DistinctBy(i => i.Id)
-                    .ToList();
+                var itemsUpdated = _itemsUpdated.Where(i => !_itemsAdded.Contains(i)).ToList();
+                var itemsUpdatedDistinct = new List<BaseItem>();
+                foreach (var item in itemsUpdated)
+                {
+                    if (foldersAddedTo.Find(x => x.Id == item.Id) == null)
+                    {
+                        itemsUpdatedDistinct.Add(item);
+                    }
+                }
 
-                SendChangeNotifications(_itemsAdded.ToList(), itemsUpdated, _itemsRemoved.ToList(), foldersAddedTo, foldersRemovedFrom, CancellationToken.None);
+                SendChangeNotifications(_itemsAdded.ToList(), itemsUpdatedDistinct, _itemsRemoved.ToList(), foldersAddedTo, foldersRemovedFrom, CancellationToken.None);
 
                 if (LibraryUpdateTimer != null)
                 {
