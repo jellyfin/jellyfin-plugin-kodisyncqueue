@@ -48,9 +48,6 @@
     <Reference Include="MediaBrowser.Model">
       <HintPath>..\packages\MediaBrowser.Common.3.0.629\lib\net45\MediaBrowser.Model.dll</HintPath>
     </Reference>
-    <Reference Include="MoreLinq">
-      <HintPath>..\packages\morelinq.1.1.0\lib\net45\MoreLinq.dll</HintPath>
-    </Reference>
     <Reference Include="ServiceStack">
       <HintPath>..\packages\ServiceStack.4.0.42\lib\net40\ServiceStack.dll</HintPath>
     </Reference>
