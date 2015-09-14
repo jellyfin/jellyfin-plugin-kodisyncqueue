@@ -8,6 +8,7 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
+using MoreLinq;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -201,21 +202,14 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             lock (_libraryChangedSyncLock)
             {
                 // Remove dupes in case some were saved multiple times
-                //var foldersAddedTo = _foldersAddedTo.DistinctBy(i => i.Id).ToList();
-                var foldersAddedTo = _foldersAddedTo.GroupBy(i => i.Id).Select(i => i.First()).ToList();
+                var foldersAddedTo = _foldersAddedTo.DistinctBy(i => i.Id).ToList();
 
-                //var foldersRemovedFrom = _foldersRemovedFrom.DistinctBy(i => i.Id).ToList();
-                var foldersRemovedFrom = _foldersRemovedFrom.GroupBy(i => i.Id).Select(i => i.First()).ToList();
+                var foldersRemovedFrom = _foldersRemovedFrom.DistinctBy(i => i.Id).ToList();
 
-                //var itemsUpdated = _itemsUpdated
-                //    .Where(i => !_itemsAdded.Contains(i))
-                //    .DistinctBy(i => i.Id)
-                //    .ToList();
                 var itemsUpdated = _itemsUpdated
-                        .Where(i => !_itemsAdded.Contains(i))
-                        .GroupBy(i => i.Id)
-                        .Select(i => i.First())
-                        .ToList();
+                    .Where(i => !_itemsAdded.Contains(i))
+                    .DistinctBy(i => i.Id)
+                    .ToList();
 
                 SendChangeNotifications(_itemsAdded.ToList(), itemsUpdated, _itemsRemoved.ToList(), foldersAddedTo, foldersRemovedFrom, CancellationToken.None);
 
