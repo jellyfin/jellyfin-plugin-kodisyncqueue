@@ -62,7 +62,7 @@
                     if (isNaN($('#txtRetDays', form).val())) {
                         config.RetDays = "0";
                     } else {
-                        if (parseInt($('#txtRetDays', form).val()) || -1 < 0) {
+                        if (parseInt($('#txtRetDays', form).val()) < 0) {
                             config.RetDays = "0";
                         } else {
                             config.RetDays = $('#txtRetDays', form).val();

@@ -72,9 +72,19 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
                 _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Deletion Not Possible When Retention Days = 0!");
                 return;
             }
-                   
+
+            if (retDays == 0)
+            {
+                _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Deletion Not Possible When Retention Days = 0!");
+                return;
+            }
+
+            retDays = retDays * -1;
+            DateTime dtNow = System.DateTime.UtcNow;
+            DateTime retDate = new DateTime(dtNow.Year, dtNow.Month, dtNow.Day, 0, 0, 0);
+            retDate = retDate.AddDays(retDays);                   
             
-            _logger.Info("Emby.Kodi.SyncQueue.Task: Scheduled Retention Deletion to \"Trim the Fat\" Has Begun!");
+            _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Scheduled Retention Deletion to \"Trim the Fat\" Has Begun! Using Retention Date: {0:yyyy-MM-ddTHH:mm:ssZ}", retDate));
             totalStart = DateTime.UtcNow;
             dataHelper = new DataHelper(_logger, _jsonSerializer);
             string dataPath = _applicationPaths.DataPath;
@@ -90,12 +100,7 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             if (!result)
             {
                 throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            }
-           
-            retDays = retDays * -1;
-            DateTime dtNow = System.DateTime.UtcNow;
-            DateTime retDate = new DateTime(dtNow.Year, dtNow.Month, dtNow.Day, 0, 0, 0);
-            retDate = retDate.AddDays(retDays);
+            }                      
 
             List<String> tables = new List<String>();
             int recNum = 0;
