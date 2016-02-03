@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Emby.Kodi Sync Queue</title>
+</head>
+<body>
+    <div data-role="page" class="page type-interior pluginConfigurationPage esqConfigurationPage">
+
+        <div data-role="content">
+            <div class="content-primary">
+                <form class="esqConfigurationForm">
+
+                    <ul class="ulForm" data-role="listview">
+                        <li>
+                            <label for="txtRetDays">
+                                Retention Days:
+                            </label>
+                            <input type="number" id="txtRetDays" name="txtRetDays" />
+                            <div class="fieldDescription">
+                                The number of days to save in the database. (0 = unlimited)
+                            </div>
+                        </li>
+                        <li>
+                            <button type="submit" data-theme="b">Save</button>
+                            <button type="button" onclick="history.back();">Cancel</button>
+                        </li>
+                    </ul>
+
+                </form>
+            </div>
+        </div>
+
+
+        <script type="text/javascript">
+
+            var SyncConfigurationPage = {
+                pluginUniqueId: "b0daa30f-2e09-4083-a6ce-459d9fecdd80"
+            };
+
+            $('.esqConfigurationPage').on('pageshow', function (event) {
+
+                Dashboard.showLoadingMsg();
+
+                var page = this;
+
+                ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
+
+                    $('#txtRetDays', page).val(config.RetDays || "0");
+                    
+                    Dashboard.hideLoadingMsg();
+                });
+            });
+
+            $('.esqConfigurationForm').on('submit', function (e) {
+
+                Dashboard.showLoadingMsg();
+           
+                var form = this;
+
+                ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
+
+                    if (isNaN($('#txtRetDays', form).val())) {
+                        config.RetDays = "0";
+                    } else {
+                        if (parseInt($('#txtRetDays', form).val()) || -1 < 0) {
+                            config.RetDays = "0";
+                        } else {
+                            config.RetDays = $('#txtRetDays', form).val();
+                        }                        
+                    }
+                    
+                    ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);              
+                });
+
+                // Disable default form submission
+                return false;
+            });
+        </script>
+    </div>
+</body>
+</html>

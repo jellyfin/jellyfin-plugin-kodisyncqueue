@@ -6,18 +6,12 @@ namespace Emby.Kodi.SyncQueue.Configuration
 {
     public class PluginConfiguration : BasePluginConfiguration
     {
-        public SyncQueueOptions[] Options { get; set; }
-
+        public String RetDays { get; set; }
+  
         public PluginConfiguration()
         {
-            Options = new SyncQueueOptions[] { };
+            RetDays = "0";
         }
-    }
-
-    public class SyncQueueOptions
-    {
-        public Boolean Enabled { get; set; }
-        public String Token { get; set; }
     }
 
 }

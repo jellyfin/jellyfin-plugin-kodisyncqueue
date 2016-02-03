@@ -512,5 +512,66 @@ namespace Emby.Kodi.SyncQueue.Helpers
             return info;
         }
 
+        public async Task<int> RetentionFixer(string tableName, DateTime retDate)
+        {
+            int recChanged = 0;
+            string sSQL = String.Format("DELETE FROM {0} WHERE lastModified >= '{1:yyyy-MM-ddTHH:mm:ssZ}'", tableName, retDate);
+            try
+            {
+                SQLiteCommand _command = new SQLiteCommand(sSQL, dbConn);
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue.Task: Retention Deletion From Table '{0}' Using SQL Statement '{1}'", tableName, sSQL));
+                _command.CommandText = sSQL;
+                recChanged = await _command.ExecuteNonQueryAsync();
+                return recChanged;
+            }
+            catch (Exception e)
+            {
+                _logger.Error(String.Format("Emby.Kodi.SyncQueue.Task:  Error deleting data from table: '{0}'  SQL: '{1}'", tableName, sSQL));
+                _logger.ErrorException(e.Message, e);
+                return 0;
+            }
+        }
+
+        public async Task<List<String>> RetentionTables()
+        {
+            string sSQL = "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY 1";
+            List<String> tables = new List<String>();
+            try
+            {
+                DataTable table = await GetDataTable(sSQL);
+                foreach (DataRow row in table.Rows)
+                {
+                    tables.Add(row.ItemArray[0].ToString());
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.Error(String.Format("Emby.Kodi.SyncQueue.Task:  Error while reading table names from database: Error: '{0}'", e.Message));
+                tables.Clear();
+            }
+            return tables;
+
+        }
+
+        public async Task<DataTable> GetDataTable(string sql)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SQLiteCommand cmd = new SQLiteCommand(sql, dbConn))
+                {
+                    using (SQLiteDataReader rdr = (SQLiteDataReader)await cmd.ExecuteReaderAsync())
+                    {
+                        dt.Load(rdr);
+                        return dt;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.Error(String.Format("Emby.Kodi.SyncQueue.Task:  Error reading table names from database: Error: '{0}'   SQL: '{1}'", e.Message, sql));
+                return null;
+            }
+        }
     }
 }
