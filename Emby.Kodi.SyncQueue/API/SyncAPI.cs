@@ -128,7 +128,7 @@ namespace Emby.Kodi.SyncQueue.API
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IApplicationPaths _applicationPaths;
 
-        private DataHelper dataHelper;
+        //private DataHelper dataHelper;
 
         public SyncAPI(ILogger logger, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths)
         {
@@ -136,19 +136,6 @@ namespace Emby.Kodi.SyncQueue.API
             _jsonSerializer = jsonSerializer;
             _applicationPaths = applicationPaths;
 
-            dataHelper = new DataHelper(_logger, _jsonSerializer);
-            string dataPath = _applicationPaths.DataPath;
-            bool result;
-
-            result = dataHelper.CheckCreateFiles(dataPath);
-
-            if (result)
-                result = dataHelper.OpenConnection();
-            
-            if (!result)
-            {
-                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            }
             _logger.Debug("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/{LastUpdateDT}/GetItems?format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
             _logger.Debug("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/GetItems?LastUpdateDT={LastUpdateDT}&format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
         }
@@ -181,42 +168,54 @@ namespace Emby.Kodi.SyncQueue.API
 
         public bool PopulateLibraryInfo(string userId, string lastDT, out SyncUpdateInfo info)
         {
-            try
+            info = null;
+            using (var dataHelper = new DataHelper(_logger, _jsonSerializer))
             {
-                _logger.Debug("Emby.Kodi.SyncQueue:  Starting PopulateLibraryInfo...");
-                var userDataChangedJson = new List<string>();
-                var tmpList = new List<string>();
-
-                info = new SyncUpdateInfo();
-                _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Added Info...");
-                info.ItemsAdded = dataHelper.FillItemsAdded(userId, lastDT);
-                _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Removed Info...");
-                info.ItemsRemoved = dataHelper.FillItemsRemoved(userId, lastDT);
-                _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Updated Info...");
-                info.ItemsUpdated = dataHelper.FillItemsUpdated(userId, lastDT);
-                _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Folders Added To Info...");
-                info.FoldersAddedTo = dataHelper.FillFoldersAddedTo(userId, lastDT);
-                _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Folders Removed From Info...");
-                info.FoldersRemovedFrom = dataHelper.FillFoldersRemovedFrom(userId, lastDT);
-                _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting User Data Changed Info...");
-                userDataChangedJson = dataHelper.FillUserDataChanged(userId, lastDT);                
-                _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Parsing User Data Changed Info...");
-                foreach (var userData in userDataChangedJson)
+                var result = dataHelper.OpenConnection();
+                
+                if (!result)
                 {
-                    info.UserDataChanged.Add(_jsonSerializer.DeserializeFromString<UserItemDataDto>(userData));
+                    throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
                 }
 
-                var json = _jsonSerializer.SerializeToString(info.UserDataChanged).ToString();
-                _logger.Debug(json);
+                try
+                {
+                    _logger.Debug("Emby.Kodi.SyncQueue:  Starting PopulateLibraryInfo...");
+                    var userDataChangedJson = new List<string>();
+                    var tmpList = new List<string>();
 
-                return true;
-            }
-            catch (Exception e)
-            {
-                _logger.Error("Emby.Kodi.SyncQueue:  Could not create Change Info for Get API!");
-                _logger.ErrorException(e.Message, e);
-                info = new SyncUpdateInfo();
-                return false;
+                    info = new SyncUpdateInfo();
+
+                    _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Added Info...");
+                    info.ItemsAdded = dataHelper.FillItemsAdded(userId, lastDT);
+                    _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Removed Info...");
+                    info.ItemsRemoved = dataHelper.FillItemsRemoved(userId, lastDT);
+                    _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Updated Info...");
+                    info.ItemsUpdated = dataHelper.FillItemsUpdated(userId, lastDT);
+                    _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Folders Added To Info...");
+                    info.FoldersAddedTo = dataHelper.FillFoldersAddedTo(userId, lastDT);
+                    _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Folders Removed From Info...");
+                    info.FoldersRemovedFrom = dataHelper.FillFoldersRemovedFrom(userId, lastDT);
+                    _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting User Data Changed Info...");
+                    userDataChangedJson = dataHelper.FillUserDataChanged(userId, lastDT);
+                    _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Parsing User Data Changed Info...");
+                    foreach (var userData in userDataChangedJson)
+                    {
+                        info.UserDataChanged.Add(_jsonSerializer.DeserializeFromString<UserItemDataDto>(userData));
+                    }
+
+                    var json = _jsonSerializer.SerializeToString(info.UserDataChanged).ToString();
+                    _logger.Debug(json);
+
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    _logger.Error("Emby.Kodi.SyncQueue:  Could not create Change Info for Get API!");
+                    _logger.ErrorException(e.Message, e);
+                    if (info == null) { info = new SyncUpdateInfo(); }
+                    return false;
+                }
             }
         }
     }
