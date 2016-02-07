@@ -34,7 +34,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
         private readonly Dictionary<Guid, List<IHasUserData>> _changedItems = new Dictionary<Guid, List<IHasUserData>>();
 
-        private DataHelper dataHelper;
+        private DataHelper dataHelper = null;
+        private CancellationTokenSource cTokenSource = new CancellationTokenSource();
+        private CancellationToken cToken;
 
         public UserSyncNotification(IUserDataManager userDataManager, ISessionManager sessionManager, ILogger logger, IUserManager userManager, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths)
         {
@@ -67,6 +69,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             {
                 throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
             }
+            cToken = cTokenSource.Token;
         }
 
         void _userDataManager_UserDataSaved(object sender, UserDataSaveEventArgs e)
@@ -121,7 +124,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 var changes = _changedItems.ToList();
                 _changedItems.Clear();
 
-                Task x = SendNotifications(changes, CancellationToken.None);
+                Task x = SendNotifications(changes, cToken);
 
                 if (UpdateTimer != null)
                 {
@@ -135,6 +138,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         {
             foreach (var pair in changes)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var userId = pair.Key;
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Starting to save items for {0}", userId.ToString()));
 
@@ -179,15 +183,37 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             }
         }
 
+        private void TriggerCancellation()
+        {            
+            cTokenSource.Cancel();
+        }
+
         public void Dispose()
         {
-            if (UpdateTimer != null)
+            if (!cToken.IsCancellationRequested)
             {
-                UpdateTimer.Dispose();
-                UpdateTimer = null;
+                TriggerCancellation();
             }
+            Dispose(true);
+        }
 
-            _userDataManager.UserDataSaved -= _userDataManager_UserDataSaved;
+        protected virtual void Dispose(bool dispose)
+        {
+            if (dispose)
+            {
+                if (UpdateTimer != null)
+                {
+                    UpdateTimer.Dispose();
+                    UpdateTimer = null;
+                }
+                if (dataHelper != null)
+                {
+                    dataHelper.Dispose();
+                    dataHelper = null;
+                }
+
+                _userDataManager.UserDataSaved -= _userDataManager_UserDataSaved;
+            }
         }
     }
 }

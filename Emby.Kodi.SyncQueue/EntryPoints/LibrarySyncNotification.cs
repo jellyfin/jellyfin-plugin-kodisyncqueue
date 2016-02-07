@@ -43,8 +43,11 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         private readonly List<BaseItem> _itemsRemoved = new List<BaseItem>();
         private readonly List<BaseItem> _itemsUpdated = new List<BaseItem>();
 
-        private DataHelper dataHelper;
-
+        private DataHelper dataHelper = null;
+        private CancellationTokenSource cTokenSource = new CancellationTokenSource();
+        private CancellationToken cToken;
+       
+        
         /// <summary>
         /// Gets or sets the library update timer.
         /// </summary>
@@ -55,6 +58,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// The library update duration
         /// </summary>
         private const int LibraryUpdateDuration = 5000;
+        private bool isDisposed = false;
 
         public LibrarySyncNotification(ILibraryManager libraryManager, ISessionManager sessionManager, IUserManager userManager, ILogger logger, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths)
         {
@@ -96,6 +100,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             {
                 throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
             }
+            cToken = cTokenSource.Token;
         }
 
         /// <summary>
@@ -199,7 +204,8 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         private void LibraryUpdateTimerCallback(object state)
         {
             lock (_libraryChangedSyncLock)
-            {
+            {                
+
                 // Remove dupes in case some were saved multiple times
                 var foldersAddedTo = _foldersAddedTo.GroupBy(i => i.Id).Select(i => i.First()).ToList();
 
@@ -210,9 +216,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     .GroupBy(i => i.Id)
                     .Select(i => i.First())
                     .ToList();
-
-                SendChangeNotifications(_itemsAdded.ToList(), itemsUpdated, _itemsRemoved.ToList(), foldersAddedTo, foldersRemovedFrom, CancellationToken.None);
-
+               
+                SendChangeNotifications(_itemsAdded.ToList(), itemsUpdated, _itemsRemoved.ToList(), foldersAddedTo, foldersRemovedFrom, cToken);
+                
                 if (LibraryUpdateTimer != null)
                 {
                     LibraryUpdateTimer.Dispose();
@@ -223,7 +229,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 _itemsRemoved.Clear();
                 _itemsUpdated.Clear();
                 _foldersAddedTo.Clear();
-                _foldersRemovedFrom.Clear();
+                _foldersRemovedFrom.Clear();                
             }
         }
 
@@ -237,9 +243,10 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// <param name="foldersRemovedFrom">The folders removed from.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         private async void SendChangeNotifications(List<BaseItem> itemsAdded, List<BaseItem> itemsUpdated, List<BaseItem> itemsRemoved, List<Folder> foldersAddedTo, List<Folder> foldersRemovedFrom, CancellationToken cancellationToken)
-        {
+        {            
             foreach (var user in _userManager.Users.ToList())
             {
+                if (isDisposed) { return; }
                 var id = user.Id;
                 var userName = user.Name;
                 var userSessions = _sessionManager.Sessions
@@ -350,11 +357,20 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             return new T[] { };
         }
 
+        private void TriggerCancellation()
+        {
+            cTokenSource.Cancel();
+        }
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         public void Dispose()
         {
+            if (!cToken.IsCancellationRequested)
+            {
+                TriggerCancellation();
+            }
             Dispose(true);
         }
 
@@ -370,6 +386,11 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 {
                     LibraryUpdateTimer.Dispose();
                     LibraryUpdateTimer = null;
+                }
+                if (dataHelper != null)
+                {
+                    dataHelper.Dispose();
+                    dataHelper = null;
                 }
 
                 _libraryManager.ItemAdded -= libraryManager_ItemAdded;

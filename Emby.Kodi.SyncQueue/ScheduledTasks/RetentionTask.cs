@@ -31,7 +31,7 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
         private readonly ILogManager _logManager;
         private readonly IUserDataManager _userDataManager;
         private readonly IApplicationPaths _applicationPaths;
-        private DataHelper dataHelper;
+        private DataHelper dataHelper = null;
         
 
         public FireRetentionTask(ILogManager logManager, ILogger logger, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataManager userDataManager, IHttpClient httpClient, IServerApplicationHost appHost, IApplicationPaths applicationPaths)
@@ -62,12 +62,6 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             //Is retDays 0.. If So Exit...
             int retDays;
             int recChanged;
-            TimeSpan dtDiff;
-            DateTime startTime;
-            DateTime endTime;
-            DateTime totalStart;
-            DateTime totalEnd;
-
             if (!(Int32.TryParse(Plugin.Instance.Configuration.RetDays, out retDays))) {
                 _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Deletion Not Possible When Retention Days = 0!");
                 return;
@@ -79,13 +73,7 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
                 return;
             }
 
-            retDays = retDays * -1;
-            DateTime dtNow = System.DateTime.UtcNow;
-            DateTime retDate = new DateTime(dtNow.Year, dtNow.Month, dtNow.Day, 0, 0, 0);
-            retDate = retDate.AddDays(retDays);                   
-            
-            _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Scheduled Retention Deletion to \"Trim the Fat\" Has Begun! Using Retention Date: {0:yyyy-MM-ddTHH:mm:ssZ}", retDate));
-            totalStart = DateTime.UtcNow;
+            //Check Database
             dataHelper = new DataHelper(_logger, _jsonSerializer);
             string dataPath = _applicationPaths.DataPath;
             bool result;
@@ -93,34 +81,66 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             result = dataHelper.CheckCreateFiles(dataPath);
 
             if (result)
+            {
                 result = dataHelper.OpenConnection();
-            if (result)
-                result = dataHelper.CreateUserTable("UserInfoChangedQueue", "UICQUnique");
+            }               
 
             if (!result)
             {
-                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            }                      
+                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");                
+            }                     
+
+            //Time to do some work!
+            TimeSpan dtDiff;
+            DateTime startTime;
+            DateTime endTime;
+            DateTime totalStart;
+            DateTime totalEnd;
+            DateTime dtNow = DateTime.UtcNow;
+            DateTime retDate = new DateTime(dtNow.Year, dtNow.Month, dtNow.Day, 0, 0, 0);
+            
+            retDays = retDays * -1;
+            
+            retDate = retDate.AddDays(retDays);                   
+            
+            _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Scheduled Retention Deletion to \"Trim the Fat\" Has Begun! Using Retention Date: {0:yyyy-MM-ddTHH:mm:ssZ}", retDate));
+            totalStart = DateTime.UtcNow;
+             
 
             List<String> tables = new List<String>();
             int recNum = 0;
             double curProg;
-
-            tables = await dataHelper.RetentionTables();
-            foreach (String tableName in tables){
-                startTime = DateTime.UtcNow;
-                recChanged = await dataHelper.RetentionFixer(tableName, retDate);
-                endTime = DateTime.UtcNow;
-                recNum++;
-                curProg = (recNum * 100)/tables.Count;
-                dtDiff = endTime - startTime;
-                progress.Report(curProg);
-                _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Deleted {0} Records from table '{1}' in: {2}", recChanged, tableName, dtDiff));
-
+            try
+            {
+                tables = await dataHelper.RetentionTables();
+                foreach (String tableName in tables)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    startTime = DateTime.UtcNow;
+                    recChanged = await dataHelper.RetentionFixer(tableName, retDate);
+                    endTime = DateTime.UtcNow;
+                    recNum++;
+                    curProg = (recNum * 100) / tables.Count;
+                    dtDiff = endTime - startTime;
+                    progress.Report(curProg);
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Deleted {0} Records from table '{1}' in: {2}", recChanged, tableName, dtDiff));
+                }
+                totalEnd = DateTime.UtcNow;
+                dtDiff = totalEnd - totalStart;
+                _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Retention Deletion Has Finished in {0}!", dtDiff));
+            } catch (Exception e)
+            {
+                _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Error Occured {0}!", e.Message));
             }
-            totalEnd = DateTime.UtcNow;
-            dtDiff = totalEnd - totalStart;
-            _logger.Info(String.Format("Emby.Kodi.SyncQueue.Tast: Retention Deletion Has Finished in {0}!", dtDiff));
+
+            cancellationToken.ThrowIfCancellationRequested();
+            dataHelper.CleanupDatabase();
+            
+            if (dataHelper != null)
+            {
+                dataHelper.Dispose();
+                dataHelper = null;
+            }
         }
 
         public string Name
