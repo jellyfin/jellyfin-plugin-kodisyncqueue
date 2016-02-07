@@ -90,7 +90,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
             if (!dataHelper.CreateLibraryTable("FoldersAddedQueue", "FAQUnique"))
                 throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            if (dataHelper.CreateLibraryTable("FoldersRemovedQueue", "FRQUnique"))
+            if (!dataHelper.CreateLibraryTable("FoldersRemovedQueue", "FRQUnique"))
                 throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
 
         }
