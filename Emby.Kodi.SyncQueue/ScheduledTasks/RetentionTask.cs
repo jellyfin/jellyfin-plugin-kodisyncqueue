@@ -30,9 +30,7 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
         private readonly ILogger _logger;
         private readonly ILogManager _logManager;
         private readonly IUserDataManager _userDataManager;
-        private readonly IApplicationPaths _applicationPaths;
-        private DataHelper dataHelper = null;
-        
+        private readonly IApplicationPaths _applicationPaths;        
 
         public FireRetentionTask(ILogManager logManager, ILogger logger, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataManager userDataManager, IHttpClient httpClient, IServerApplicationHost appHost, IApplicationPaths applicationPaths)
         {
@@ -78,14 +76,8 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             {
                 string dataPath = _applicationPaths.DataPath;
 
-                if (dataHelper.CheckCreateFiles(dataPath))
-                {
-                    if (!dataHelper.OpenConnection())
-                    {
-                      throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");                
-                    }
-                }               
-                                  
+                dataHelper.CheckCreateFiles(dataPath);
+                dataHelper.OpenConnection();                
 
                 //Time to do some work!
                 TimeSpan dtDiff;

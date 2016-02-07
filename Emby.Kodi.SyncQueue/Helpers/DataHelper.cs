@@ -55,33 +55,22 @@ namespace Emby.Kodi.SyncQueue.Helpers
         }
         */
 
-        public bool CheckCreateFiles(string embyDataPath)
+        public void CheckCreateFiles(string embyDataPath)
         {
             lock (_dbConnSyncLock)
             {
-                try
+                dbPath = Path.Combine(embyDataPath, "SyncData", "Emby.Kodi.SyncQueue.db");
+
+                if (!Directory.Exists(Path.Combine(embyDataPath, "SyncData")))
                 {
-                    dbPath = Path.Combine(embyDataPath, "SyncData", "Emby.Kodi.SyncQueue.db");
-
-                    if (!Directory.Exists(Path.Combine(embyDataPath, "SyncData")))
-                    {
-                        _logger.Debug("Emby.Kodi.SyncQueue:  Creating Sync Data Folder...");
-                        Directory.CreateDirectory(Path.Combine(embyDataPath, "SyncData"));
-                    }
-
-                    if (!File.Exists(dbPath))
-                    {
-                        _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Creating database file: {0}", dbPath));
-                        SQLiteConnection.CreateFile(dbPath);
-                    }
-
-                    return true;
+                    _logger.Debug("Emby.Kodi.SyncQueue:  Creating Sync Data Folder...");
+                    Directory.CreateDirectory(Path.Combine(embyDataPath, "SyncData"));
                 }
-                catch (Exception e)
+
+                if (!File.Exists(dbPath))
                 {
-                    _logger.Error("Emby.Kodi.SyncQueue:  Error in CheckCreateFiles!");
-                    _logger.ErrorException(e.Message, e);
-                    return false;
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Creating database file: {0}", dbPath));
+                    SQLiteConnection.CreateFile(dbPath);
                 }
             }            
         }
@@ -91,207 +80,119 @@ namespace Emby.Kodi.SyncQueue.Helpers
             var sSQL = String.Format("SELECT name FROM sqlite_master WHERE type = 'table' AND name = '{0}'", tableName);
             using (SQLiteDataReader dReader = SQLReader(sSQL))
             {
-                try
+                if (dReader != null)
                 {
-                    if (dReader != null)
-                    {
-                        if (dReader.HasRows)
-                        {
-                            dReader.Close();
-                            return true;
-                        }
-                        else
-                        {
-                            _logger.Debug(String.Format("Table not found: {0}... Creating table...", tableName));
-                            dReader.Close();
-                            return false;
-                        }
-                    }
-                    else { return false; }
-                }
-                catch (Exception e)
-                {
-                    _logger.Error(String.Format("Emby.Kodi.SyncQueue:  Error creating table: {0}", tableName));
-                    _logger.ErrorException(e.Message, e);
-                    if (!dReader.IsClosed)
+                    if (dReader.HasRows)
                     {
                         dReader.Close();
+                        return true;
                     }
-                    return false;
+                    else
+                    {
+                        _logger.Debug(String.Format("Table not found: {0}... Creating table...", tableName));
+                        dReader.Close();
+                        return false;
+                    }
                 }
+                else { return false; }                
             }
         }
 
         
-        public bool OpenConnection()
+        public void OpenConnection()
         {
             lock (_dbConnSyncLock)
             {
-                try
-                {
-                    dbConn = new SQLiteConnection("Data Source=" + dbPath + ";Version=3");
-                    dbConn.Open();
-                    bNeedDisposed = true;
-                    return true;
-                }
-                catch (Exception e)
-                {
-                    _logger.Error(String.Format("Emby.Kodi.SyncQueue:  Could not connect to database: {0}", dbPath));
-                    _logger.ErrorException(e.Message, e);
-                    return false;
-                }
+                dbConn = new SQLiteConnection("Data Source=" + dbPath + ";Version=3");
+                dbConn.Open();
+                bNeedDisposed = true;
             }
         }
 
-        public bool CreateLibraryTable(string tableName, string indexName)
-        {
-            string sSQL;
-            bool result;
-            int i;
-
-            try
-            {
-                if (!this.TableExists(tableName))
-                {
-                    sSQL = String.Format("CREATE TABLE IF NOT EXISTS {0} (itemId VARCHAR(50), userId VARCHAR(50), lastModified DATETIME)", tableName);
-                    result = SQLExecuter(sSQL, out i);
-                    if (!result)
-                        _logger.Error(String.Format("Could not create table: \"{0}\"", tableName));
-                    else
-                    {
-                        _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Table Created:  {0}", tableName));
-                        sSQL = String.Format("CREATE UNIQUE INDEX IF NOT EXISTS {0} ON {1} (userId, itemId)", indexName, tableName);
-                        result = SQLExecuter(sSQL, out i);
-                        if (!result)
-                            _logger.Error(String.Format("Could not create index for \"{0}\"", tableName));
-                        else
-                            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Index Created: {0}  For Table:  {1}", indexName, tableName));
-                    }
-                }
-                return true;
-            }
-            catch (Exception e)
-            {
-                _logger.Error(String.Format("Emby.Kodi.SyncQueue:  Could not create table: {0} or index: {1}", tableName, indexName));
-                _logger.ErrorException(e.Message, e); 
-                return false;
-            }
-        }
-
-        public bool CreateUserTable(string tableName, string indexName)
+        public void CreateLibraryTable(string tableName, string indexName)
         {
             string sSQL;
             int i;
 
-            try
+            if (!this.TableExists(tableName))
             {
-                if (!this.TableExists(tableName))
-                {
-                    sSQL = String.Format("CREATE TABLE IF NOT EXISTS {0} (itemId VARCHAR(50), userId VARCHAR(50), json TEXT, lastModified DATETIME)", tableName);
-                    if (!SQLExecuter(sSQL, out i))
-                        _logger.Error(String.Format("Could not create table: \"{0}\"", tableName));
-                    else
-                    {
-                        _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Table Created:  {0}", tableName));
-                        sSQL = String.Format("CREATE UNIQUE INDEX IF NOT EXISTS {0} ON {1} (userId, itemId)", indexName, tableName);
-                        if (!SQLExecuter(sSQL, out i))
-                            _logger.Error(String.Format("Could not create index for \"{0}\"", tableName));
-                        else
-                            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Index Created: {0}  For Table:  {1}", indexName, tableName));
-                    }
-                }
-                return true;
-            }
-            catch (Exception e)
-            {
-                _logger.Error(String.Format("Emby.Kodi.SyncQueue:  Could not create table: {0} or index: {1}", tableName, indexName));
-                _logger.ErrorException(e.Message, e);
-                return false;
+                sSQL = String.Format("CREATE TABLE IF NOT EXISTS {0} (itemId VARCHAR(50), userId VARCHAR(50), lastModified DATETIME)", tableName);
+                _logger.Info(String.Format("Emby.Kodi.SyncQueue: Creating Table {0}", tableName));
+                SQLExecuter(sSQL, out i);
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Table Created:  {0}", tableName));
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue: Creating Index {0}", indexName));
+                sSQL = String.Format("CREATE UNIQUE INDEX IF NOT EXISTS {0} ON {1} (userId, itemId)", indexName, tableName);
+                SQLExecuter(sSQL, out i);
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Index Created: {0}  For Table:  {1}", indexName, tableName));
             }
         }
 
-        public bool SQLExecuter(string sSQL, out int recChanged)
+        public void CreateUserTable(string tableName, string indexName)
+        {
+            string sSQL;
+            int i;
+
+            if (!this.TableExists(tableName))
+            {
+                sSQL = String.Format("CREATE TABLE IF NOT EXISTS {0} (itemId VARCHAR(50), userId VARCHAR(50), json TEXT, lastModified DATETIME)", tableName);
+                _logger.Info(String.Format("Emby.Kodi.SyncQueue: Creating Table {0}", tableName));
+                SQLExecuter(sSQL, out i);
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Table Created:  {0}", tableName));
+                sSQL = String.Format("CREATE UNIQUE INDEX IF NOT EXISTS {0} ON {1} (userId, itemId)", indexName, tableName);
+                _logger.Info(String.Format("Emby.Kodi.SyncQueue: Creating Index {0}", indexName));
+                SQLExecuter(sSQL, out i);
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Index Created: {0}  For Table:  {1}", indexName, tableName));
+            }            
+        }
+
+        public void SQLExecuter(string sSQL, out int recChanged)
         {            
             using (var command = new SQLiteCommand(sSQL, dbConn))
-            try
             {
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Executing SQL Statement:  {0}", sSQL));
                 lock (_dbConnSyncLock) { recChanged = command.ExecuteNonQuery(); };
-                return true;
-            }
-            catch (Exception e)
-            {
-                _logger.Error(String.Format("Emby.Kodi.SyncQueue:  Error executing SQL statement:  {0}", sSQL));
-                _logger.ErrorException(e.Message, e);
-                recChanged = 0;
-                return false;
-            }
+            }            
         }
 
         public SQLiteDataReader SQLReader(string sSQL)
         {
             using (var command = new SQLiteCommand(sSQL, dbConn))
             {
-                try
-                {
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Reader SQL Statement:  {0}", sSQL));
-                    return command.ExecuteReader();
-                }
-                catch (Exception e)
-                {
-                    _logger.Error(String.Format("Emby.Kodi.SyncQueue:  Error reader SQL statment:  {0}", sSQL));
-                    _logger.ErrorException(e.Message, e);
-                    return null;
-                }
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Reader SQL Statement:  {0}", sSQL));
+                return command.ExecuteReader();                
             }
         }
 
         public async Task<int> LibrarySetItem(string item, string user, string tableName, CancellationToken cancellationToken)
         {
             string sSQL = String.Format("SELECT * FROM {0} WHERE itemId = '{1}' AND userId = '{2}'", tableName, item, user);
-            try
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var recChanged = 0;
+            cancellationToken.ThrowIfCancellationRequested();
+            var recChanged = 0;
 
-                using (var _command = new SQLiteCommand(sSQL, dbConn))
-                {
-                    using (SQLiteDataReader _reader = _command.ExecuteReader())
-                    {
-                        if (_reader.HasRows)
-                        {
-                            // Must update the Value
-                            sSQL = String.Format("UPDATE {0} SET lastModified = '{1:yyyy-MM-ddTHH:mm:ssZ}' WHERE itemId = '{2}' and  userId = '{3}'", tableName, DateTime.UtcNow, item, user);
-                            _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Updating ItemId: '{0}' for UserId: '{1}' in table: '{2}'", item, user, tableName));
-                            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using SQL Statement: '{0}'", sSQL));
-                        }
-                        else
-                        {
-                            // Must Insert the value
-                            sSQL = String.Format("INSERT INTO {0} VALUES ('{1}','{2}','{3:yyyy-MM-ddTHH:mm:ssZ}')", tableName, item, user, DateTime.UtcNow);
-                            _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Adding ItemId: '{0}' for UserID: '{1}' to table: '{2}'", item, user, tableName));
-                            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using SQL Statement '{0}'", sSQL));
-                        }
-                        _reader.Close();
-                        _command.CommandText = sSQL;
-                        recChanged = await _command.ExecuteNonQueryAsync();
-                        return recChanged;
-                    }
-                }
-            }
-            catch (Exception e)
+            using (var _command = new SQLiteCommand(sSQL, dbConn))
             {
-                if (e is TaskCanceledException)
+                using (SQLiteDataReader _reader = _command.ExecuteReader())
                 {
-                    _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Task Cancelled!");
+                    if (_reader.HasRows)
+                    {
+                        // Must update the Value
+                        sSQL = String.Format("UPDATE {0} SET lastModified = '{1:yyyy-MM-ddTHH:mm:ssZ}' WHERE itemId = '{2}' and  userId = '{3}'", tableName, DateTime.UtcNow, item, user);
+                        _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Updating ItemId: '{0}' for UserId: '{1}' in table: '{2}'", item, user, tableName));
+                        _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using SQL Statement: '{0}'", sSQL));
+                    }
+                    else
+                    {
+                        // Must Insert the value
+                        sSQL = String.Format("INSERT INTO {0} VALUES ('{1}','{2}','{3:yyyy-MM-ddTHH:mm:ssZ}')", tableName, item, user, DateTime.UtcNow);
+                        _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Adding ItemId: '{0}' for UserID: '{1}' to table: '{2}'", item, user, tableName));
+                        _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using SQL Statement '{0}'", sSQL));
+                    }
+                    _reader.Close();
+                    _command.CommandText = sSQL;
+                    recChanged = await _command.ExecuteNonQueryAsync();
+                    return recChanged;
                 }
-                else 
-                {
-                    _logger.Error(String.Format("Emby.Kodi.SyncQueue:  Error writing data to database:  '{0}'", sSQL));
-                    _logger.ErrorException(e.Message, e);                
-                }                                
-                return 0;
-            }
+            }           
         }
 
         public async Task<int> UserChangeSetItem(MediaBrowser.Model.Dto.UserItemDataDto dto, string user, string item, string tableName, CancellationToken cancellationToken)
@@ -304,45 +205,25 @@ namespace Emby.Kodi.SyncQueue.Helpers
             {
                 using (SQLiteDataReader _reader = _command.ExecuteReader())
                 {
-                    try
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (_reader.HasRows)
                     {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        if (_reader.HasRows)
-                        {
-                            // Must update the Value
-                            sSQL = String.Format("UPDATE {0} SET lastModified = '{1:yyyy-MM-ddTHH:mm:ssZ}', json = '{2}' WHERE itemId = '{3}' and  userId = '{4}'", tableName, DateTime.UtcNow, _json, item, user);
-                            _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Updating ItemId: '{0}' for UserId: '{1}' in table: '{2}'", item, user, tableName));
-                            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using SQL Statement: '{0}'", sSQL));
-                        }
-                        else
-                        {
-                            // Must Insert the value
-                            sSQL = String.Format("INSERT INTO {0} VALUES ('{1}','{2}','{3}','{4:yyyy-MM-ddTHH:mm:ssZ}')", tableName, item, user, _json, DateTime.UtcNow);
-                            _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Adding ItemId: '{0}' for UserID: '{1}' to table: '{2}'", item, user, tableName));
-                            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using SQL Statement '{0}'", sSQL));
-                        }
-                        _reader.Close();
-                        _command.CommandText = sSQL;
-                        recChanged = await _command.ExecuteNonQueryAsync();
-                        return recChanged;
+                        // Must update the Value
+                        sSQL = String.Format("UPDATE {0} SET lastModified = '{1:yyyy-MM-ddTHH:mm:ssZ}', json = '{2}' WHERE itemId = '{3}' and  userId = '{4}'", tableName, DateTime.UtcNow, _json, item, user);
+                        _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Updating ItemId: '{0}' for UserId: '{1}' in table: '{2}'", item, user, tableName));
+                        _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using SQL Statement: '{0}'", sSQL));
                     }
-                    catch (Exception e)
+                    else
                     {
-                        if (e is TaskCanceledException)
-                        {
-                            _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Task Cancelled!");
-                        }
-                        else
-                        {
-                            _logger.Error(String.Format("Emby.Kodi.SyncQueue:  Error writing data to database:  '{0}'", sSQL));                            
-                            _logger.ErrorException(e.Message, e);
-                        }                        
-                        if (!_reader.IsClosed) 
-                        {
-                            _reader.Close();
-                        }
-                        return 0;
+                        // Must Insert the value
+                        sSQL = String.Format("INSERT INTO {0} VALUES ('{1}','{2}','{3}','{4:yyyy-MM-ddTHH:mm:ssZ}')", tableName, item, user, _json, DateTime.UtcNow);
+                        _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Adding ItemId: '{0}' for UserID: '{1}' to table: '{2}'", item, user, tableName));
+                        _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using SQL Statement '{0}'", sSQL));
                     }
+                    _reader.Close();
+                    _command.CommandText = sSQL;
+                    recChanged = await _command.ExecuteNonQueryAsync();
+                    return recChanged;                    
                 }
             }
         }
@@ -352,54 +233,28 @@ namespace Emby.Kodi.SyncQueue.Helpers
             Task<int>[] addTasks;
             IEnumerable<Task<int>> LibraryAddItemQuery;
             int iReturn;
-            try
-            {
-                LibraryAddItemQuery = 
-                    from item in items select LibrarySetItem(item, user, tableName, cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
+            LibraryAddItemQuery = 
+                from item in items select LibrarySetItem(item, user, tableName, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
 
-                addTasks = LibraryAddItemQuery.ToArray();
+            addTasks = LibraryAddItemQuery.ToArray();
             
-                int[] itemCount = await Task.WhenAll(addTasks);
-                iReturn = 1;
-            }
-            catch (Exception e)
-            {
-                if (e is TaskCanceledException)
-                {
-                    _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Task Cancelled!");
-                }
-                else
-                {
-                    _logger.Error("Emby.Kodi.SyncQueue:  Error in AlterLibrary...");
-                    _logger.ErrorException(e.Message, e);
-                }
-                iReturn = 0;
-            }
+            int[] itemCount = await Task.WhenAll(addTasks);
+            iReturn = 1;            
             return iReturn;
         }
 
         public async Task<int> LibraryItemsToAlter(List<string> items, string user, string tableName, CancellationToken cancellationToken)
         {
-            try
+            if (items.Count > 0)
             {
-                if (items.Count > 0)
-                {
-                    int i = await AlterLibrary(items, user, tableName, cancellationToken);
-                    return 1;
-                }
-                else
-                {
-                    return 0;
-                }
-                
+                int i = await AlterLibrary(items, user, tableName, cancellationToken);
+                return 1;
             }
-            catch (Exception e)
+            else
             {
-                _logger.Error("Emby.Kodi.SyncQueue:  Error in LibraryItemsToAlter...");
-                _logger.ErrorException(e.Message, e);
                 return 0;
-            }
+            }           
         }
 
         public List<string> FillItemsAdded(string userId, string lastDT)
@@ -582,18 +437,11 @@ namespace Emby.Kodi.SyncQueue.Helpers
             int recChanged = 0;
             string sSQL = String.Format("DELETE FROM {0} WHERE lastModified >= '{1:yyyy-MM-ddTHH:mm:ssZ}'", tableName, retDate);
             using (var _command = new SQLiteCommand(sSQL, dbConn))
-            try
-            {                
+            {
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue.Task: Retention Deletion From Table '{0}' Using SQL Statement '{1}'", tableName, sSQL));
                 _command.CommandText = sSQL;
                 recChanged = await _command.ExecuteNonQueryAsync();
                 return recChanged;
-            }
-            catch (Exception e)
-            {
-                _logger.Error(String.Format("Emby.Kodi.SyncQueue.Task:  Error deleting data from table: '{0}'  SQL: '{1}'", tableName, sSQL));
-                _logger.ErrorException(e.Message, e);
-                return 0;
             }
         }
 
@@ -601,19 +449,11 @@ namespace Emby.Kodi.SyncQueue.Helpers
         {
             string sSQL = "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY 1";
             List<String> tables = new List<String>();
-            try
+            using (var table = await GetDataTable(sSQL))
+            foreach (DataRow row in table.Rows)
             {
-                using (var table = await GetDataTable(sSQL))
-                foreach (DataRow row in table.Rows)
-                {
-                    tables.Add(row.ItemArray[0].ToString());
-                }
-            }
-            catch (Exception e)
-            {
-                _logger.Error(String.Format("Emby.Kodi.SyncQueue.Task:  Error while reading table names from database: Error: '{0}'", e.Message));
-                tables.Clear();
-            }
+                tables.Add(row.ItemArray[0].ToString());
+            }           
             return tables;
 
         }
@@ -621,22 +461,13 @@ namespace Emby.Kodi.SyncQueue.Helpers
         public async Task<DataTable> GetDataTable(string sql)
         {
             DataTable dt = new DataTable();
-            try
+            using (SQLiteCommand cmd = new SQLiteCommand(sql, dbConn))
             {
-                using (SQLiteCommand cmd = new SQLiteCommand(sql, dbConn))
+                using (SQLiteDataReader rdr = (SQLiteDataReader)await cmd.ExecuteReaderAsync())
                 {
-                    using (SQLiteDataReader rdr = (SQLiteDataReader)await cmd.ExecuteReaderAsync())
-                    {
-                        dt.Load(rdr);
-                        return dt;
-                    }
+                    dt.Load(rdr);
+                    return dt;
                 }
-            }
-            catch (Exception e)
-            {
-                _logger.Error(String.Format("Emby.Kodi.SyncQueue.Task:  Error reading table names from database: Error: '{0}'   SQL: '{1}'", e.Message, sql));
-                dt = null;
-                return dt;
             }
         }
 
@@ -644,13 +475,10 @@ namespace Emby.Kodi.SyncQueue.Helpers
         {
             String sql = "vacuum;";
             using (var cmd = new SQLiteCommand(sql, dbConn))
-            try
             {
+                _logger.Info("Emby.Kodi.SyncQUeue: Beginning Vacuum");
                 await cmd.ExecuteNonQueryAsync();
-            }
-            catch (Exception e)
-            {
-                _logger.Error(String.Format("Emby.Kodi.SyncQueue.Task: Error Cleaning Up Deleted Records: {0}", e.Message));
+                _logger.Info("Emby.Kodi.SyncQueue: Vacuum Finished!");
             }
         }
 
@@ -667,15 +495,8 @@ namespace Emby.Kodi.SyncQueue.Helpers
                 {
                     if (dbConn != null && dbConn.State == ConnectionState.Open)
                     {
-                        try
-                        {
-                            dbConn.Close();
-                            dbConn = null;
-                        }
-                        catch (Exception e)
-                        {
-                            _logger.ErrorException(e.Message, e);
-                        }
+                        dbConn.Close();
+                        dbConn = null;                        
                     }
                 }
             }

@@ -56,12 +56,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             dataHelper = new DataHelper(_logger, _jsonSerializer);
             string dataPath = _applicationPaths.DataPath;
 
-            if (!dataHelper.CheckCreateFiles(dataPath))
-                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            if (!dataHelper.OpenConnection())
-                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            if (!dataHelper.CreateUserTable("UserInfoChangedQueue", "UICQUnique"))
-                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");                         
+            dataHelper.CheckCreateFiles(dataPath);
+            dataHelper.OpenConnection();
+            dataHelper.CreateUserTable("UserInfoChangedQueue", "UICQUnique");
         }
 
         void _userDataManager_UserDataSaved(object sender, UserDataSaveEventArgs e)
@@ -111,6 +108,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         private void UpdateTimerCallback(object state)
         {
             lock (_syncLock)
+            try
             {
                 // Remove dupes in case some were saved multiple times
                 var changes = _changedItems.ToList();
@@ -124,70 +122,48 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     UpdateTimer = null;
                 }
             }
+            catch (Exception e)
+            {
+                _logger.Error(String.Format("Emby.Kodi.SyncQueue: An Error Has Occurred in UserUpdateTimerCallback: {0}", e.Message));
+                _logger.ErrorException(e.Message, e);
+            }
         }
 
         private async Task SendNotifications(IEnumerable<KeyValuePair<Guid, List<IHasUserData>>> changes, CancellationToken cancellationToken)
         {
             foreach (var pair in changes)
             {
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var userId = pair.Key;
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Starting to save items for {0}", userId.ToString()));
+                cancellationToken.ThrowIfCancellationRequested();
+                var userId = pair.Key;
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Starting to save items for {0}", userId.ToString()));
 
-                    var user = _userManager.GetUserById(userId);
+                var user = _userManager.GetUserById(userId);
 
-                    var dtoList = pair.Value
-                           .GroupBy(i => i.Id)
-                           .Select(i => i.First())
-                           .Select(i =>
-                           {
-                               var dto = _userDataManager.GetUserDataDto(i, user);
-                               dto.ItemId = i.Id.ToString("N");
-                               return dto;
-                           })
-                           .ToList();
+                var dtoList = pair.Value
+                        .GroupBy(i => i.Id)
+                        .Select(i => i.First())
+                        .Select(i =>
+                        {
+                            var dto = _userDataManager.GetUserDataDto(i, user);
+                            dto.ItemId = i.Id.ToString("N");
+                            return dto;
+                        })
+                        .ToList();
 
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
 
-                    Task<int> saveUser = SaveUserChanges(dtoList, userId.ToString("N"), "UserInfoChangedQueue", cancellationToken);
-
-                    int iSaveUser = await saveUser;
-                }
-                catch (Exception e)
-                {
-                    if (e is TaskCanceledException)
-                    {
-                        _logger.Info("Emby.Kodi.SyncQueue.Task: Save User Changes Cancelled!");
-                    }
-                    else
-                    {
-                        _logger.Error(String.Format("Emby.Kodi.SyncQueue: Error In User Change Notification: {0}!", e.Message));
-                        _logger.ErrorException(e.Message, e);
-                    }
-                }
+                await SaveUserChanges(dtoList, userId.ToString("N"), "UserInfoChangedQueue", cancellationToken);
             }
         }
 
-        private async Task<int> SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, string user, string tableName, CancellationToken cancellationToken)
-        {
-            try
-            {
-                IEnumerable<Task<int>> LibraryAddItemQuery =
-                    from dto in dtos select dataHelper.UserChangeSetItem(dto, user, dto.ItemId, tableName, cancellationToken);
+        private async Task SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, string user, string tableName, CancellationToken cancellationToken)
+        {           
+            IEnumerable<Task<int>> LibraryAddItemQuery =
+                from dto in dtos select dataHelper.UserChangeSetItem(dto, user, dto.ItemId, tableName, cancellationToken);
+            
+            Task<int>[] addTasks = LibraryAddItemQuery.ToArray();
 
-                Task<int>[] addTasks = LibraryAddItemQuery.ToArray();
-
-                int[] itemCount = await Task.WhenAll(addTasks);
-                return 1;
-            }
-            catch (Exception e)
-            {
-                _logger.Error("Emby.Kodi.SyncQueue:  Emby.Kodi.SyncQueue:  Error in AlterLibrary");
-                _logger.ErrorException(e.Message, e);
-                return 0;
-            }
+            int[] itemCount = await Task.WhenAll(addTasks);            
         }
 
         private void TriggerCancellation()

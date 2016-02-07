@@ -78,20 +78,13 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             dataHelper = new DataHelper(_logger, _jsonSerializer);
             string dataPath = _applicationPaths.DataPath;
 
-            if (!dataHelper.CheckCreateFiles(dataPath))
-                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            if (!dataHelper.OpenConnection())
-                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            if (!dataHelper.CreateLibraryTable("ItemsAddedQueue", "IAQUnique"))
-                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            if (!dataHelper.CreateLibraryTable("ItemsUpdatedQueue", "IUQUnique"))
-                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            if (!dataHelper.CreateLibraryTable("ItemsRemovedQueue", "IRQUnique"))
-                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            if (!dataHelper.CreateLibraryTable("FoldersAddedQueue", "FAQUnique"))
-                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            if (!dataHelper.CreateLibraryTable("FoldersRemovedQueue", "FRQUnique"))
-                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
+            dataHelper.CheckCreateFiles(dataPath);
+            dataHelper.OpenConnection();
+            dataHelper.CreateLibraryTable("ItemsAddedQueue", "IAQUnique");
+            dataHelper.CreateLibraryTable("ItemsUpdatedQueue", "IUQUnique");
+            dataHelper.CreateLibraryTable("ItemsRemovedQueue", "IRQUnique");
+            dataHelper.CreateLibraryTable("FoldersAddedQueue", "FAQUnique");
+            dataHelper.CreateLibraryTable("FoldersRemovedQueue", "FRQUnique");
 
         }
 
@@ -199,29 +192,37 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             {                
 
                 // Remove dupes in case some were saved multiple times
-                var foldersAddedTo = _foldersAddedTo.GroupBy(i => i.Id).Select(i => i.First()).ToList();
-
-                var foldersRemovedFrom = _foldersRemovedFrom.GroupBy(i => i.Id).Select(i => i.First()).ToList();
-
-                var itemsUpdated = _itemsUpdated
-                    .Where(i => !_itemsAdded.Contains(i))
-                    .GroupBy(i => i.Id)
-                    .Select(i => i.First())
-                    .ToList();
-               
-                SendChangeNotifications(_itemsAdded.ToList(), itemsUpdated, _itemsRemoved.ToList(), foldersAddedTo, foldersRemovedFrom, cTokenSource.Token);
-                
-                if (LibraryUpdateTimer != null)
+                try
                 {
-                    LibraryUpdateTimer.Dispose();
-                    LibraryUpdateTimer = null;
-                }
+                    var foldersAddedTo = _foldersAddedTo.GroupBy(i => i.Id).Select(i => i.First()).ToList();
 
+                    var foldersRemovedFrom = _foldersRemovedFrom.GroupBy(i => i.Id).Select(i => i.First()).ToList();
+
+                    var itemsUpdated = _itemsUpdated
+                        .Where(i => !_itemsAdded.Contains(i))
+                        .GroupBy(i => i.Id)
+                        .Select(i => i.First())
+                        .ToList();
+
+                    SendChangeNotifications(_itemsAdded.ToList(), itemsUpdated, _itemsRemoved.ToList(), foldersAddedTo, foldersRemovedFrom, cTokenSource.Token);
+
+                    if (LibraryUpdateTimer != null)
+                    {
+                        LibraryUpdateTimer.Dispose();
+                        LibraryUpdateTimer = null;
+                    }
+                    
+                }
+                catch (Exception e)
+                {
+                    _logger.Error(String.Format("Emby.Kodi.SyncQueue: An Error Has Occurred in LibraryUpdateTimerCallback: {0}", e.Message));
+                    _logger.ErrorException(e.Message, e);
+                }
                 _itemsAdded.Clear();
                 _itemsRemoved.Clear();
                 _itemsUpdated.Clear();
                 _foldersAddedTo.Clear();
-                _foldersRemovedFrom.Clear();                
+                _foldersRemovedFrom.Clear();
             }
         }
 
@@ -239,54 +240,39 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             foreach (var user in _userManager.Users.ToList())
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                try
-                {
-                    var id = user.Id;
-                    var userName = user.Name;
-                    var userSessions = _sessionManager.Sessions
-                        .Where(u => u.UserId.HasValue && u.UserId.Value == id && u.IsActive)
-                        .ToList();
+                var id = user.Id;
+                var userName = user.Name;
+                var userSessions = _sessionManager.Sessions
+                    .Where(u => u.UserId.HasValue && u.UserId.Value == id && u.IsActive)
+                    .ToList();
 
-                    var info = GetLibraryUpdateInfo(itemsAdded, itemsUpdated, itemsRemoved, foldersAddedTo,
-                                                    foldersRemovedFrom, id);
-                    int[] iTasks = new int[5];
+                var info = GetLibraryUpdateInfo(itemsAdded, itemsUpdated, itemsRemoved, foldersAddedTo,
+                                                foldersRemovedFrom, id);
+                int[] iTasks = new int[5];
 
-                    // I am doing this to strip out information that doesn't usually make it to the websocket...
-                    // Will query Luke about that at a later time...
-                    var json = _jsonSerializer.SerializeToString(info); //message
-                    var dejson = _jsonSerializer.DeserializeFromString<LibraryUpdateInfo>(json);
+                // I am doing this to strip out information that doesn't usually make it to the websocket...
+                // Will query Luke about that at a later time...
+                var json = _jsonSerializer.SerializeToString(info); //message
+                var dejson = _jsonSerializer.DeserializeFromString<LibraryUpdateInfo>(json);
 
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  User: {0} - {1}", userName, id));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Added:          {0}", dejson.ItemsAdded.Count.ToString()));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Updated:        {0}", dejson.ItemsUpdated.Count.ToString()));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Removed:        {0}", dejson.ItemsRemoved.Count.ToString()));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Added To:     {0}", dejson.FoldersAddedTo.Count.ToString()));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Removed From: {0}", dejson.FoldersRemovedFrom.Count.ToString()));
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  User: {0} - {1}", userName, id));
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Added:          {0}", dejson.ItemsAdded.Count.ToString()));
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Updated:        {0}", dejson.ItemsUpdated.Count.ToString()));
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Removed:        {0}", dejson.ItemsRemoved.Count.ToString()));
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Added To:     {0}", dejson.FoldersAddedTo.Count.ToString()));
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Removed From: {0}", dejson.FoldersRemovedFrom.Count.ToString()));
 
-                    Task<int> iaTask = dataHelper.LibraryItemsToAlter(dejson.ItemsAdded, id.ToString("N"), "ItemsAddedQueue", cancellationToken);
-                    Task<int> iuTask = dataHelper.LibraryItemsToAlter(dejson.ItemsUpdated, id.ToString("N"), "ItemsUpdatedQueue", cancellationToken);
-                    Task<int> irTask = dataHelper.LibraryItemsToAlter(dejson.ItemsRemoved, id.ToString("N"), "ItemsRemovedQueue", cancellationToken);
-                    Task<int> faTask = dataHelper.LibraryItemsToAlter(dejson.FoldersAddedTo, id.ToString("N"), "FoldersAddedQueue", cancellationToken);
-                    Task<int> frTask = dataHelper.LibraryItemsToAlter(dejson.FoldersRemovedFrom, id.ToString("N"), "FoldersRemovedQueue", cancellationToken);
+                Task<int> iaTask = dataHelper.LibraryItemsToAlter(dejson.ItemsAdded, id.ToString("N"), "ItemsAddedQueue", cancellationToken);
+                Task<int> iuTask = dataHelper.LibraryItemsToAlter(dejson.ItemsUpdated, id.ToString("N"), "ItemsUpdatedQueue", cancellationToken);
+                Task<int> irTask = dataHelper.LibraryItemsToAlter(dejson.ItemsRemoved, id.ToString("N"), "ItemsRemovedQueue", cancellationToken);
+                Task<int> faTask = dataHelper.LibraryItemsToAlter(dejson.FoldersAddedTo, id.ToString("N"), "FoldersAddedQueue", cancellationToken);
+                Task<int> frTask = dataHelper.LibraryItemsToAlter(dejson.FoldersRemovedFrom, id.ToString("N"), "FoldersRemovedQueue", cancellationToken);
 
-                    iTasks[0] = await iaTask;
-                    iTasks[1] = await iuTask;
-                    iTasks[2] = await irTask;
-                    iTasks[3] = await faTask;
-                    iTasks[4] = await frTask;
-                } 
-                catch (Exception e)
-                {
-                   if (e is TaskCanceledException)
-                    {
-                        _logger.Info("Emby.Kodi.SyncQueue.Task: Save Library Changes Cancelled!");
-                    }
-                    else
-                    {
-                        _logger.Error(String.Format("Emby.Kodi.SyncQueue: Error In Library Changes Notification: {0}!", e.Message));
-                        _logger.ErrorException(e.Message, e);
-                    }
-                }
+                iTasks[0] = await iaTask;
+                iTasks[1] = await iuTask;
+                iTasks[2] = await irTask;
+                iTasks[3] = await faTask;
+                iTasks[4] = await frTask;                
             }
         }
 
@@ -366,10 +352,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
         private void TriggerCancellation()
         {
-            cTokenSource.Cancel();
-            Thread.Sleep(2000);
-            cTokenSource.Dispose();
-            cTokenSource = null;
+            cTokenSource.Cancel();            
         }
 
         /// <summary>
@@ -380,6 +363,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             if (!cTokenSource.Token.IsCancellationRequested)
             {
                 TriggerCancellation();
+                Thread.Sleep(2000);
+                cTokenSource.Dispose();
+                cTokenSource = null;
             }
             Dispose(true);
         }
