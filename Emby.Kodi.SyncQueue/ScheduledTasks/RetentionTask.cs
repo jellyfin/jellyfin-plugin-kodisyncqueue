@@ -77,19 +77,15 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             using (var dataHelper = new DataHelper(_logger, _jsonSerializer)) 
             {
                 string dataPath = _applicationPaths.DataPath;
-                bool result;
 
-                result = dataHelper.CheckCreateFiles(dataPath);
-
-                if (result)
+                if (dataHelper.CheckCreateFiles(dataPath))
                 {
-                    result = dataHelper.OpenConnection();
+                    if (!dataHelper.OpenConnection())
+                    {
+                      throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");                
+                    }
                 }               
-
-                if (!result)
-                {
-                    throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");                
-                }                     
+                                  
 
                 //Time to do some work!
                 TimeSpan dtDiff;
@@ -112,60 +108,33 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
                 
                 int recNum = 0;
                 double curProg;
-                try
-                {
-                    tables = await dataHelper.RetentionTables();
-                    foreach (String tableName in tables)
-                    {
-                        try
-                        {
-                            cancellationToken.ThrowIfCancellationRequested();
-                            startTime = DateTime.UtcNow;
-                            recChanged = await dataHelper.RetentionFixer(tableName, retDate);
-                            endTime = DateTime.UtcNow;
-                            recNum++;
-                            curProg = (recNum * 100) / tables.Count;
-                            dtDiff = endTime - startTime;
-                            progress.Report(curProg);
-                            _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Deleted {0} Records from table '{1}' in: {2}", recChanged, tableName, dtDiff));
-                        }
-                        catch (Exception e)
-                        {
-                            if (e is TaskCanceledException)
-                            {
-                                _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Task Cancelled!");
-                            }
-                            else
-                            {
-                                _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Error Occurred {0}!", e.Message));
-                            }
-                            return;
-                        }
-                    }
-                    totalEnd = DateTime.UtcNow;
-                    dtDiff = totalEnd - totalStart;
-                    _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Retention Deletion Has Finished in {0}!", dtDiff));
-                } catch (Exception e)
-                {
-                    _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Error Occured {0}!", e.Message));
-                }
-
-                try
+                tables = await dataHelper.RetentionTables();
+                foreach (String tableName in tables)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    dataHelper.CleanupDatabase();
-                }
-                catch (Exception e)
-                {
-                    if (e is TaskCanceledException)
-                    {
-                        _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Task Cancelled!");
+                    try
+                    {                            
+                        startTime = DateTime.UtcNow;
+                        recChanged = await dataHelper.RetentionFixer(tableName, retDate);
+                        endTime = DateTime.UtcNow;
+                        recNum++;
+                        curProg = (recNum * 100) / tables.Count;
+                        dtDiff = endTime - startTime;
+                        progress.Report(curProg);
+                        _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Deleted {0} Records from table '{1}' in: {2}", recChanged, tableName, dtDiff));
                     }
-                    else
+                    catch (Exception e)
                     {
                         _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Error Occurred {0}!", e.Message));
+                        throw;
                     }
                 }
+                totalEnd = DateTime.UtcNow;
+                dtDiff = totalEnd - totalStart;
+                _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Retention Deletion Has Finished in {0}!", dtDiff));
+                
+                cancellationToken.ThrowIfCancellationRequested();
+                await dataHelper.CleanupDatabase();                
             }
         }
 

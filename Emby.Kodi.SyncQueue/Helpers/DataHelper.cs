@@ -181,7 +181,6 @@ namespace Emby.Kodi.SyncQueue.Helpers
         public bool CreateUserTable(string tableName, string indexName)
         {
             string sSQL;
-            bool result;
             int i;
 
             try
@@ -189,15 +188,13 @@ namespace Emby.Kodi.SyncQueue.Helpers
                 if (!this.TableExists(tableName))
                 {
                     sSQL = String.Format("CREATE TABLE IF NOT EXISTS {0} (itemId VARCHAR(50), userId VARCHAR(50), json TEXT, lastModified DATETIME)", tableName);
-                    result = SQLExecuter(sSQL, out i);
-                    if (!result)
+                    if (!SQLExecuter(sSQL, out i))
                         _logger.Error(String.Format("Could not create table: \"{0}\"", tableName));
                     else
                     {
                         _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Table Created:  {0}", tableName));
                         sSQL = String.Format("CREATE UNIQUE INDEX IF NOT EXISTS {0} ON {1} (userId, itemId)", indexName, tableName);
-                        result = SQLExecuter(sSQL, out i);
-                        if (!result)
+                        if (!SQLExecuter(sSQL, out i))
                             _logger.Error(String.Format("Could not create index for \"{0}\"", tableName));
                         else
                             _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Index Created: {0}  For Table:  {1}", indexName, tableName));
@@ -230,26 +227,6 @@ namespace Emby.Kodi.SyncQueue.Helpers
                 return false;
             }
         }
-
-        /*
-        public bool SQLReader(string sSQL, out SQLiteDataReader reader)
-        {
-            using (var command = new SQLiteCommand(sSQL, dbConn))
-            try
-            {
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Reader SQL Statement:  {0}", sSQL));
-                reader = command.ExecuteReader();
-                return true;
-            }
-            catch (Exception e)
-            {
-                _logger.Error(String.Format("Emby.Kodi.SyncQueue:  Error reader SQL statment:  {0}", sSQL));
-                _logger.ErrorException(e.Message, e);
-                reader = null;
-                return false;
-            }
-        }
-        */
 
         public SQLiteDataReader SQLReader(string sSQL)
         {
@@ -663,7 +640,7 @@ namespace Emby.Kodi.SyncQueue.Helpers
             }
         }
 
-        public async void CleanupDatabase()
+        public async Task CleanupDatabase()
         {
             String sql = "vacuum;";
             using (var cmd = new SQLiteCommand(sql, dbConn))

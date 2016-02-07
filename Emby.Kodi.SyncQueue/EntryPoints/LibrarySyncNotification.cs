@@ -45,7 +45,6 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
         private DataHelper dataHelper = null;
         private CancellationTokenSource cTokenSource = new CancellationTokenSource();
-        private CancellationToken cToken;
        
         
         /// <summary>
@@ -58,7 +57,6 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// The library update duration
         /// </summary>
         private const int LibraryUpdateDuration = 5000;
-        private bool isDisposed = false;
 
         public LibrarySyncNotification(ILibraryManager libraryManager, ISessionManager sessionManager, IUserManager userManager, ILogger logger, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths)
         {
@@ -79,28 +77,22 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             _logger.Info("Emby.Kodi.Sync.Queue:  LibrarySyncNotification Startup...");
             dataHelper = new DataHelper(_logger, _jsonSerializer);
             string dataPath = _applicationPaths.DataPath;
-            bool result;
 
-            result = dataHelper.CheckCreateFiles(dataPath);
-
-            if (result)
-                result = dataHelper.OpenConnection();
-            if (result)
-                result = dataHelper.CreateLibraryTable("ItemsAddedQueue", "IAQUnique");
-            if (result)
-                result = dataHelper.CreateLibraryTable("ItemsUpdatedQueue", "IUQUnique");
-            if (result)
-                result = dataHelper.CreateLibraryTable("ItemsRemovedQueue", "IRQUnique");
-            if (result)
-                result = dataHelper.CreateLibraryTable("FoldersAddedQueue", "FAQUnique");
-            if (result)
-                result = dataHelper.CreateLibraryTable("FoldersRemovedQueue", "FRQUnique");
-
-            if (!result)
-            {
+            if (!dataHelper.CheckCreateFiles(dataPath))
                 throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            }
-            cToken = cTokenSource.Token;
+            if (!dataHelper.OpenConnection())
+                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
+            if (!dataHelper.CreateLibraryTable("ItemsAddedQueue", "IAQUnique"))
+                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
+            if (!dataHelper.CreateLibraryTable("ItemsUpdatedQueue", "IUQUnique"))
+                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
+            if (!dataHelper.CreateLibraryTable("ItemsRemovedQueue", "IRQUnique"))
+                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
+            if (!dataHelper.CreateLibraryTable("FoldersAddedQueue", "FAQUnique"))
+                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
+            if (dataHelper.CreateLibraryTable("FoldersRemovedQueue", "FRQUnique"))
+                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
+
         }
 
         /// <summary>
@@ -217,7 +209,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     .Select(i => i.First())
                     .ToList();
                
-                SendChangeNotifications(_itemsAdded.ToList(), itemsUpdated, _itemsRemoved.ToList(), foldersAddedTo, foldersRemovedFrom, cToken);
+                SendChangeNotifications(_itemsAdded.ToList(), itemsUpdated, _itemsRemoved.ToList(), foldersAddedTo, foldersRemovedFrom, cTokenSource.Token);
                 
                 if (LibraryUpdateTimer != null)
                 {
@@ -246,9 +238,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         {            
             foreach (var user in _userManager.Users.ToList())
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
-                    if (isDisposed) { return; }
                     var id = user.Id;
                     var userName = user.Name;
                     var userSessions = _sessionManager.Sessions
@@ -375,6 +367,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         private void TriggerCancellation()
         {
             cTokenSource.Cancel();
+            Thread.Sleep(2000);
+            cTokenSource.Dispose();
+            cTokenSource = null;
         }
 
         /// <summary>
@@ -382,7 +377,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// </summary>
         public void Dispose()
         {
-            if (!cToken.IsCancellationRequested)
+            if (!cTokenSource.Token.IsCancellationRequested)
             {
                 TriggerCancellation();
             }

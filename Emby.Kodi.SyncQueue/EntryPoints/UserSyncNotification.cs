@@ -36,7 +36,6 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
         private DataHelper dataHelper = null;
         private CancellationTokenSource cTokenSource = new CancellationTokenSource();
-        private CancellationToken cToken;
 
         public UserSyncNotification(IUserDataManager userDataManager, ISessionManager sessionManager, ILogger logger, IUserManager userManager, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths)
         {
@@ -56,20 +55,13 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             _logger.Info("Emby.Kodi.SyncQueue:  UserSyncNotification Startup...");
             dataHelper = new DataHelper(_logger, _jsonSerializer);
             string dataPath = _applicationPaths.DataPath;
-            bool result;
 
-            result = dataHelper.CheckCreateFiles(dataPath);
-
-            if (result)
-                result = dataHelper.OpenConnection();
-            if (result)
-                result = dataHelper.CreateUserTable("UserInfoChangedQueue", "UICQUnique");
-            
-            if (!result)
-            {
+            if (!dataHelper.CheckCreateFiles(dataPath))
                 throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
-            }
-            cToken = cTokenSource.Token;
+            if (!dataHelper.OpenConnection())
+                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");
+            if (!dataHelper.CreateUserTable("UserInfoChangedQueue", "UICQUnique"))
+                throw new ApplicationException("Emby.Kodi.SyncQueue:  Could Not Be Loaded Due To Previous Error!");                         
         }
 
         void _userDataManager_UserDataSaved(object sender, UserDataSaveEventArgs e)
@@ -124,7 +116,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 var changes = _changedItems.ToList();
                 _changedItems.Clear();
 
-                Task x = SendNotifications(changes, cToken);
+                Task x = SendNotifications(changes, cTokenSource.Token);
 
                 if (UpdateTimer != null)
                 {
@@ -205,9 +197,12 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
         public void Dispose()
         {
-            if (!cToken.IsCancellationRequested)
+            if (!cTokenSource.Token.IsCancellationRequested)
             {
                 TriggerCancellation();
+                Thread.Sleep(2000);
+                cTokenSource.Dispose();
+                cTokenSource = null;
             }
             Dispose(true);
         }
@@ -225,7 +220,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 {
                     dataHelper.Dispose();
                     dataHelper = null;
-                }
+                }                
 
                 _userDataManager.UserDataSaved -= _userDataManager_UserDataSaved;
             }
