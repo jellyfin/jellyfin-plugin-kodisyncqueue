@@ -135,12 +135,7 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
 
             cancellationToken.ThrowIfCancellationRequested();
             dataHelper.CleanupDatabase();
-            
-            if (dataHelper != null)
-            {
-                dataHelper.Dispose();
-                dataHelper = null;
-            }
+           
         }
 
         public string Name
@@ -162,6 +157,15 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             {
                 return
                     "If Retention Days > 0 then this will remove the old data to keep information flowing quickly";
+            }
+        }
+
+        public void Dispose()
+        {
+            if (dataHelper != null)
+            {
+                dataHelper.Dispose();
+                dataHelper = null;
             }
         }
     }
