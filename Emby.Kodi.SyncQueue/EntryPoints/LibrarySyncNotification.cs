@@ -246,40 +246,55 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         {            
             foreach (var user in _userManager.Users.ToList())
             {
-                if (isDisposed) { return; }
-                var id = user.Id;
-                var userName = user.Name;
-                var userSessions = _sessionManager.Sessions
-                    .Where(u => u.UserId.HasValue && u.UserId.Value == id && u.IsActive)
-                    .ToList();
+                try
+                {
+                    if (isDisposed) { return; }
+                    var id = user.Id;
+                    var userName = user.Name;
+                    var userSessions = _sessionManager.Sessions
+                        .Where(u => u.UserId.HasValue && u.UserId.Value == id && u.IsActive)
+                        .ToList();
 
-                var info = GetLibraryUpdateInfo(itemsAdded, itemsUpdated, itemsRemoved, foldersAddedTo,
-                                                foldersRemovedFrom, id);
-                int[] iTasks = new int[5];
+                    var info = GetLibraryUpdateInfo(itemsAdded, itemsUpdated, itemsRemoved, foldersAddedTo,
+                                                    foldersRemovedFrom, id);
+                    int[] iTasks = new int[5];
 
-                // I am doing this to strip out information that doesn't usually make it to the websocket...
-                // Will query Luke about that at a later time...
-                var json = _jsonSerializer.SerializeToString(info); //message
-                var dejson = _jsonSerializer.DeserializeFromString<LibraryUpdateInfo>(json);
+                    // I am doing this to strip out information that doesn't usually make it to the websocket...
+                    // Will query Luke about that at a later time...
+                    var json = _jsonSerializer.SerializeToString(info); //message
+                    var dejson = _jsonSerializer.DeserializeFromString<LibraryUpdateInfo>(json);
 
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  User: {0} - {1}", userName, id));
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Added:          {0}", dejson.ItemsAdded.Count.ToString()));
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Updated:        {0}", dejson.ItemsUpdated.Count.ToString()));
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Removed:        {0}", dejson.ItemsRemoved.Count.ToString()));
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Added To:     {0}", dejson.FoldersAddedTo.Count.ToString()));
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Removed From: {0}", dejson.FoldersRemovedFrom.Count.ToString()));
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  User: {0} - {1}", userName, id));
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Added:          {0}", dejson.ItemsAdded.Count.ToString()));
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Updated:        {0}", dejson.ItemsUpdated.Count.ToString()));
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Removed:        {0}", dejson.ItemsRemoved.Count.ToString()));
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Added To:     {0}", dejson.FoldersAddedTo.Count.ToString()));
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Removed From: {0}", dejson.FoldersRemovedFrom.Count.ToString()));
 
-                Task<int> iaTask = dataHelper.LibraryItemsToAlter(dejson.ItemsAdded, id.ToString("N"), "ItemsAddedQueue", cancellationToken);
-                Task<int> iuTask = dataHelper.LibraryItemsToAlter(dejson.ItemsUpdated, id.ToString("N"), "ItemsUpdatedQueue", cancellationToken);
-                Task<int> irTask = dataHelper.LibraryItemsToAlter(dejson.ItemsRemoved, id.ToString("N"), "ItemsRemovedQueue", cancellationToken);
-                Task<int> faTask = dataHelper.LibraryItemsToAlter(dejson.FoldersAddedTo, id.ToString("N"), "FoldersAddedQueue", cancellationToken);
-                Task<int> frTask = dataHelper.LibraryItemsToAlter(dejson.FoldersRemovedFrom, id.ToString("N"), "FoldersRemovedQueue", cancellationToken);
+                    Task<int> iaTask = dataHelper.LibraryItemsToAlter(dejson.ItemsAdded, id.ToString("N"), "ItemsAddedQueue", cancellationToken);
+                    Task<int> iuTask = dataHelper.LibraryItemsToAlter(dejson.ItemsUpdated, id.ToString("N"), "ItemsUpdatedQueue", cancellationToken);
+                    Task<int> irTask = dataHelper.LibraryItemsToAlter(dejson.ItemsRemoved, id.ToString("N"), "ItemsRemovedQueue", cancellationToken);
+                    Task<int> faTask = dataHelper.LibraryItemsToAlter(dejson.FoldersAddedTo, id.ToString("N"), "FoldersAddedQueue", cancellationToken);
+                    Task<int> frTask = dataHelper.LibraryItemsToAlter(dejson.FoldersRemovedFrom, id.ToString("N"), "FoldersRemovedQueue", cancellationToken);
 
-                iTasks[0] = await iaTask;
-                iTasks[1] = await iuTask;
-                iTasks[2] = await irTask;
-                iTasks[3] = await faTask;
-                iTasks[4] = await frTask;
+                    iTasks[0] = await iaTask;
+                    iTasks[1] = await iuTask;
+                    iTasks[2] = await irTask;
+                    iTasks[3] = await faTask;
+                    iTasks[4] = await frTask;
+                } 
+                catch (Exception e)
+                {
+                   if (e is TaskCanceledException)
+                    {
+                        _logger.Info("Emby.Kodi.SyncQueue.Task: Save Library Changes Cancelled!");
+                    }
+                    else
+                    {
+                        _logger.Error(String.Format("Emby.Kodi.SyncQueue: Error In Library Changes Notification: {0}!", e.Message));
+                        _logger.ErrorException(e.Message, e);
+                    }
+                }
             }
         }
 

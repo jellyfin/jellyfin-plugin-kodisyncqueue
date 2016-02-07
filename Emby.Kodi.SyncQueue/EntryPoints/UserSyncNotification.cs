@@ -138,28 +138,43 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         {
             foreach (var pair in changes)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var userId = pair.Key;
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Starting to save items for {0}", userId.ToString()));
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var userId = pair.Key;
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Starting to save items for {0}", userId.ToString()));
 
-                var user = _userManager.GetUserById(userId);
+                    var user = _userManager.GetUserById(userId);
 
-                var dtoList = pair.Value
-                       .GroupBy(i => i.Id)
-                       .Select(i => i.First())
-                       .Select(i =>
-                       {
-                           var dto = _userDataManager.GetUserDataDto(i, user);
-                           dto.ItemId = i.Id.ToString("N");
-                           return dto;
-                       })
-                       .ToList();
+                    var dtoList = pair.Value
+                           .GroupBy(i => i.Id)
+                           .Select(i => i.First())
+                           .Select(i =>
+                           {
+                               var dto = _userDataManager.GetUserDataDto(i, user);
+                               dto.ItemId = i.Id.ToString("N");
+                               return dto;
+                           })
+                           .ToList();
 
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
 
-                Task<int> saveUser = SaveUserChanges(dtoList, userId.ToString("N"), "UserInfoChangedQueue", cancellationToken);
+                    Task<int> saveUser = SaveUserChanges(dtoList, userId.ToString("N"), "UserInfoChangedQueue", cancellationToken);
 
-                int iSaveUser = await saveUser;
+                    int iSaveUser = await saveUser;
+                }
+                catch (Exception e)
+                {
+                    if (e is TaskCanceledException)
+                    {
+                        _logger.Info("Emby.Kodi.SyncQueue.Task: Save User Changes Cancelled!");
+                    }
+                    else
+                    {
+                        _logger.Error(String.Format("Emby.Kodi.SyncQueue: Error In User Change Notification: {0}!", e.Message));
+                        _logger.ErrorException(e.Message, e);
+                    }
+                }
             }
         }
 
@@ -177,7 +192,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             }
             catch (Exception e)
             {
-                _logger.Error("Emby.Kodi.SyncQueue:  Emby.Kodi.SyncQueue:  Error in AlterLibrary...");
+                _logger.Error("Emby.Kodi.SyncQueue:  Emby.Kodi.SyncQueue:  Error in AlterLibrary");
                 _logger.ErrorException(e.Message, e);
                 return 0;
             }
