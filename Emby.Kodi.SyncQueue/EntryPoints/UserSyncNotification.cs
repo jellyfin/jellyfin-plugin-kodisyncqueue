@@ -27,6 +27,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         private readonly IUserManager _userManager;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IApplicationPaths _applicationPaths;
+        private readonly ILibraryManager _libraryManager;
 
         private readonly object _syncLock = new object();
         private Timer UpdateTimer { get; set; }
@@ -37,7 +38,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         private DataHelper dataHelper = null;
         private CancellationTokenSource cTokenSource = new CancellationTokenSource();
 
-        public UserSyncNotification(IUserDataManager userDataManager, ISessionManager sessionManager, ILogger logger, IUserManager userManager, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths)
+        public UserSyncNotification(ILibraryManager libraryManager, IUserDataManager userDataManager, ISessionManager sessionManager, ILogger logger, IUserManager userManager, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths)
         {
             _userDataManager = userDataManager;
             _sessionManager = sessionManager;
@@ -45,6 +46,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             _userManager = userManager;
             _jsonSerializer = jsonSerializer;
             _applicationPaths = applicationPaths;
+            _libraryManager = libraryManager;
             //dataHelper = new DataHelper(_logger, _jsonSerializer);
         }
 
@@ -110,17 +112,23 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             lock (_syncLock)
             try
             {
+                _logger.Info("Emby.Kodi.SyncQueue: Starting User Changes Sync...");
+                var startDate = DateTime.UtcNow;
+
                 // Remove dupes in case some were saved multiple times
                 var changes = _changedItems.ToList();
                 _changedItems.Clear();
 
                 Task x = SendNotifications(changes, cTokenSource.Token);
+                Task.WaitAll(x);
 
                 if (UpdateTimer != null)
                 {
                     UpdateTimer.Dispose();
                     UpdateTimer = null;
                 }
+                TimeSpan dateDiff = DateTime.UtcNow - startDate;
+                _logger.Info(String.Format("Emby.Kodi.SyncQueue: User Changes Sync Finished Taking {0}", dateDiff.ToString("c")));
             }
             catch (Exception e)
             {
@@ -131,6 +139,8 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
         private async Task SendNotifications(IEnumerable<KeyValuePair<Guid, List<IHasUserData>>> changes, CancellationToken cancellationToken)
         {
+            List<Task> myTasks = new List<Task>();
+            
             foreach (var pair in changes)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -152,18 +162,22 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
 
-                await SaveUserChanges(dtoList, userId.ToString("N"), "UserInfoChangedQueue", cancellationToken);
+                myTasks.Add(SaveUserChanges(dtoList, user.Name, userId.ToString("N"), "UserInfoChangedQueue", cancellationToken));
             }
+            Task[] iTasks = myTasks.ToArray();
+            await Task.WhenAll(iTasks);
         }
 
-        private async Task SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, string user, string tableName, CancellationToken cancellationToken)
+        private async Task SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, string userName, string userId, string tableName, CancellationToken cancellationToken)
         {           
-            IEnumerable<Task<int>> LibraryAddItemQuery =
-                from dto in dtos select dataHelper.UserChangeSetItem(dto, user, dto.ItemId, tableName, cancellationToken);
+            IEnumerable<Task<string>> LibraryAddItemQuery =
+                from dto in dtos select dataHelper.UserChangeSetItemAsync(dto, userId, dto.ItemId, tableName, _libraryManager, cancellationToken);
             
-            Task<int>[] addTasks = LibraryAddItemQuery.ToArray();
+            Task<string>[] addTasks = LibraryAddItemQuery.ToArray();
 
-            int[] itemCount = await Task.WhenAll(addTasks);            
+            string[] itemIds = await Task.WhenAll(addTasks);
+            _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"USERSYNC\" User {0}({1}) posted {2} Updates:  {3}", userId, userName, itemIds.Count(), String.Join(",", itemIds.ToArray())));
+            //_logger.Info(String.Format("Emby.Kodi.SyncQueue: Item Id's: {0}", String.Join(",", itemIds.ToArray())));
         }
 
         private void TriggerCancellation()

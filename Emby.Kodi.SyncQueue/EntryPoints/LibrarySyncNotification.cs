@@ -194,6 +194,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 // Remove dupes in case some were saved multiple times
                 try
                 {
+                    _logger.Info("Emby.Kodi.SyncQueue: Starting Library Sync...");
+                    var startTime = DateTime.UtcNow;
+
                     var foldersAddedTo = _foldersAddedTo.GroupBy(i => i.Id).Select(i => i.First()).ToList();
 
                     var foldersRemovedFrom = _foldersRemovedFrom.GroupBy(i => i.Id).Select(i => i.First()).ToList();
@@ -204,13 +207,17 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                         .Select(i => i.First())
                         .ToList();
 
-                    SendChangeNotifications(_itemsAdded.ToList(), itemsUpdated, _itemsRemoved.ToList(), foldersAddedTo, foldersRemovedFrom, cTokenSource.Token);
+                    
+                    Task x = SendChangeNotifications(_itemsAdded.ToList(), itemsUpdated, _itemsRemoved.ToList(), foldersAddedTo, foldersRemovedFrom, cTokenSource.Token);
+                    Task.WaitAll(x);
 
                     if (LibraryUpdateTimer != null)
                     {
                         LibraryUpdateTimer.Dispose();
                         LibraryUpdateTimer = null;
                     }
+                    TimeSpan dateDiff = DateTime.UtcNow - startTime;
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue: Finished Library Sync Taking {0}", dateDiff.ToString("c")));
                     
                 }
                 catch (Exception e)
@@ -235,45 +242,51 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// <param name="foldersAddedTo">The folders added to.</param>
         /// <param name="foldersRemovedFrom">The folders removed from.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        private async void SendChangeNotifications(List<BaseItem> itemsAdded, List<BaseItem> itemsUpdated, List<BaseItem> itemsRemoved, List<Folder> foldersAddedTo, List<Folder> foldersRemovedFrom, CancellationToken cancellationToken)
-        {            
+        private async Task SendChangeNotifications(List<BaseItem> itemsAdded, List<BaseItem> itemsUpdated, List<BaseItem> itemsRemoved, List<Folder> foldersAddedTo, List<Folder> foldersRemovedFrom, CancellationToken cancellationToken)
+        {
+            List<Task> myTasksList = new List<Task>();
             foreach (var user in _userManager.Users.ToList())
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var id = user.Id;
                 var userName = user.Name;
-                var userSessions = _sessionManager.Sessions
-                    .Where(u => u.UserId.HasValue && u.UserId.Value == id && u.IsActive)
-                    .ToList();
 
                 var info = GetLibraryUpdateInfo(itemsAdded, itemsUpdated, itemsRemoved, foldersAddedTo,
                                                 foldersRemovedFrom, id);
-                int[] iTasks = new int[5];
 
                 // I am doing this to strip out information that doesn't usually make it to the websocket...
                 // Will query Luke about that at a later time...
                 var json = _jsonSerializer.SerializeToString(info); //message
                 var dejson = _jsonSerializer.DeserializeFromString<LibraryUpdateInfo>(json);
 
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  User: {0} - {1}", userName, id));
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  User: {0} - {1}", userName, id.ToString("N")));
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Added:          {0}", dejson.ItemsAdded.Count.ToString()));
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Updated:        {0}", dejson.ItemsUpdated.Count.ToString()));
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Removed:        {0}", dejson.ItemsRemoved.Count.ToString()));
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Added To:     {0}", dejson.FoldersAddedTo.Count.ToString()));
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Removed From: {0}", dejson.FoldersRemovedFrom.Count.ToString()));
 
-                Task<int> iaTask = dataHelper.LibraryItemsToAlter(dejson.ItemsAdded, id.ToString("N"), "ItemsAddedQueue", cancellationToken);
-                Task<int> iuTask = dataHelper.LibraryItemsToAlter(dejson.ItemsUpdated, id.ToString("N"), "ItemsUpdatedQueue", cancellationToken);
-                Task<int> irTask = dataHelper.LibraryItemsToAlter(dejson.ItemsRemoved, id.ToString("N"), "ItemsRemovedQueue", cancellationToken);
-                Task<int> faTask = dataHelper.LibraryItemsToAlter(dejson.FoldersAddedTo, id.ToString("N"), "FoldersAddedQueue", cancellationToken);
-                Task<int> frTask = dataHelper.LibraryItemsToAlter(dejson.FoldersRemovedFrom, id.ToString("N"), "FoldersRemovedQueue", cancellationToken);
-
-                iTasks[0] = await iaTask;
-                iTasks[1] = await iuTask;
-                iTasks[2] = await irTask;
-                iTasks[3] = await faTask;
-                iTasks[4] = await frTask;                
+                myTasksList.Add(AlterLibrary(dejson.ItemsAdded, id.ToString("N"), userName, "ItemsAddedQueue", "Items Added", cancellationToken));
+                myTasksList.Add(AlterLibrary(dejson.ItemsUpdated, id.ToString("N"), userName, "ItemsUpdatedQueue", "Items Updated", cancellationToken));
+                myTasksList.Add(AlterLibrary(dejson.ItemsRemoved, id.ToString("N"), userName, "ItemsRemovedQueue", "Items Removed", cancellationToken));                
+                //await AlterLibrary(dejson.FoldersAddedTo, id.ToString(), userName, "FoldersAddedQueue", "Folders Added", cancellationToken);
+                //await AlterLibrary(dejson.FoldersRemovedFrom, id.ToString(), userName, "FoldersRemovedQueue", "Folders Removed", cancellationToken);               
             }
+            Task[] iTasks = myTasksList.ToArray();
+            await Task.WhenAll(iTasks);
+        }
+
+        public async Task AlterLibrary(List<string> items, string userId, string userName, string tableName, string UpdateType, CancellationToken cancellationToken)
+        {
+            IEnumerable<Task<string>> LibraryItemsQuery =
+                    from item in items select dataHelper.LibrarySetItemAsync(item, userId, tableName, _libraryManager, cancellationToken);
+            
+            Task<string>[] iTasks = LibraryItemsQuery.ToArray();
+            
+            string[] itemIds = await Task.WhenAll(iTasks);
+            _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"LIBRARYSYNC\" User {0}({1}) posted {2} items to \"{3}\":  {4}", userId, userName, itemIds.Count(), UpdateType,
+                String.Join(",", itemIds.ToArray())));
+            //_logger.Info(String.Format("Emby.Kodi.SyncQueue: Item Id's: {0}", String.Join(",", itemIds.ToArray())));
         }
 
 

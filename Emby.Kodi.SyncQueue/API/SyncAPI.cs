@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -88,7 +89,7 @@ namespace Emby.Kodi.SyncQueue.API
         {
             _logger.Info("Emby.Kodi.SyncQueue: Server Time Requested...");
             var info = new ServerTimeInfo();
-            _logger.Info("Emby.Kodi.SyncQueue: Class Variable Created!");
+            _logger.Debug("Emby.Kodi.SyncQueue: Class Variable Created!");
             int retDays = 0;
             DateTime dtNow = DateTime.UtcNow;
             DateTime retDate;
@@ -108,12 +109,12 @@ namespace Emby.Kodi.SyncQueue.API
                 retDate = new DateTime(dtNow.Year, dtNow.Month, dtNow.Day, 0, 0, 0);
                 retDate = retDate.AddDays(retDays);
             }
-            _logger.Info("Emby.Kodi.SyncQueue: Getting Ready to Set Variables!");
-            info.ServerDateTime = String.Format("{0:yyyy-MM-ddTHH:mm:ssZ}", DateTime.UtcNow);
-            info.RetentionDateTime = String.Format("{0:yyyy-MM-ddTHH:mm:ssZ}", retDate); 
-
-            _logger.Info("Emby.Kodi.SyncQueue: ServerDateTime = {0}", info.ServerDateTime);
-            _logger.Info("Emby.Kodi.SyncQueue: RetentionDateTime = {0}", info.RetentionDateTime);
+            _logger.Debug("Emby.Kodi.SyncQueue: Getting Ready to Set Variables!");
+            info.ServerDateTime = String.Format("{0}", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
+            info.RetentionDateTime = String.Format("{0}", retDate.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture)); 
+            
+            _logger.Debug(String.Format("Emby.Kodi.SyncQueue: ServerDateTime = {0}", info.ServerDateTime));
+            _logger.Debug(String.Format("Emby.Kodi.SyncQueue: RetentionDateTime = {0}", info.RetentionDateTime));
 
             return info;
         }
@@ -145,53 +146,72 @@ namespace Emby.Kodi.SyncQueue.API
             _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
             _logger.Debug("Emby.Kodi.SyncQueue:  Processing message...");
             var info = new SyncUpdateInfo();
-            
-            var result = PopulateLibraryInfo(request.UserID, request.LastUpdateDT, out info);
+            if (request.LastUpdateDT == null || request.LastUpdateDT == "")
+                request.LastUpdateDT = "2010-01-01T00:00:00Z";
 
+            Task<SyncUpdateInfo> x = PopulateLibraryInfo(request.UserID, request.LastUpdateDT);
+            Task.WhenAll(x);
+            
             _logger.Debug("Emby.Kodi.SyncQueue:  Request processed... Returning result...");
-            return info;
+            return x.Result;
         }
 
         public SyncUpdateInfo Get(GetLibraryItemsQuery request)
         {
             _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
             _logger.Debug("Emby.Kodi.SyncQueue:  Processing message...");
-            var info = new SyncUpdateInfo();
             if (request.LastUpdateDT == null || request.LastUpdateDT == "")
                 request.LastUpdateDT = "2010-01-01T00:00:00Z";
 
-            var result = PopulateLibraryInfo(request.UserID, request.LastUpdateDT, out info);
+            Task<SyncUpdateInfo> x = PopulateLibraryInfo(request.UserID, request.LastUpdateDT);
+            Task.WhenAll(x);
 
             _logger.Debug("Emby.Kodi.SyncQueue:  Request processed... Returning result...");
-            return info;
+            return x.Result;
         }
 
-        public bool PopulateLibraryInfo(string userId, string lastDT, out SyncUpdateInfo info)
+        public async Task<SyncUpdateInfo> PopulateLibraryInfo(string userId, string lastDT)
         {
-            info = null;
             using (var dataHelper = new DataHelper(_logger, _jsonSerializer))
             {
+                var startTime = DateTime.UtcNow;
+                string dataPath = _applicationPaths.DataPath;
+                dataHelper.CheckCreateFiles(dataPath);
                 dataHelper.OpenConnection();
                 
                 _logger.Debug("Emby.Kodi.SyncQueue:  Starting PopulateLibraryInfo...");
                 var userDataChangedJson = new List<string>();
                 var tmpList = new List<string>();
 
-                info = new SyncUpdateInfo();
+                var info = new SyncUpdateInfo();
 
                 _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Added Info...");
-                info.ItemsAdded = dataHelper.FillItemsAdded(userId, lastDT);
+                Task<List<string>> t1 = dataHelper.FillItemsAddedAsync(userId, lastDT);
+                //info.ItemsAdded = dataHelper.FillItemsAdded(userId, lastDT);
                 _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Removed Info...");
-                info.ItemsRemoved = dataHelper.FillItemsRemoved(userId, lastDT);
+                Task<List<string>> t2 = dataHelper.FillItemsRemovedAsync(userId, lastDT);
+                //info.ItemsRemoved = dataHelper.FillItemsRemoved(userId, lastDT);
                 _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Updated Info...");
-                info.ItemsUpdated = dataHelper.FillItemsUpdated(userId, lastDT);
+                Task<List<string>> t3 = dataHelper.FillItemsUpdatedAsync(userId, lastDT);
+                //info.ItemsUpdated = dataHelper.FillItemsUpdated(userId, lastDT);
                 _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Folders Added To Info...");
-                info.FoldersAddedTo = dataHelper.FillFoldersAddedTo(userId, lastDT);
+                //info.FoldersAddedTo = dataHelper.FillFoldersAddedTo(userId, lastDT);
+                info.FoldersAddedTo.Clear();
                 _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Folders Removed From Info...");
-                info.FoldersRemovedFrom = dataHelper.FillFoldersRemovedFrom(userId, lastDT);
+                //info.FoldersRemovedFrom = dataHelper.FillFoldersRemovedFrom(userId, lastDT);
+                info.FoldersRemovedFrom.Clear();
                 _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting User Data Changed Info...");
-                userDataChangedJson = dataHelper.FillUserDataChanged(userId, lastDT);
+                //userDataChangedJson = dataHelper.FillUserDataChanged(userId, lastDT);
+                Task<List<string>> t4 = dataHelper.FillUserDataChangedAsync(userId, lastDT);
                 _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Parsing User Data Changed Info...");
+
+                await Task.WhenAll(t1, t2, t3, t4);
+
+                info.ItemsAdded = t1.Result;
+                info.ItemsRemoved = t2.Result;
+                info.ItemsUpdated = t3.Result;
+                userDataChangedJson = t4.Result;
+
                 foreach (var userData in userDataChangedJson)
                 {
                     info.UserDataChanged.Add(_jsonSerializer.DeserializeFromString<UserItemDataDto>(userData));
@@ -199,8 +219,10 @@ namespace Emby.Kodi.SyncQueue.API
 
                 var json = _jsonSerializer.SerializeToString(info.UserDataChanged).ToString();
                 _logger.Debug(json);
+                TimeSpan diffDate = DateTime.UtcNow - startTime;
+                _logger.Info(String.Format("Emby.Kodi.SyncQueue: Request Finished Taking {0}", diffDate.ToString("c")));
 
-                return true;                
+                return info;                
             }
         }
     }
