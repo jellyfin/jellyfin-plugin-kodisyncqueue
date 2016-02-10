@@ -359,7 +359,7 @@ namespace Emby.Kodi.SyncQueue.Helpers
         public async Task<int> RetentionFixerAsync(string tableName, DateTime retDate)
         {
             int recChanged = 0;
-            string sSQL = String.Format("DELETE FROM {0} WHERE lastModified >= '{1}'", tableName, retDate.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
+            string sSQL = String.Format("DELETE FROM {0} WHERE lastModified <= '{1}'", tableName, retDate.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
             using (var _command = new SQLiteCommand(sSQL, dbConn))
             {
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue.Task: Retention Deletion From Table '{0}' Using SQL Statement '{1}'", tableName, sSQL));
