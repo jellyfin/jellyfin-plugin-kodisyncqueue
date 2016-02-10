@@ -394,9 +394,11 @@ namespace Emby.Kodi.SyncQueue.Helpers
             String sql = "vacuum;";
             using (var cmd = new SQLiteCommand(sql, dbConn))
             {
-                _logger.Info("Emby.Kodi.SyncQUeue: Beginning Vacuum");
+                var startVac = DateTime.UtcNow;
+                _logger.Info("Emby.Kodi.SyncQueue.Task: Beginning Vacuum");
                 await cmd.ExecuteNonQueryAsync();
-                _logger.Info("Emby.Kodi.SyncQueue: Vacuum Finished!");
+                TimeSpan vacDiff = DateTime.UtcNow - startVac;
+                _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Vacuum Finished Taking {0}", vacDiff.ToString("c")));
             }
         }
 
