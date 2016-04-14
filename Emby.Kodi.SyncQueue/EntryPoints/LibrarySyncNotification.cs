@@ -334,7 +334,13 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 return false;
             }
 
-            return !(item is IChannelItem);
+
+            if (item.SourceType != SourceType.Library)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
