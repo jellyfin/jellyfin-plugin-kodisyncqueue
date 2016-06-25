@@ -154,7 +154,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                         .Select(i => i.First())
                         .Select(i =>
                         {
-                            var dto = _userDataManager.GetUserDataDto(i, user);
+                            var dto = _userDataManager.GetUserDataDto(i, user).Result;
                             dto.ItemId = i.Id.ToString("N");
                             return dto;
                         })
