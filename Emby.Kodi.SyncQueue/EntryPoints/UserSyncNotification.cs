@@ -1,21 +1,18 @@
-﻿using MediaBrowser.Controller.Channels;
-using MediaBrowser.Controller.Entities;
+﻿using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Session;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Emby.Kodi.SyncQueue.Helpers;
 using System.Threading.Tasks;
-using MediaBrowser.Model.Session;
+using Emby.Kodi.SyncQueue.Data;
+using Emby.Kodi.SyncQueue.Entities;
 
 namespace Emby.Kodi.SyncQueue.EntryPoints
 {
@@ -35,7 +32,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
         private readonly Dictionary<Guid, List<IHasUserData>> _changedItems = new Dictionary<Guid, List<IHasUserData>>();
 
-        private DataHelper dataHelper = null;
+        //private DbRepo Repo = null;
         private CancellationTokenSource cTokenSource = new CancellationTokenSource();
 
         public UserSyncNotification(ILibraryManager libraryManager, IUserDataManager userDataManager, ISessionManager sessionManager, ILogger logger, IUserManager userManager, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths)
@@ -55,12 +52,11 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             _userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
 
             _logger.Info("Emby.Kodi.SyncQueue:  UserSyncNotification Startup...");
-            dataHelper = new DataHelper(_logger, _jsonSerializer);
-            string dataPath = _applicationPaths.DataPath;
-
-            dataHelper.CheckCreateFiles(dataPath);
-            dataHelper.OpenConnection();
-            dataHelper.CreateUserTable("UserInfoChangedQueue", "UICQUnique");
+            //Repo = new DbRepo(_applicationPaths.DataPath);            
+            if (DbRepo.DataPath == null)
+            {
+                DbRepo.DataPath = _applicationPaths.DataPath;
+            }
         }
 
         void _userDataManager_UserDataSaved(object sender, UserDataSaveEventArgs e)
@@ -109,6 +105,11 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
         private void UpdateTimerCallback(object state)
         {
+            if (!Plugin.Instance.Configuration.IsEnabled)
+            {
+                return;
+            }
+
             lock (_syncLock)
             try
             {
@@ -162,21 +163,23 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
 
-                myTasks.Add(SaveUserChanges(dtoList, user.Name, userId.ToString("N"), "UserInfoChangedQueue", cancellationToken));
+                myTasks.Add(SaveUserChanges(dtoList, user.Name, userId.ToString("N"), cancellationToken));
             }
             Task[] iTasks = myTasks.ToArray();
             await Task.WhenAll(iTasks);
         }
 
-        private async Task SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, string userName, string userId, string tableName, CancellationToken cancellationToken)
-        {           
-            IEnumerable<Task<string>> LibraryAddItemQuery =
-                from dto in dtos select dataHelper.UserChangeSetItemAsync(dto, userId, dto.ItemId, tableName, _libraryManager, cancellationToken);
+        private async Task SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, string userName, string userId, CancellationToken cancellationToken)
+        {
+            bool result = await Task.Run(() =>
+            {
+                DbRepo.SetUserInfoSync(dtos, userName, userId, cancellationToken, _logger, _jsonSerializer);
+                return true;
+            });
             
-            Task<string>[] addTasks = LibraryAddItemQuery.ToArray();
+            List<string> ids = dtos.Select(s => s.ItemId).ToList();
 
-            string[] itemIds = await Task.WhenAll(addTasks);
-            _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"USERSYNC\" User {0}({1}) posted {2} Updates:  {3}", userId, userName, itemIds.Count(), String.Join(",", itemIds.ToArray())));
+            _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"USERSYNC\" User {0}({1}) posted {2} Updates:  {3}", userId, userName, ids.Count(), String.Join(",", ids.ToArray())));
             //_logger.Info(String.Format("Emby.Kodi.SyncQueue: Item Id's: {0}", String.Join(",", itemIds.ToArray())));
         }
 
@@ -206,11 +209,11 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     UpdateTimer.Dispose();
                     UpdateTimer = null;
                 }
-                if (dataHelper != null)
-                {
-                    dataHelper.Dispose();
-                    dataHelper = null;
-                }                
+                //if (Repo != null)
+                //{
+                //    Repo.Dispose();
+                //    Repo = null;
+                //}                
 
                 _userDataManager.UserDataSaved -= _userDataManager_UserDataSaved;
             }

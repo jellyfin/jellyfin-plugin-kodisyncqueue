@@ -1,24 +1,16 @@
 ﻿using System.Globalization;
-using MediaBrowser.Common.IO;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Common.ScheduledTasks;
 using MediaBrowser.Controller;
-using MediaBrowser.Controller.Entities;
-using MediaBrowser.Controller.Entities.Movies;
-using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using MediaBrowser.Common.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-//using CommonIO;
-using Emby.Kodi.SyncQueue;
-using Emby.Kodi.SyncQueue.Helpers;
+using Emby.Kodi.SyncQueue.Data;
 
 namespace Emby.Kodi.SyncQueue.ScheduledTasks
 {
@@ -43,6 +35,11 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             _applicationPaths = applicationPaths;
 
             _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Task Scheduled!");
+
+            if (DbRepo.DataPath == null)
+            {
+                DbRepo.DataPath = _applicationPaths.DataPath;
+            }
         }
 
         public IEnumerable<ITaskTrigger> GetDefaultTriggers()
@@ -57,10 +54,9 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
 
         public async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
         {
-            
             //Is retDays 0.. If So Exit...
             int retDays;
-            int recChanged;
+
             if (!(Int32.TryParse(Plugin.Instance.Configuration.RetDays, out retDays))) {
                 _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Deletion Not Possible When Retention Days = 0!");
                 return;
@@ -73,63 +69,15 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             }
 
             //Check Database
-            using (var dataHelper = new DataHelper(_logger, _jsonSerializer)) 
+            bool result = await Task.Run(() =>
             {
-                string dataPath = _applicationPaths.DataPath;
-
-                dataHelper.CheckCreateFiles(dataPath);
-                dataHelper.OpenConnection();                
-
-                //Time to do some work!
-                TimeSpan dtDiff;
-                DateTime startTime;
-                DateTime endTime;
-                DateTime totalStart;
-                DateTime totalEnd;
-                DateTime dtNow = DateTime.UtcNow;
-                DateTime retDate = new DateTime(dtNow.Year, dtNow.Month, dtNow.Day, 0, 0, 0);
-            
                 retDays = retDays * -1;
-            
-                retDate = retDate.AddDays(retDays);                   
-            
-                _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Scheduled Retention Deletion to \"Trim the Fat\" Has Begun! Using Retention Date: {0}", retDate.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture)));
-                totalStart = DateTime.UtcNow;
-
-
-                List<String> tables = new List<String>();
+                var dt = DateTime.UtcNow.AddDays(retDays);
+                var dtl = (long)(dt.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
+                DbRepo.DeleteOldData(dtl, _logger);
                 
-                int recNum = 0;
-                double curProg;
-                tables = await dataHelper.RetentionTablesAsync();
-                foreach (String tableName in tables)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    try
-                    {                            
-                        startTime = DateTime.UtcNow;
-                        recChanged = await dataHelper.RetentionFixerAsync(tableName, retDate);
-                        endTime = DateTime.UtcNow;
-                        recNum++;
-                        curProg = (recNum * 100) / tables.Count;
-                        dtDiff = endTime - startTime;
-                        progress.Report(curProg);
-                        _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Deleted {0} Records from table '{1}' in: {2}", recChanged, tableName, dtDiff));
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Error Occurred {0}!", e.Message));
-                        throw;
-                    }
-                }
-                totalEnd = DateTime.UtcNow;          
-                
-                cancellationToken.ThrowIfCancellationRequested();
-                await dataHelper.CleanupDatabaseAsync();
-
-                dtDiff = totalEnd - totalStart;
-                _logger.Info(String.Format("Emby.Kodi.SyncQueue.Task: Retention Deletion Has Finished in {0}!", dtDiff));
-            }
+                return true;
+            });
         }
 
         public string Name

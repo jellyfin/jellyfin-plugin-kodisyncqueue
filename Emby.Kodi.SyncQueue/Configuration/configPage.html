@@ -21,6 +21,12 @@
                             </div>
                         </li>
                         <li>
+                            <label for="chkEnabled">
+                                Enabled:
+                            </label>
+                            <input type="checkbox" id="chkEnabled" data-mini="true" />                            
+                        </li>
+                        <li>
                             <button type="submit" data-theme="b">Save</button>
                             <button type="button" onclick="history.back();">Cancel</button>
                         </li>
@@ -46,6 +52,7 @@
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
 
                     $('#txtRetDays', page).val(config.RetDays || "0");
+                    $('#chkEnabled', page).checked(config.IsEnabled || false).checkboxradio("refresh");
                     
                     Dashboard.hideLoadingMsg();
                 });
@@ -68,6 +75,7 @@
                             config.RetDays = $('#txtRetDays', form).val();
                         }                        
                     }
+                    config.IsEnabled = $('#chkEnabled', form).checked();
                     
                     ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);              
                 });

@@ -7,10 +7,12 @@ namespace Emby.Kodi.SyncQueue.Configuration
     public class PluginConfiguration : BasePluginConfiguration
     {
         public String RetDays { get; set; }
+        public bool IsEnabled { get; set; }
   
         public PluginConfiguration()
         {
             RetDays = "0";
+            IsEnabled = true;
         }
     }
 
