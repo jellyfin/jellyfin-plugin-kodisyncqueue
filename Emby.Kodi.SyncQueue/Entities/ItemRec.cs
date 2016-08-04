@@ -1,40 +1,27 @@
 ﻿
-using VelocityDb;
+using LiteDB;
 
 namespace Emby.Kodi.SyncQueue.Entities
 {
-    public class ItemRec : OptimizedPersistable
+    public class ItemRec
     {
-        private string itemId;
-        private string userId;
-        private long lastModified;
-        private int status;
         //Status 0 = Added
         //Status 1 = Updated
         //Status 2 = Removed
 
-        public string ItemId
-        {
-            get { return itemId; }
-            set { Update(); itemId = value; }
-        }
-
-        public string UserId
-        {
-            get { return userId; }
-            set { Update(); userId = value; }
-        }
-
-        public long LastModified
-        {
-            get { return lastModified; }
-            set { Update(); lastModified = value; }
-        }
-
-        public int Status
-        {
-            get { return status; }
-            set { Update(); status = value; }
-        }
+        [BsonId]
+        public int Id { get; set; }
+        [BsonField]
+        public string ItemId { get; set; }
+        [BsonField]
+        public string UserId { get; set; }
+        [BsonField]
+        public long LastModified { get; set; }
+        [BsonField]
+        public int Status { get; set; }
+        [BsonField]
+        public string MediaType { get; set; }
+        [BsonField]
+        public string LibraryName { get; set; }
     }
 }

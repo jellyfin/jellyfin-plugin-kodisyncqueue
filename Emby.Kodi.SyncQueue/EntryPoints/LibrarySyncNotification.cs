@@ -69,12 +69,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             _libraryManager.ItemUpdated += libraryManager_ItemUpdated;
             _libraryManager.ItemRemoved += libraryManager_ItemRemoved;
 
-            _logger.Info("Emby.Kodi.Sync.Queue:  LibrarySyncNotification Startup...");
-
-            if (DbRepo.DataPath == null)
-            {
-                DbRepo.DataPath = _applicationPaths.DataPath;
-            }         
+            _logger.Info("Emby.Kodi.Sync.Queue:  LibrarySyncNotification Startup...");            
         }
 
         /// <summary>
@@ -84,7 +79,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemAdded(object sender, ItemChangeEventArgs e)
         {
-            if (!FilterItem(e.Item))
+            var type = string.Empty;
+            var cname = string.Empty;
+            if (!FilterItem(e.Item, out type, out cname))
             {
                 return;
             }
@@ -115,7 +112,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 var item = new LibItem()
                 {
                     Id = e.Item.Id,
-                    SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds)
+                    SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
+                    ItemType = type,
+                    CollectionName = cname
                 };
                 _itemsAdded.Add(item);
             }
@@ -128,7 +127,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemUpdated(object sender, ItemChangeEventArgs e)
         {
-            if (!FilterItem(e.Item))
+            var type = string.Empty;
+            var cname = string.Empty;
+            if (!FilterItem(e.Item, out type, out cname))
             {
                 return;
             }
@@ -148,7 +149,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 var item = new LibItem()
                 {
                     Id = e.Item.Id,
-                    SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds)
+                    SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
+                    ItemType = type,
+                    CollectionName = cname
                 };
 
                 _itemsUpdated.Add(item);
@@ -162,7 +165,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemRemoved(object sender, ItemChangeEventArgs e)
         {
-            if (!FilterItem(e.Item))
+            var type = string.Empty;
+            var cname = string.Empty;
+            if (!FilterItem(e.Item, out type, out cname))
             {
                 return;
             }
@@ -193,7 +198,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 var item = new LibItem()
                 {
                     Id = e.Item.Id,
-                    SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds)
+                    SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
+                    ItemType = type,
+                    CollectionName = cname
                 };
 
                 _itemsRemoved.Add(item);
@@ -313,8 +320,11 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
             bool result = await Task.Run(() => 
             {
-                DbRepo.SetLibrarySync(items, Items, userId, userName, tableName, status, cancellationToken, _logger);                
-                return true;
+                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
+                {
+                    repo.SetLibrarySync(items, Items, userId, userName, status, cancellationToken);                
+                }
+                    return true;
             });
 
             _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"LIBRARYSYNC\" User {0}({1}) {2} {3} items:  {4}", userId, userName, statusType, items.Count(), 
@@ -353,10 +363,26 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             };
         }
 
-        private bool FilterItem(BaseItem item)
+        private bool FilterItem(BaseItem item, out string type, out string cname)
         {
-            _logger.Debug("Emby.Kodi.SyncQueue:  GetClientTypeName: " + item.GetClientTypeName());
+            //_logger.Info(String.Format("Emby.Kodi.SyncQueue:  {0}", _jsonSerializer.SerializeToString(item)));
+            //var folders = _libraryManager.GetCollectionFolders(item);
+            //foreach (var folder in folders)
+            //{
+            //    _logger.Info(String.Format("Emby.Kodi.SyncQueue.Collection:  {0}", folder.Name));
+            //}
 
+            //var ids = item.GetAncestorIds();
+            //foreach (var id in ids)
+            //{
+
+            //}
+
+            var cn = _libraryManager.GetCollectionFolders(item).FirstOrDefault();
+            if (cn != null) { cname = cn.Name; }
+            else { cname = string.Empty; }
+
+            type = string.Empty;            
             if (item.LocationType == LocationType.Virtual)
             {
                 return false;
@@ -367,9 +393,26 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Ignorning item type Person"));
                 return false;
             }
-
-
             if (item.SourceType != SourceType.Library)
+            {
+                return false;
+            }
+
+            var ids = item.GetAncestorIds().ToList();
+            foreach (var id in ids)
+            {
+                var cf = _libraryManager.GetItemById(id) as ICollectionFolder;
+                if (cf != null && cf.CollectionType != null && cf.CollectionType != "")
+                {
+                    if (cf.CollectionType == "movies" || cf.CollectionType == "tvshows" || cf.CollectionType == "music" || cf.CollectionType == "musicvideos" || cf.CollectionType == "boxsets")
+                    {
+                        type = cf.CollectionType;
+                        break;
+                    }
+                }
+            }
+
+            if (type == string.Empty)
             {
                 return false;
             }
@@ -436,11 +479,6 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     LibraryUpdateTimer.Dispose();
                     LibraryUpdateTimer = null;
                 }
-                //if (Repo != null)
-                //{
-                //    Repo.Dispose();
-                //    Repo = null;
-                //}
 
                 _libraryManager.ItemAdded -= libraryManager_ItemAdded;
                 _libraryManager.ItemUpdated -= libraryManager_ItemUpdated;

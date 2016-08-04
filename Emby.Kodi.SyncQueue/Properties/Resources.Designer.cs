@@ -63,9 +63,9 @@ namespace Emby.Kodi.SyncQueue.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] VelocityDb {
+        internal static byte[] LiteDB {
             get {
-                object obj = ResourceManager.GetObject("VelocityDb", resourceCulture);
+                object obj = ResourceManager.GetObject("LiteDB", resourceCulture);
                 return ((byte[])(obj));
             }
         }

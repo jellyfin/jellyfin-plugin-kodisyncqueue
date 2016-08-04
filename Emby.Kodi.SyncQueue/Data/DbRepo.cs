@@ -5,114 +5,356 @@ using System.Collections.Generic;
 using System.Linq;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
-using VelocityDb;
-using VelocityDb.Session;
 using System.IO;
+using LiteDB;
 
 namespace Emby.Kodi.SyncQueue.Data
 {
-    public static class DbRepo
+    public class DbRepo: IDisposable
     {
-        private static readonly object _syncLock = new object();
-        private static readonly object _sessLock = new object();
-        private static string dataPath;
+        private object _createLock = new object();
+        private LiteDatabase DB = null;
+        private string dataPath;
+        private string dataName = "Emby.Kodi.SyncQueue.ldb";
 
-        public static string DataPath
+        private readonly ILogger _logger;
+        private readonly IJsonSerializer _json;
+
+        private LiteCollection<FolderRec> folders = null;
+        private LiteCollection<ItemRec> items = null;
+        private LiteCollection<UserInfoRec> userinfos = null;
+        
+        public string DataPath
         {
             get { return dataPath; }
             set { dataPath = Path.Combine(value, "SyncData"); }
         }
 
-        private static SessionNoServer GetSession()
-        {
-            lock (_sessLock)
+        public DbRepo(string dp, ILogger logger, IJsonSerializer json = null)
+        {            
+            DataPath = dp;
+            var data = Path.Combine(DataPath, dataName);
+            //var newdb = false;
+            _logger = logger;
+            _json = json;
+
+            if (!File.Exists(data))
             {
-                if (DataPath == null) { throw new Exception("Invalid Data Path!"); }
-                var result = new SessionNoServer(DataPath);
-                result.BeginUpdate();
-                try
+            //    newdb = true;
+            }
+            if (DB == null) { DB = new LiteDatabase(data); }
+            
+            folders = DB.GetCollection<FolderRec>("Folders");
+            items = DB.GetCollection<ItemRec>("Items");
+            userinfos = DB.GetCollection<UserInfoRec>("UserInfos");
+
+            folders.EnsureIndex(x => x.ItemId);
+            folders.EnsureIndex(x => x.UserId);
+            folders.EnsureIndex(x => x.LastModified);
+            folders.EnsureIndex(x => x.Status);
+            folders.EnsureIndex(x => x.MediaType);
+            items.EnsureIndex(x => x.ItemId);
+            items.EnsureIndex(x => x.UserId);
+            items.EnsureIndex(x => x.LastModified);
+            items.EnsureIndex(x => x.Status);
+            items.EnsureIndex(x => x.MediaType);
+            userinfos.EnsureIndex(x => x.ItemId);
+            userinfos.EnsureIndex(x => x.UserId);
+            userinfos.EnsureIndex(x => x.LastModified);
+            userinfos.EnsureIndex(x => x.MediaType);
+
+
+            //if (newdb)
+            //{
+            //    using (var trn = DB.BeginTrans())
+            //    {
+            //        try
+            //        {
+            //            var test = new ItemRec()
+            //            {
+            //                ItemId = "1111111",
+            //                Status = 0,
+            //                UserId = "9681fd367a36447797c75b6cfcd68e7f",
+            //                LastModified = 12345
+            //            };
+            //            items.Insert(test);
+            //            test = new ItemRec()
+            //            {
+            //                ItemId = "2222222",
+            //                Status = 0,
+            //                UserId = "9681fd367a36447797c75b6cfcd68e7f",
+            //                LastModified = 12345
+            //            };
+            //            items.Insert(test);
+            //            test = new ItemRec()
+            //            {
+            //                ItemId = "3333333",
+            //                Status = 1,
+            //                UserId = "9681fd367a36447797c75b6cfcd68e7f",
+            //                LastModified = 12345
+            //            };
+            //            items.Insert(test);
+            //            test = new ItemRec()
+            //            {
+            //                ItemId = "4444444",
+            //                Status = 1,
+            //                UserId = "9681fd367a36447797c75b6cfcd68e7f",
+            //                LastModified = 12345
+            //            };
+            //            items.Insert(test);
+            //            test = new ItemRec()
+            //            {
+            //                ItemId = "5555555",
+            //                Status = 2,
+            //                UserId = "9681fd367a36447797c75b6cfcd68e7f",
+            //                LastModified = 12345
+            //            };
+            //            items.Insert(test);
+            //            test = new ItemRec()
+            //            {
+            //                ItemId = "666666666",
+            //                Status = 2,
+            //                UserId = "9681fd367a36447797c75b6cfcd68e7f",
+            //                LastModified = 12345
+            //            };
+            //            items.Insert(test);
+            //            trn.Commit();
+            //        }
+            //        catch (Exception)
+            //        {
+            //            trn.Rollback();
+            //            throw;
+            //        }
+            //    }
+            //}
+            //else if (_json != null)
+            //{
+                //var temp = items.FindAll().ToList();
+                //temp.ForEach(x =>
+                //{
+                //    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Found item: {0}", _json.SerializeToString(x)));
+                //});
+            //}
+        }      
+
+        public List<string> GetItems(long dtl, int status, string userId, bool movies, bool tvshows, bool music, bool musicvideos, bool boxsets, List<string> filterList)
+        {
+            using (var trn = DB.BeginTrans())
+            {                
+                var result = new List<string>();
+                List<ItemRec> final = new List<ItemRec>();
+                //
+                var itms = items.Find(x => x.LastModified > dtl && x.Status == status && x.UserId == userId).ToList();
+                
+                if (movies) { final.AddRange(itms.Where(x => x.MediaType == "movies").ToList()); }
+                if (tvshows) { final.AddRange(itms.Where(x => x.MediaType == "tvshows").ToList()); }
+                if (music) { final.AddRange(itms.Where(x => x.MediaType == "music").ToList()); }
+                if (musicvideos) { final.AddRange(itms.Where(x => x.MediaType == "musicvideos").ToList()); }
+                if (boxsets) { final.AddRange(itms.Where(x => x.MediaType == "boxsets").ToList()); }
+
+                //_logger.Info("HERE IS THE DATA FROM FILTERLIST: {0}", _json.SerializeToString(filterList));
+                if (filterList != null)
                 {
-                    var folder = new FolderRec()
+                    foreach (var f in filterList)
                     {
-                        ItemId = "111",
-                        UserId = "111",
-                        LastModified = 12345,
-                        Status = 0
-                    };
-                    var item = new ItemRec()
-                    {
-                        ItemId = "222",
-                        UserId = "222",
-                        LastModified = 12345,
-                        Status = 0
-                    };
-                    var user = new UserInfoRec()
-                    {
-                        ItemId = "333",
-                        UserId = "333",
-                        LastModified = 12345,
-                        Json = "{test: \"test\"}"
-                    };
-                    result.Persist(folder);
-                    result.Persist(item);
-                    result.Persist(user);
-                    result.Commit();
-                }
-                catch
-                {
-                    result.Abort();
+                        final = final.Where(x => x.LibraryName.ToLower() != f.ToLower()).ToList();
+                    }
                 }
 
+                final.ForEach(x =>
+                {
+                    if (result.Where(i => i == x.ItemId).FirstOrDefault() == null)
+                    {
+                        result.Add(x.ItemId);
+                    }
+                });
+
+                //var temp = items.FindAll().ToList();
+                //temp.ForEach(x =>
+                //{
+                //    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Found item: {0}", _json.SerializeToString(x)));
+                //});
+
+                return result;
+            }
+
+            
+        }
+
+        public List<string> GetFolders(long dtl, int status, string userId, bool movies, bool tvshows, bool music, bool musicvideos, bool boxsets)
+        {
+            using (var trn = DB.BeginTrans())
+            {
+                var result = new List<string>();
+                List<FolderRec> final = new List<FolderRec>();
+                //
+                var flds = folders.Find(x => x.LastModified > dtl && x.Status == status && x.UserId == userId).ToList();
+
+                if (movies) { final.AddRange(flds.Where(x => x.MediaType == "movies").ToList()); }
+                if (tvshows) { final.AddRange(flds.Where(x => x.MediaType == "tvshows").ToList()); }
+                if (music) { final.AddRange(flds.Where(x => x.MediaType == "music").ToList()); }
+                if (musicvideos) { final.AddRange(flds.Where(x => x.MediaType == "musicvideos").ToList()); }
+                if (boxsets) { final.AddRange(flds.Where(x => x.MediaType == "boxsets").ToList()); }
+
+                final.ForEach(x =>
+                {
+                    if (result.Where(i => i == x.ItemId).FirstOrDefault() == null)
+                    {
+                        result.Add(x.ItemId);
+                    }
+                });
                 return result;
             }
         }
 
-        public static void SetLibrarySync(List<string> items, List<LibItem> Items, string userId, string userName, string tableName, int status, CancellationToken cancellationToken, ILogger _logger)
+        public List<string> GetUserInfos(long dtl, string userId, out List<string> ids, bool movies, bool tvshows, bool music, bool musicvideos, bool boxsets, List<string> filterList)
         {
-            lock (_sessLock)
+            using (var trn = DB.BeginTrans())
             {
-                ItemRec newRec;
-                var statusType = string.Empty;
-                if (status == 0) { statusType = "Added"; }
-                else if (status == 1) { statusType = "Updated"; }
-                else { statusType = "Removed"; }
-                items.ForEach(i =>
-                {
-                    using (var session = GetSession())
-                    {
-                        try
-                        {
-                            session.BeginUpdate();
-                            var item = Items.Where(itm => itm.Id.ToString("N") == i).FirstOrDefault();
-                            long newTime;
-                            if (item != null)
-                            {
-                                newTime = item.SyncApiModified;
-                            }
-                            else
-                            {
-                                newTime = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
-                            }
+                var result = new List<string>();
+                var tids = new List<string>();
+                var final = new List<UserInfoRec>();
+                //
+                var uids = userinfos.Find(x => x.LastModified > dtl && x.UserId == userId).ToList();
 
-                            ItemRec rec = session.AllObjects<ItemRec>()
-                                .Where(x => x.ItemId == i && x.UserId == userId)
-                                .FirstOrDefault();
-                        //Repo.Items.FindOne(x => x.ItemId == i);
-                        newRec = new ItemRec()
+                if (movies) { final.AddRange(uids.Where(x => x.MediaType == "movies").ToList()); }
+                if (tvshows) { final.AddRange(uids.Where(x => x.MediaType == "tvshows").ToList()); }
+                if (music) { final.AddRange(uids.Where(x => x.MediaType == "music").ToList()); }
+                if (musicvideos) { final.AddRange(uids.Where(x => x.MediaType == "musicvideos").ToList()); }
+                if (boxsets) { final.AddRange(uids.Where(x => x.MediaType == "boxsets").ToList()); }
+
+                if (filterList != null)
+                {
+                    foreach (var f in filterList)
+                    {
+                        final = final.Where(x => x.LibraryName.ToLower() != f.ToLower()).ToList();
+                    }
+                }
+
+                final.ForEach(x =>
+                {
+                    result.Add(x.Json);
+                    tids.Add(x.ItemId);
+                });
+                ids = tids;
+
+
+
+                var temp = items.FindAll();
+                foreach (var t in temp)
+                {
+                    _logger.Info("");
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Id:        {0}", t.Id));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  ItemId:    {0}", t.ItemId));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  UserId:    {0}", t.UserId));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  MediaType: {0}", t.MediaType));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  CollName:  {0}", t.LibraryName));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Status:    {0}", t.Status));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  LastMod:   {0}", t.LastModified));
+                };
+
+                var temp2 = userinfos.FindAll();
+                foreach (var t in temp2)
+                {
+                    _logger.Info("");
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Id:        {0}", t.Id));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  ItemId:    {0}", t.ItemId));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  UserId:    {0}", t.UserId));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  MediaType: {0}", t.MediaType));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  CollName:  {0}", t.LibraryName));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  JSON:      {0}", t.Json));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  LastMod:   {0}", t.LastModified));
+                };
+                //var temp2 = userinfos.FindAll();
+                //foreach (var t in temp2)
+                //{
+                //    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Found: {0}", _json.SerializeToString(t)));
+                //};
+
+
+                //var temp = items.FindAll().ToList();
+                //temp.ForEach(x =>
+                //{
+                //    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Found item: {0}", _json.SerializeToString(x)));
+                //});
+                return result;
+            }
+        }
+
+        public void DeleteOldData(long dtl)
+        {
+            using (var trn = DB.BeginTrans())
+            {
+                try
+                { 
+                    _logger.Info("Emby.Kodi.SyncQueue.Task: Starting Folder Retention Deletion...");
+                    folders.Delete(x => x.LastModified < dtl);
+                    _logger.Info("Emby.Kodi.SyncQueue.Task: Finished Folder Retention Deletion...");
+
+                    _logger.Info("Emby.Kodi.SyncQueue.Task: Starting Item Retention Deletion...");
+                    items.Delete(x => x.LastModified < dtl);
+                    _logger.Info("Emby.Kodi.SyncQueue.Task: Finished Item Retention Deletion...");
+
+                    _logger.Info("Emby.Kodi.SyncQueue.Task: Starting UserItem Retention Deletion...");
+                    userinfos.Delete(x => x.LastModified < dtl);
+                    _logger.Info("Emby.Kodi.SyncQueue.Task: Finished UserItem Retention Deletion...");
+
+                    //repo.DB.BeginTrans().Commit();
+                    trn.Commit();
+                }
+                catch (Exception)
+                {
+                    //repo.DB.BeginTrans().Rollback();                
+                    trn.Rollback();
+                    throw;
+                }
+                //finally
+                //{
+                //    //FOR DEBUGGING ONLY
+                //    var items = session.AllObjects<ItemRec>().ToList(); //repo.Items.FindAll();
+                //    items.ForEach(x => { _logger.Info("Emby.Kodi.SyncQueue.Task:  " + x.ItemId + " - " + x.LastModified); });
+                //    //END FOR DEBUGGING ONLY
+                //}
+            }
+        }
+
+        public void SetLibrarySync(List<string> lItems, List<LibItem> libItems, string userId, string userName, int status, CancellationToken cancellationToken)
+        {
+            ItemRec newRec;
+            var statusType = string.Empty;
+            if (status == 0) { statusType = "Added"; }
+            else if (status == 1) { statusType = "Updated"; }
+            else { statusType = "Removed"; }
+            using (var trn = DB.BeginTrans())
+            {
+                try
+                {
+                    lItems.ForEach(i =>
+                    {
+                        var libitem = libItems.Where(itm => itm.Id.ToString("N") == i).FirstOrDefault();
+                        long newTime;
+                        if (libitem != null)
+                        {
+                            newTime = libitem.SyncApiModified;
+
+                            ItemRec rec = items.Find(x => x.ItemId == i && x.UserId == userId).FirstOrDefault();
+
+                            newRec = new ItemRec()
                             {
                                 ItemId = i,
                                 UserId = userId,
                                 Status = status,
-                                LastModified = newTime
+                                LastModified = newTime,
+                                MediaType = libitem.ItemType,
+                                LibraryName = libitem.CollectionName
                             };
-                        //if (rec == null) { Repo.Items.Insert(newRec); }
-                        if (rec == null) { session.Persist(newRec); }
+
+                            if (rec == null) { items.Insert(newRec); }
                             else if (rec.LastModified < newTime)
                             {
                                 newRec.Id = rec.Id;
-                                session.Persist(newRec);
-                            //Repo.Items.Update(newRec);
-                        }
+                                items.Update(newRec);
+                            }
                             else { newRec = null; }
 
                             if (newRec != null)
@@ -123,297 +365,80 @@ namespace Emby.Kodi.SyncQueue.Data
                             {
                                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped for UserId: '{1}'", i, userId));
                             }
-                            session.Commit();
                         }
-                        catch (Exception ex)
-                        {
-                            session.Abort();
-                            throw ex;
-                        }
-                    }
-                });
+                    });
+                    trn.Commit();
+                }
+                catch (Exception ex)
+                {
+                    trn.Rollback();
+                    throw ex;
+                }
             }
         }
 
-        public static void SetUserInfoSync(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, string userName, string userId, CancellationToken cancellationToken, ILogger _logger, IJsonSerializer _jsonSerializer)
+        public void SetUserInfoSync(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId, CancellationToken cancellationToken)
         {
-            lock (_sessLock)
+            using (var trn = DB.BeginTrans())
             {
-                //Repo.DB.BeginTrans();
-                dtos.ForEach(dto =>
+                try
                 {
-                    using (var session = GetSession())
+                    dtos.ForEach(dto =>
                     {
-                        try
-                        {
-                            session.BeginUpdate();
-                            var json = _jsonSerializer.SerializeToString(dto).ToString();
-                            _logger.Debug("Emby.Kodi.SyncQueue:  Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
+                        var json = _json.SerializeToString(dto).ToString();
+                        _logger.Debug("Emby.Kodi.SyncQueue:  Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
 
-                        //var oldRec = Repo.UserInfos.FindOne(x => x.UserId == userId && x.ItemId == dto.ItemId);
-                        UserInfoRec oldRec = session.AllObjects<UserInfoRec>()
-                                .Where(x => x.ItemId == dto.ItemId && x.UserId == userId)
-                                .FirstOrDefault();
+                        LibItem itemref = itemRefs.Where(x => x.Id.ToString("N") == dto.ItemId).FirstOrDefault();
+                        if (itemref != null)
+                        {
+                            UserInfoRec oldRec = userinfos.Find(x => x.ItemId == dto.ItemId && x.UserId == userId)
+                                                          .FirstOrDefault();
                             var newRec = new UserInfoRec()
                             {
                                 ItemId = dto.ItemId,
                                 Json = json,
                                 UserId = userId,
-                                LastModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds)
+                                LastModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
+                                MediaType = itemref.ItemType,
+                                LibraryName = itemref.CollectionName
                             };
-                            if (oldRec != null)
+                            if (oldRec == null)
+                            {
+                                userinfos.Insert(newRec);
+                            }
+                            else
                             {
                                 newRec.Id = oldRec.Id;
+                                userinfos.Update(newRec);
+
                             }
-                            session.Persist(newRec);
-                            session.Commit();
-                        }
-                        catch (Exception ex)
-                        {
-                            session.Abort();
-                            throw ex;
-                        }
-
-                    }
-                });
-            }
-        }
-
-        public static void DeleteOldData(long dtl, ILogger _logger)
-        {
-            lock (_sessLock)
-            {
-                using (var session = GetSession())
-                {
-                    try
-                    {
-                        session.BeginUpdate();
-                        _logger.Info("Emby.Kodi.SyncQueue.Task: Starting Folder Retention Deletion...");
-                        var folders = session.AllObjects<FolderRec>()
-                                             .Where(x => x.LastModified < dtl)
-                                             .ToList();
-                        folders.ForEach(x =>
-                        {
-                            _logger.Info("Emby.Kodi.SyncQueue.Task: Deleting Folder: " + x.Id.ToString());
-                            session.Unpersist(x);
-                        });
-                        _logger.Info("Emby.Kodi.SyncQueue.Task: Finished Folder Retention Deletion...");
-                        _logger.Info("Emby.Kodi.SyncQueue.Task: Starting Item Retention Deletion...");
-                        var recs = session.AllObjects<ItemRec>()
-                                          .Where(x => x.LastModified < dtl)
-                                          .ToList();
-                        recs.ForEach(x =>
-                        {
-                            _logger.Info("Emby.Kodi.SyncQueue.Task: Deleting Item: " + x.Id.ToString());
-                            session.Unpersist(x);
-                        });
-                        _logger.Info("Emby.Kodi.SyncQueue.Task: Finished Item Retention Deletion...");
-                        _logger.Info("Emby.Kodi.SyncQueue.Task: Starting UserItem Retention Deletion...");
-                        var uis = session.AllObjects<UserInfoRec>()
-                                         .Where(x => x.LastModified < dtl)
-                                         .ToList();
-                        uis.ForEach(x =>
-                        {
-                            _logger.Info("Emby.Kodi.SyncQueue.Task: Deleting User Info: " + x.Id.ToString());
-                            session.Unpersist(x);
-                        });
-                        _logger.Info("Emby.Kodi.SyncQueue.Task: Finished UserItem Retention Deletion...");
-
-                        //repo.DB.BeginTrans().Commit();
-                        session.Commit();
-                    }
-                    catch (Exception ex)
-                    {
-                        //repo.DB.BeginTrans().Rollback();                
-                        session.Abort();
-                        throw ex;
-                    }
-                    finally
-                    {
-                        //FOR DEBUGGING ONLY
-                        var items = session.AllObjects<ItemRec>().ToList(); //repo.Items.FindAll();
-                        items.ForEach(x => { _logger.Info("Emby.Kodi.SyncQueue.Task:  " + x.ItemId + " - " + x.LastModified); });
-                        //END FOR DEBUGGING ONLY
-                    }
-                }
-            }
-        }
-
-        public static List<string> GetItems(long dtl, int status, string userId)
-        {
-            lock (_sessLock)
-            {
-                var result = new List<string>();
-                //using (var repo = new DbRepo(_applicationPaths.DataPath))
-                using (var session = GetSession())
-                {
-                    session.BeginRead();
-                    //var items = repo.Items.Find(x => x.LastModified >= dtl && x.Status == 0);
-                    var items = session.AllObjects<ItemRec>().Where(x => x.LastModified >= dtl && x.Status == 0 && x.UserId == userId).ToList();
-                    items.ForEach(x =>
-                    {
-                        if (result.Where(i => i == x.ItemId).FirstOrDefault() == null)
-                        {
-                            result.Add(x.ItemId);
                         }
                     });
-                    session.Commit();
+                    trn.Commit();
                 }
-
-                return result;
-            }
-        }
-
-        public static List<string> GetFolders(long dtl, int status, string userId)
-        {
-            lock (_sessLock)
-            {
-                var result = new List<string>();
-                //using (var repo = new DbRepo(_applicationPaths.DataPath))
-                using (var session = GetSession())
+                catch (Exception)
                 {
-                    session.BeginRead();
-                    //var items = repo.Items.Find(x => x.LastModified >= dtl && x.Status == 0);
-                    var items = session.AllObjects<FolderRec>().Where(x => x.LastModified >= dtl && x.Status == 0 && x.UserId == userId).ToList();
-                    items.ForEach(x =>
-                    {
-                        if (result.Where(i => i == x.ItemId).FirstOrDefault() == null)
-                        {
-                            result.Add(x.ItemId);
-                        }
-                    });
-                    session.Commit();
+                    trn.Rollback();
+                    throw;
                 }
-
-                return result;
             }
         }
 
-        public static List<string> GetUserInfos(long dtl, string userId, out List<string> ids)
+        #region Dispose
+
+        public void Dispose()
         {
-            lock (_sessLock)
-            {
-                var result = new List<string>();
-                var tids = new List<string>();
-                //using (var repo = new DbRepo(_applicationPaths.DataPath))
-                using (var session = GetSession())
-                {
-                    session.BeginRead();
-                    //var items = repo.Items.Find(x => x.LastModified >= dtl && x.Status == 0);
-                    var items = session.AllObjects<UserInfoRec>().Where(x => x.LastModified >= dtl && x.UserId == userId).ToList();
-                    items.ForEach(x =>
-                    {
-                        result.Add(x.Json);
-                        tids.Add(x.ItemId);
-                    });
-                    session.Commit();
-                }
+            Dispose(true);
+        }
 
-                ids = tids;
-                return result;
+        protected virtual void Dispose(bool dispose)
+        {
+            if (dispose)
+            {
+                if (DB != null) { DB.Dispose(); }
             }
         }
-        //public static DbRepo()
-        //{
-        //    var dataPath = Path.Combine(embyDataPath, "SyncData");
-        //    //var dbName = "Emby.Kodi.SyncQueue.litedb";
 
-        //    bool exists = false;
-        //    if (File.Exists(dataPath)) { exists = true; }
-
-        //    DocStore = new EmbeddableDocumentStore { DataDirectory = dataPath, DefaultDatabase = "Emby.Kodi.SyncQueue" };
-
-
-        //    DB = new LiteDatabase(Path.Combine(embyDataPath, "SyncData", "Emby.Kodi.SyncQueue.litedb"));
-        //    var mapper = BsonMapper.Global;
-
-        //    Folders = DB.GetCollection<FolderRec>("Folders");            
-        //    Items = DB.GetCollection<ItemRec>("Items");
-        //    UserInfos = DB.GetCollection<UserInfoRec>("UserInfos");
-        //    Folders.EnsureIndex(x => x.ItemId);
-        //    Items.EnsureIndex(x => x.ItemId);
-        //    UserInfos.EnsureIndex(x => x.ItemId);
-        //    Folders.EnsureIndex(x => x.UserId);
-        //    Items.EnsureIndex(x => x.UserId);
-        //    UserInfos.EnsureIndex(x => x.UserId);
-        //    Folders.EnsureIndex(x => x.LastModified);
-        //    Items.EnsureIndex(x => x.LastModified);
-        //    UserInfos.EnsureIndex(x => x.LastModified);
-
-        //    if (!exists)
-        //    {
-        //        var test = new ItemRec()
-        //        {
-        //            Id = new Guid(),
-        //            ItemId = "1111111",
-        //            Status = 0,
-        //            UserId = "1111111",
-        //            LastModified = 12345
-        //        };
-        //        Items.Insert(test);
-        //        test = new ItemRec()
-        //        {
-        //            Id = new Guid(),
-        //            ItemId = "2222222",
-        //            Status = 0,
-        //            UserId = "2222222",
-        //            LastModified = 12345
-        //        };
-        //        Items.Insert(test);
-        //        test = new ItemRec()
-        //        {
-        //            Id = new Guid(),
-        //            ItemId = "3333333",
-        //            Status = 1,
-        //            UserId = "3333333",
-        //            LastModified = 12345
-        //        };
-        //        Items.Insert(test);
-        //        test = new ItemRec()
-        //        {
-        //            Id = new Guid(),
-        //            ItemId = "4444444",
-        //            Status = 1,
-        //            UserId = "4444444",
-        //            LastModified = 12345
-        //        };
-        //        Items.Insert(test);
-        //        test = new ItemRec()
-        //        {
-        //            Id = new Guid(),
-        //            ItemId = "5555555",
-        //            Status = 2,
-        //            UserId = "5555555",
-        //            LastModified = 12345
-        //        };
-        //        Items.Insert(test);
-        //        test = new ItemRec()
-        //        {
-        //            Id = new Guid(),
-        //            ItemId = "666666666",
-        //            Status = 2,
-        //            UserId = "666666666",
-        //            LastModified = 12345
-        //        };
-        //        Items.Insert(test);
-        //    }
-        //}
-
-        //#region Dispose
-
-        //public void Dispose()
-        //{            
-        //    Dispose(true);
-        //}
-
-        //protected virtual void Dispose(bool dispose)
-        //{
-        //    if (dispose)
-        //    {
-        //        DB.Dispose();
-        //    }
-        //}
-
-        //#endregion
+        #endregion
     }
 }

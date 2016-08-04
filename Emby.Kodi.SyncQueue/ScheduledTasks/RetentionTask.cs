@@ -35,11 +35,6 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             _applicationPaths = applicationPaths;
 
             _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Task Scheduled!");
-
-            if (DbRepo.DataPath == null)
-            {
-                DbRepo.DataPath = _applicationPaths.DataPath;
-            }
         }
 
         public IEnumerable<ITaskTrigger> GetDefaultTriggers()
@@ -74,9 +69,14 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
                 retDays = retDays * -1;
                 var dt = DateTime.UtcNow.AddDays(retDays);
                 var dtl = (long)(dt.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
-                DbRepo.DeleteOldData(dtl, _logger);
-                
-                return true;
+                //DbRepo.DeleteOldData(dtl, _logger);
+
+                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger))
+                {                    
+                    repo.DeleteOldData(dtl);
+                }
+
+                    return true;
             });
         }
 

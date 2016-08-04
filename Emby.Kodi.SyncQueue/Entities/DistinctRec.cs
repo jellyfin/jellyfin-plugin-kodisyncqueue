@@ -2,6 +2,6 @@
 {
     public class DistinctRec
     {
-        public string Id { get; set; }
+        public string Id;
     }
 }

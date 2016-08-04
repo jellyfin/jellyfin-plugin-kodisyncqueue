@@ -31,6 +31,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         private const int UpdateDuration = 500;
 
         private readonly Dictionary<Guid, List<IHasUserData>> _changedItems = new Dictionary<Guid, List<IHasUserData>>();
+        private List<LibItem> _itemRef = new List<LibItem>();
 
         //private DbRepo Repo = null;
         private CancellationTokenSource cTokenSource = new CancellationTokenSource();
@@ -51,12 +52,52 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         {
             _userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
 
-            _logger.Info("Emby.Kodi.SyncQueue:  UserSyncNotification Startup...");
-            //Repo = new DbRepo(_applicationPaths.DataPath);            
-            if (DbRepo.DataPath == null)
+            _logger.Info("Emby.Kodi.SyncQueue:  UserSyncNotification Startup...");            
+        }
+
+        private bool FilterItem(BaseItem item, out string type, out string cname)
+        {
+            type = string.Empty;
+            cname = string.Empty;
+            if (item.LocationType == LocationType.Virtual)
             {
-                DbRepo.DataPath = _applicationPaths.DataPath;
+                return false;
             }
+            else if (String.IsNullOrEmpty(item.GetClientTypeName()) == false &&
+                item.GetClientTypeName().Equals("Person", StringComparison.InvariantCultureIgnoreCase))
+            {
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Ignorning item type Person"));
+                return false;
+            }
+            if (item.SourceType != SourceType.Library)
+            {
+                return false;
+            }
+
+            var cn = _libraryManager.GetCollectionFolders(item).FirstOrDefault();
+            if (cn != null) { cname = cn.Name; }
+            else { cname = string.Empty; }
+
+            var ids = item.GetAncestorIds().ToList();
+            foreach (var id in ids)
+            {
+                var cf = _libraryManager.GetItemById(id) as ICollectionFolder;
+                if (cf != null && cf.CollectionType != null && cf.CollectionType != "")
+                {
+                    if (cf.CollectionType == "movies" || cf.CollectionType == "tvshows" || cf.CollectionType == "music" || cf.CollectionType == "musicvideos" || cf.CollectionType == "boxsets")
+                    {
+                        type = cf.CollectionType;
+                        break;
+                    }
+                }
+            }
+
+            if (type == string.Empty)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         void _userDataManager_UserDataSaved(object sender, UserDataSaveEventArgs e)
@@ -66,8 +107,20 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 return;
             }
 
+            var cname = string.Empty;
             lock (_syncLock)
             {
+                var type = string.Empty;
+                var testItem = e.Item as BaseItem;
+
+                if (testItem != null)
+                {
+                    if (!FilterItem(testItem, out type, out cname))
+                    {
+                        return;
+                    }
+                }
+
                 if (UpdateTimer == null)
                 {
                     UpdateTimer = new Timer(UpdateTimerCallback, null, UpdateDuration,
@@ -87,12 +140,19 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 }
 
                 keys.Add(e.Item);
-
+                
                 var baseItem = e.Item as BaseItem;
 
                 // Go up one level for indicators
                 if (baseItem != null)
                 {
+                    _itemRef.Add(new LibItem()
+                    {
+                        Id = baseItem.Id,
+                        ItemType = type,
+                        CollectionName = cname
+                    });
+
                     var parent = baseItem.Parent;
 
                     if (parent != null)
@@ -118,9 +178,11 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
                 // Remove dupes in case some were saved multiple times
                 var changes = _changedItems.ToList();
+                var itemRef = _itemRef.ToList();
                 _changedItems.Clear();
+                _itemRef.Clear();
 
-                Task x = SendNotifications(changes, cTokenSource.Token);
+                Task x = SendNotifications(changes, itemRef, cTokenSource.Token);
                 Task.WaitAll(x);
 
                 if (UpdateTimer != null)
@@ -138,7 +200,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             }
         }
 
-        private async Task SendNotifications(IEnumerable<KeyValuePair<Guid, List<IHasUserData>>> changes, CancellationToken cancellationToken)
+        private async Task SendNotifications(IEnumerable<KeyValuePair<Guid, List<IHasUserData>>> changes, List<LibItem> itemRefs, CancellationToken cancellationToken)
         {
             List<Task> myTasks = new List<Task>();
             
@@ -163,24 +225,26 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
                 _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
 
-                myTasks.Add(SaveUserChanges(dtoList, user.Name, userId.ToString("N"), cancellationToken));
+                myTasks.Add(SaveUserChanges(dtoList, itemRefs, user.Name, userId.ToString("N"), cancellationToken));
             }
             Task[] iTasks = myTasks.ToArray();
             await Task.WhenAll(iTasks);
         }
 
-        private async Task SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, string userName, string userId, CancellationToken cancellationToken)
+        private async Task SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId, CancellationToken cancellationToken)
         {
             bool result = await Task.Run(() =>
             {
-                DbRepo.SetUserInfoSync(dtos, userName, userId, cancellationToken, _logger, _jsonSerializer);
+                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
+                {
+                    repo.SetUserInfoSync(dtos, itemRefs, userName, userId, cancellationToken);
+                }
                 return true;
             });
             
             List<string> ids = dtos.Select(s => s.ItemId).ToList();
 
             _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"USERSYNC\" User {0}({1}) posted {2} Updates:  {3}", userId, userName, ids.Count(), String.Join(",", ids.ToArray())));
-            //_logger.Info(String.Format("Emby.Kodi.SyncQueue: Item Id's: {0}", String.Join(",", itemIds.ToArray())));
         }
 
         private void TriggerCancellation()
@@ -209,11 +273,6 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     UpdateTimer.Dispose();
                     UpdateTimer = null;
                 }
-                //if (Repo != null)
-                //{
-                //    Repo.Dispose();
-                //    Repo = null;
-                //}                
 
                 _userDataManager.UserDataSaved -= _userDataManager_UserDataSaved;
             }
