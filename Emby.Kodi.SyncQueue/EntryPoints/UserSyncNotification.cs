@@ -75,7 +75,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             }
 
             var cn = _libraryManager.GetCollectionFolders(item).FirstOrDefault();
-            if (cn != null) { cname = cn.Name; }
+            if (cn != null) { cname = cn.Id.ToString("N"); }
             else { cname = string.Empty; }
 
             var ids = item.GetAncestorIds().ToList();

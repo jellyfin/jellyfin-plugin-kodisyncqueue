@@ -27,23 +27,12 @@ namespace Emby.Kodi.SyncQueue.API
             _applicationPaths = applicationPaths;
 
             _logger.Debug("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/{LastUpdateDT}/GetItems?format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
-            _logger.Debug("Emby.Kodi.SyncQueue:  SyncAPI Created AS GET and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/GetItems?LastUpdateDT={LastUpdateDT}&format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
-            _logger.Debug("Emby.Kodi.SyncQueue:  SyncAPI Created AS POST and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/GetItems?LastUpdateDT={LastUpdateDT}&format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
+            _logger.Debug("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/GetItems?LastUpdateDT={LastUpdateDT}&format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
             _logger.Debug("Emby.Kodi.SyncQueue:  The following parameters also exist to filter the results:");
-            _logger.Debug("Emby.Kodi.SyncQueue:  movies=0 will remove all CollectionType \"movies\"");
-            _logger.Debug("Emby.Kodi.SyncQueue:  tvshows=0 will remove all CollectionType \"tvshows\"");
-            _logger.Debug("Emby.Kodi.SyncQueue:  music=0 will remove all CollectionType \"music\"");
-            _logger.Debug("Emby.Kodi.SyncQueue:  musicvideos=0 will remove all CollectionType \"musicvideos\"");
-            _logger.Debug("Emby.Kodi.SyncQueue:  boxsets=0 will remove all CollectionType \"boxsets\"");
-            _logger.Debug("Emby.Kodi.SyncQueue:  MediaLibraries can also be filtered by using POST instead of GET...");
-            _logger.Debug("Emby.Kodi.SyncQueue:  Content-Type should be set to application/json");
-            _logger.Debug("Emby.Kodi.SyncQueue:  {\"filterList\":[\"movies\", \"tv\", \"movies_family\"]}");
-            _logger.Debug("Emby.Kodi.SyncQueue:  filterList is case sensitive and must be as listed here...");
-            _logger.Debug("Emby.Kodi.SyncQueue:  The items inside the [] are not case sensitive...");
-
-
-
-
+            _logger.Debug("Emby.Kodi.SyncQueue:  filter=movies,tvshows,music,musicvideos,boxsets");
+            _logger.Debug("Emby.Kodi.SyncQueue:  Results will be included by default and only filtered if added to the filter query...");
+            _logger.Debug("Emby.Kodi.SyncQueue:  the filter query must be lowercase in both the name and the items...");
+            
             //repo = new DbRepo(_applicationPaths.DataPath);     
             using (var repo = new DbRepo(_applicationPaths.DataPath, _logger))
             {
@@ -58,16 +47,47 @@ namespace Emby.Kodi.SyncQueue.API
             var info = new SyncUpdateInfo();
             if (request.LastUpdateDT == null || request.LastUpdateDT == "")
                 request.LastUpdateDT = "1900-01-01T00:00:00Z";
+            bool movies = true;
+            bool tvshows = true;
+            bool music = true;
+            bool musicvideos = true;
+            bool boxsets = true;
 
+            if (request.filter != null && request.filter != "")
+            {
+                var filter = request.filter.ToLower().Split(',');
+                foreach (var f in filter)
+                {
+                    f.Trim();
+                    switch (f)
+                    {
+                        case "movies":
+                            movies = false;
+                            break;
+                        case "tvshows":
+                            tvshows = false;
+                            break;
+                        case "music":
+                            music = false;
+                            break;
+                        case "musicvideos":
+                            musicvideos = false;
+                            break;
+                        case "boxsets":
+                            boxsets = false;
+                            break;
+                    }
+                }
+            }
 
             Task<SyncUpdateInfo> x = PopulateLibraryInfo(
                                                             request.UserID,
                                                             request.LastUpdateDT,
-                                                            (request.movies == 0) ? false : true,
-                                                            (request.tvshows == 0) ? false : true,
-                                                            (request.music == 0) ? false : true,
-                                                            (request.musicvideos == 0) ? false : true,
-                                                            (request.boxsets == 0) ? false : true
+                                                            movies,
+                                                            tvshows,
+                                                            music,
+                                                            musicvideos,
+                                                            boxsets
                                                         );
             Task.WhenAll(x);
             
@@ -81,50 +101,57 @@ namespace Emby.Kodi.SyncQueue.API
             _logger.Debug("Emby.Kodi.SyncQueue:  Processing message...");
             if (request.LastUpdateDT == null || request.LastUpdateDT == "")
                 request.LastUpdateDT = "1900-01-01T00:00:00Z";
+            bool movies = true;
+            bool tvshows = true;
+            bool music = true;
+            bool musicvideos = true;
+            bool boxsets = true;
+
+            if (request.filter != null && request.filter != "")
+            {
+                var filter = request.filter.ToLower().Split(',');
+                foreach (var f in filter)
+                {
+                    f.Trim();
+                    switch (f)
+                    {
+                        case "movies":
+                            movies = false;
+                            break;
+                        case "tvshows":
+                            tvshows = false;
+                            break;
+                        case "music":
+                            music = false;
+                            break;
+                        case "musicvideos":
+                            musicvideos = false;
+                            break;
+                        case "boxsets":
+                            boxsets = false;
+                            break;
+                    }
+                }
+            }
 
             Task<SyncUpdateInfo> x = PopulateLibraryInfo(
                                                             request.UserID, 
                                                             request.LastUpdateDT,
-                                                            (request.movies == 0) ? false : true,
-                                                            (request.tvshows == 0) ? false : true,
-                                                            (request.music == 0) ? false : true,
-                                                            (request.musicvideos == 0) ? false : true,
-                                                            (request.boxsets == 0) ? false : true
+                                                            movies,
+                                                            tvshows,
+                                                            music,
+                                                            musicvideos,
+                                                            boxsets
                                                         );
             Task.WhenAll(x);
 
             _logger.Debug("Emby.Kodi.SyncQueue:  Request processed... Returning result...");
             return x.Result;
-        }
-
-        public SyncUpdateInfo Post(GetLibraryItemsQueryPost request)
-        {
-            
-            _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
-            _logger.Debug("Emby.Kodi.SyncQueue:  Processing message...");
-            if (request.LastUpdateDT == null || request.LastUpdateDT == "")
-                request.LastUpdateDT = "1900-01-01T00:00:00Z";
-
-            Task<SyncUpdateInfo> x = PopulateLibraryInfo(
-                                                            request.UserID,
-                                                            request.LastUpdateDT,
-                                                            (request.movies == 0) ? false : true,
-                                                            (request.tvshows == 0) ? false : true,
-                                                            (request.music == 0) ? false : true,
-                                                            (request.musicvideos == 0) ? false : true,
-                                                            (request.boxsets == 0) ? false : true,
-                                                            request.filterList
-                                                        );
-            Task.WhenAll(x);
-
-            _logger.Debug("Emby.Kodi.SyncQueue:  Request processed... Returning result...");
-            return x.Result;
-        }
+        }        
 
         public async Task<SyncUpdateInfo> PopulateLibraryInfo(string userId, string lastDT, 
                                                               bool movies, bool tvshows, bool music,
-                                                              bool musicvideos, bool boxsets,
-                                                              List<string> filterList = null)
+                                                              bool musicvideos, bool boxsets)
         {
             var startTime = DateTime.UtcNow;
 
@@ -144,7 +171,7 @@ namespace Emby.Kodi.SyncQueue.API
 
                 using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
                 {
-                    result = repo.GetItems(dtl, 0, userId, movies, tvshows, music, musicvideos, boxsets, filterList);
+                    result = repo.GetItems(dtl, 0, userId, movies, tvshows, music, musicvideos, boxsets);
                 }
                 
                 if (result.Count > 0)
@@ -164,7 +191,7 @@ namespace Emby.Kodi.SyncQueue.API
                 List<string> result = null;
                 using (var repo = new DbRepo(_applicationPaths.DataPath, _logger))
                 {
-                    result = repo.GetItems(dtl, 2, userId, movies, tvshows, music, musicvideos, boxsets, filterList);
+                    result = repo.GetItems(dtl, 2, userId, movies, tvshows, music, musicvideos, boxsets);
                 }
 
                 if (result.Count > 0)
@@ -184,7 +211,7 @@ namespace Emby.Kodi.SyncQueue.API
                 List<string> result = null;
                 using (var repo = new DbRepo(_applicationPaths.DataPath, _logger))
                 {
-                    result = repo.GetItems(dtl, 1, userId, movies, tvshows, music, musicvideos, boxsets, filterList);
+                    result = repo.GetItems(dtl, 1, userId, movies, tvshows, music, musicvideos, boxsets);
                 }
                 
                 if (result.Count > 0)
@@ -209,7 +236,7 @@ namespace Emby.Kodi.SyncQueue.API
                 List<string> result = null;
                 using (var repo = new DbRepo(_applicationPaths.DataPath, _logger))
                 {
-                    result = repo.GetUserInfos(dtl, userId, out ids, movies, tvshows, music, musicvideos, boxsets, filterList);
+                    result = repo.GetUserInfos(dtl, userId, out ids, movies, tvshows, music, musicvideos, boxsets);
                 }
                 
                 if (result.Count > 0)
