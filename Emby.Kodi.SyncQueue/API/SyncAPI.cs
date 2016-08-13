@@ -26,15 +26,15 @@ namespace Emby.Kodi.SyncQueue.API
             _jsonSerializer = jsonSerializer;
             _applicationPaths = applicationPaths;
 
-            _logger.Debug("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/{LastUpdateDT}/GetItems?format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
-            _logger.Debug("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/GetItems?LastUpdateDT={LastUpdateDT}&format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
-            _logger.Debug("Emby.Kodi.SyncQueue:  The following parameters also exist to filter the results:");
-            _logger.Debug("Emby.Kodi.SyncQueue:  filter=movies,tvshows,music,musicvideos,boxsets");
-            _logger.Debug("Emby.Kodi.SyncQueue:  Results will be included by default and only filtered if added to the filter query...");
-            _logger.Debug("Emby.Kodi.SyncQueue:  the filter query must be lowercase in both the name and the items...");
-            
-            //repo = new DbRepo(_applicationPaths.DataPath);     
-            using (var repo = new DbRepo(_applicationPaths.DataPath, _logger))
+            _logger.Info("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/{LastUpdateDT}/GetItems?format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
+            _logger.Info("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/GetItems?LastUpdateDT={LastUpdateDT}&format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
+            _logger.Info("Emby.Kodi.SyncQueue:  The following parameters also exist to filter the results:");
+            _logger.Info("Emby.Kodi.SyncQueue:  filter=movies,tvshows,music,musicvideos,boxsets");
+            _logger.Info("Emby.Kodi.SyncQueue:  Results will be included by default and only filtered if added to the filter query...");
+            _logger.Info("Emby.Kodi.SyncQueue:  the filter query must be lowercase in both the name and the items...");
+
+            ////repo = new DbRepo(_applicationPaths.DataPath);     
+            using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
             {
 
             }

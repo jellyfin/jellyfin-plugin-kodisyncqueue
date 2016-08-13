@@ -1,5 +1,4 @@
-﻿using Emby.Kodi.SyncQueue.Entities;
-using System;
+﻿using System;
 using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +6,7 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System.IO;
 using LiteDB;
+using Emby.Kodi.SyncQueue.Entities;
 
 namespace Emby.Kodi.SyncQueue.Data
 {
@@ -31,13 +31,23 @@ namespace Emby.Kodi.SyncQueue.Data
         }
 
         public DbRepo(string dp, ILogger logger, IJsonSerializer json = null)
-        {            
+        {
+            logger.Info("EMBY.KODI.SYNCQUEUE: CREATING DATAPATH");
             DataPath = dp;
+            logger.Info("EMBY.KODI.SYNCQUEUE: CREATING FULL FILENAME");
             var data = Path.Combine(DataPath, dataName);
             //var newdb = false;
+            logger.Info("EMBY.KODI.SYNCQUEUE: SETTING GLOBALS");
             _logger = logger;
             _json = json;
 
+            logger.Info("EMBY.KODI.SYNCQUEUE: CHECKING DIRECTORY EXISTANCE");
+            if (!Directory.Exists(DataPath))
+            {
+                Directory.CreateDirectory(DataPath);
+            }
+
+            logger.Info("EMBY.KODI.SYNCQUEUE: CHECKING FILE EXISTANCE");
             if (!File.Exists(data))
             {
             //    newdb = true;

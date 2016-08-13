@@ -71,6 +71,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EmbeddedAssembly.cs" />
     <Compile Include="Entities\DistinctRec.cs" />
     <Compile Include="Entities\ServerTimeInfo.cs" />
     <Compile Include="Entities\SyncUpdateInfo.cs" />
@@ -107,7 +108,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\LiteDB.dll" />
+    <EmbeddedResource Include="LiteDB.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
