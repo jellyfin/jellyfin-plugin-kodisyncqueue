@@ -18,32 +18,8 @@ namespace Emby.Kodi.SyncQueue
             Instance = this;
 
             Logger = logger;
-            Logger.Info("Emby.Kodi.SyncQueue IS NOW STARTING!!!");
-
-            try
-            {
-                string[] names = this.GetType().Assembly.GetManifestResourceNames();
-                foreach (string name in names)
-                {
-                    logger.Info(String.Format("Resource: \"{0}\"", name));
-                }
-
-                string resource1 = "Emby.Kodi.SyncQueue.LiteDB.dll";
-
-                EmbeddedAssembly.Load(resource1, "LiteDB.dll");
-
-                AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("Error Loading LiteDB.dll", ex);
-            }                        
-        }
-
-        public Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
-        {
-            return EmbeddedAssembly.Get(args.Name);
-        }
+            Logger.Info("Emby.Kodi.SyncQueue IS NOW STARTING!!!");                         
+        }        
 
         /// <summary>
         /// Gets the name of the plugin
