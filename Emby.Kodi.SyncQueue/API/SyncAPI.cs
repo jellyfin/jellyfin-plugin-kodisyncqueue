@@ -9,6 +9,7 @@ using MediaBrowser.Model.Serialization;
 using MediaBrowser.Common.Configuration;
 using Emby.Kodi.SyncQueue.Entities;
 using Emby.Kodi.SyncQueue.Data;
+using System.Globalization;
 
 namespace Emby.Kodi.SyncQueue.API
 {
@@ -161,8 +162,10 @@ namespace Emby.Kodi.SyncQueue.API
 
             var info = new SyncUpdateInfo();
 
-            var userDT = Convert.ToDateTime(lastDT);
-            var dtl = (long)(userDT.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
+            //var userDT = Convert.ToDateTime(lastDT);
+            var userDT = DateTime.Parse(lastDT, CultureInfo.CurrentCulture, DateTimeStyles.AssumeUniversal);
+
+            var dtl = (long)(userDT.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
 
             _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Added Info...");
             Task<List<string>> t1 = Task.Run(() =>

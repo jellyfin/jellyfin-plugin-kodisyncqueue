@@ -78,6 +78,10 @@ namespace Emby.Kodi.SyncQueue.Data
                 var result = new List<string>();
                 List<ItemRec> final = new List<ItemRec>();
                 //
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(dtl), dtl));
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  IntStatus: {0}", status));
+                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  userId: {0}", userId));
+
                 var itms = items.Find(x => x.LastModified > dtl &&
                                            x.Status == status &&
                                            x.UserId == userId)
@@ -111,6 +115,8 @@ namespace Emby.Kodi.SyncQueue.Data
                 {
                     if (result.Where(i => i == x.ItemId).FirstOrDefault() == null)
                     {
+                        _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item {0} Modified {1:yyyy-MM-dd HH:mm:ss} for time {2}", x.ItemId, 
+                                new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(x.LastModified), x.LastModified));
                         result.Add(x.ItemId);
                     }
                 });
