@@ -70,8 +70,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\PluginSettingsAPI.cs" />
     <Compile Include="EmbeddedAssembly.cs" />
     <Compile Include="Entities\DistinctRec.cs" />
+    <Compile Include="Entities\PluginSettings.cs" />
     <Compile Include="Entities\ServerTimeInfo.cs" />
     <Compile Include="Entities\SyncUpdateInfo.cs" />
     <Compile Include="API\RoutesAPI.cs" />

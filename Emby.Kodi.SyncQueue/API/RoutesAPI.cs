@@ -33,4 +33,10 @@ namespace Emby.Kodi.SyncQueue.API
     {
         
     }
+
+    [Route("/Emby.Kodi.SyncQueue/GetPluginSettings", "GET", Summary = "Get SyncQueue Plugin Settings")]
+    public class GetPluginSettings : IReturn<PluginSettings>
+    {
+
+    }
 }
