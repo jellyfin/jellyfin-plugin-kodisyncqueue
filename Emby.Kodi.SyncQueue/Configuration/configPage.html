@@ -22,14 +22,53 @@
                         </li>
                         <li>
                             <label for="chkEnabled">
-                                Enabled:
+                                Enabled
                             </label>
                             <input type="checkbox" id="chkEnabled" data-mini="true" />                            
                         </li>
                         <li>
+                            <label>Items to Track:</label><br />
+                            <table>
+                                <tr>
+                                    <td>
+                                        <label for="tkMovies">
+                                            Movies
+                                        </label>
+                                        <input type="checkbox" id="tkMovies" data-mini="true" />
+                                    </td>
+                                    <td>
+                                        <label for="tkBoxSets">
+                                            BoxSets
+                                        </label>
+                                        <input type="checkbox" id="tkBoxSets" data-mini="true" />
+                                    </td>
+                                    <td>
+                                        <label for="tkTVShows">
+                                            TV Shows
+                                        </label>
+                                        <input type="checkbox" id="tkTVShows" data-mini="true" />
+                                    </td>
+                                <!--</tr>
+                                <tr>-->
+                                    <td>
+                                        <label for="tkMusic">
+                                            Music
+                                        </label>
+                                        <input type="checkbox" id="tkMusic" data-mini="true" />
+                                    </td>
+                                    <td>
+                                        <label for="tkMusicVideos">
+                                            Music Videos
+                                        </label>
+                                        <input type="checkbox" id="tkMusicVideos" data-mini="true" />
+                                    </td>
+                                </tr>                                
+                            </table>                            
+                        </li>
+                        <li>
                             <button type="submit" data-theme="b">Save</button>
                             <button type="button" onclick="history.back();">Cancel</button>
-                        </li>
+                        </li>                        
                     </ul>
 
                 </form>
@@ -53,7 +92,11 @@
 
                     $('#txtRetDays', page).val(config.RetDays || "0");
                     $('#chkEnabled', page).checked(config.IsEnabled || false).checkboxradio("refresh");
-                    
+                    $('#tkMovies', page).checked(config.tkMovies || false).checkboxradio("refresh");
+                    $('#tkBoxSets', page).checked(config.tkBoxSets || false).checkboxradio("refresh");
+                    $('#tkTVShows', page).checked(config.tkTVShows || false).checkboxradio("refresh");
+                    $('#tkMusic', page).checked(config.tkMusic || false).checkboxradio("refresh");
+                    $('#tkMusicVideos', page).checked(config.tkMusicVideos || false).checkboxradio("refresh");
                     Dashboard.hideLoadingMsg();
                 });
             });
@@ -76,6 +119,11 @@
                         }                        
                     }
                     config.IsEnabled = $('#chkEnabled', form).checked();
+                    config.tkMovies = $('#tkMovies', form).checked();
+                    config.tkTVShows = $('#tkTVShows', form).checked();
+                    config.tkMusic = $('#tkMusic', form).checked();
+                    config.tkMusicVideos = $('#tkMusicVideos', form).checked();
+                    config.tkBoxSets = $('#tkBoxSets', form).checked();
                     
                     ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);              
                 });

@@ -15,7 +15,7 @@ namespace Emby.Kodi.SyncQueue.Data
         private object _createLock = new object();
         private LiteDatabase DB = null;
         private string dataPath;
-        private string dataName = "Emby.Kodi.SyncQueue.ldb";
+        private string dataName = "Emby.Kodi.SyncQueue.1.2.ldb";
 
         private readonly ILogger _logger;
         private readonly IJsonSerializer _json;
@@ -84,20 +84,20 @@ namespace Emby.Kodi.SyncQueue.Data
 
                 var itms = items.Find(x => x.LastModified > dtl &&
                                            x.Status == status &&
-                                           x.UserId == userId)
-                                .Where(x =>
+                                           x.UserId == userId).ToList();
+                itms = itms.Where(x =>
                                 {
                                     switch (x.MediaType)
                                     {
-                                        case "movies":
+                                        case 0:
                                             if (movies) { return true; } else { return false; }
-                                        case "tvshows":
+                                        case 1:
                                             if (tvshows) { return true; } else { return false; }
-                                        case "music":
+                                        case 2:
                                             if (music) { return true; } else { return false; }
-                                        case "musicvideos":
+                                        case 3:
                                             if (musicvideos) { return true; } else { return false; }
-                                        case "boxsets":
+                                        case 4:
                                             if (boxsets) { return true; } else { return false; }
                                     }
                                     return false;
@@ -186,26 +186,26 @@ namespace Emby.Kodi.SyncQueue.Data
                 var tids = new List<string>();
                 var final = new List<UserInfoRec>();
 
-                var uids = userinfos.Find(x => x.LastModified > dtl && 
-                                               x.UserId == userId)
-                                    .Where(x =>
-                                    {
-                                        switch (x.MediaType)
-                                        {
-                                            case "movies":
-                                                if (movies) { return true; } else { return false; }
-                                            case "tvshows":
-                                                if (tvshows) { return true; } else { return false; }
-                                            case "music":
-                                                if (music) { return true; } else { return false; }
-                                            case "musicvideos":
-                                                if (musicvideos) { return true; } else { return false; }
-                                            case "boxsets":
-                                                if (boxsets) { return true; } else { return false; }
-                                        }
-                                        return false;
-                                    })
-                                    .ToList();
+                var uids = userinfos.Find(x => x.LastModified > dtl &&
+                                               x.UserId == userId).ToList();
+                uids = uids.Where(x =>
+                            {
+                                switch (x.MediaType)
+                                {
+                                    case 0:
+                                        if (movies) { return true; } else { return false; }
+                                    case 1:
+                                        if (tvshows) { return true; } else { return false; }
+                                    case 2:
+                                        if (music) { return true; } else { return false; }
+                                    case 3:
+                                        if (musicvideos) { return true; } else { return false; }
+                                    case 4:
+                                        if (boxsets) { return true; } else { return false; }
+                                }
+                                return false;
+                            })
+                            .ToList();
 
                 //if (movies) { final.AddRange(uids.Where(x => x.MediaType == "movies").ToList()); }
                 //if (tvshows) { final.AddRange(uids.Where(x => x.MediaType == "tvshows").ToList()); }
@@ -221,31 +221,31 @@ namespace Emby.Kodi.SyncQueue.Data
                 });
                 ids = tids;
 
-                var temp = items.FindAll();
-                foreach (var t in temp)
-                {
-                    _logger.Debug("");
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Id:        {0}", t.Id));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId:    {0}", t.ItemId));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  UserId:    {0}", t.UserId));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  MediaType: {0}", t.MediaType));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  CollName:  {0}", t.LibraryName));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Status:    {0}", t.Status));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  LastMod:   {0}", t.LastModified));
-                };
+                //var temp = items.FindAll();
+                //foreach (var t in temp)
+                //{
+                //    _logger.Debug("");
+                //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Id:        {0}", t.Id));
+                //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId:    {0}", t.ItemId));
+                //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  UserId:    {0}", t.UserId));
+                //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  MediaType: {0}", t.MediaType));
+                //    //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  CollName:  {0}", t.LibraryName));
+                //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Status:    {0}", t.Status));
+                //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  LastMod:   {0}", t.LastModified));
+                //};
 
-                var temp2 = userinfos.FindAll();
-                foreach (var t in temp2)
-                {
-                    _logger.Debug("");
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Id:        {0}", t.Id));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId:    {0}", t.ItemId));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  UserId:    {0}", t.UserId));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  MediaType: {0}", t.MediaType));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  CollName:  {0}", t.LibraryName));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JSON:      {0}", t.Json));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  LastMod:   {0}", t.LastModified));
-                };
+                //var temp2 = userinfos.FindAll();
+                //foreach (var t in temp2)
+                //{
+                //    _logger.Debug("");
+                //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Id:        {0}", t.Id));
+                //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId:    {0}", t.ItemId));
+                //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  UserId:    {0}", t.UserId));
+                //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  MediaType: {0}", t.MediaType));
+                //    //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  CollName:  {0}", t.LibraryName));
+                //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JSON:      {0}", t.Json));
+                //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  LastMod:   {0}", t.LastModified));
+                //};
                 return result;
             }
         }
@@ -278,7 +278,7 @@ namespace Emby.Kodi.SyncQueue.Data
             }
         }
 
-        public void SetLibrarySync(List<string> lItems, List<LibItem> libItems, string userId, string userName, int status, CancellationToken cancellationToken)
+        public void SetLibrarySync(List<string> sItems, List<LibItem> libItems, string userId, string userName, int status, CancellationToken cancellationToken)
         {
             ItemRec newRec;
             var statusType = string.Empty;
@@ -289,41 +289,53 @@ namespace Emby.Kodi.SyncQueue.Data
             {
                 try
                 {
-                    lItems.ForEach(i =>
+                    sItems.ForEach(i =>
                     {
-                        var libitem = libItems.Where(itm => itm.Id.ToString("N") == i).FirstOrDefault();
-                        long newTime;
-                        if (libitem != null)
+                        if (statusType == "Removed")
                         {
-                            newTime = libitem.SyncApiModified;
-
-                            ItemRec rec = items.Find(x => x.ItemId == i && x.UserId == userId).FirstOrDefault();
-
-                            newRec = new ItemRec()
+                            var rec = items.Find(x => x.ItemId == i && x.UserId == userId).FirstOrDefault();
+                            if (rec != null)
                             {
-                                ItemId = i,
-                                UserId = userId,
-                                Status = status,
-                                LastModified = newTime,
-                                MediaType = libitem.ItemType,
-                                LibraryName = libitem.CollectionName
-                            };
-
-                            if (rec == null) { items.Insert(newRec); }
-                            else if (rec.LastModified < newTime)
-                            {
-                                newRec.Id = rec.Id;
-                                items.Update(newRec);
+                                items.Delete(rec.Id);
+                                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  {0} ItemId: '{1}' for UserId: '{2}'", statusType, i, userId));
                             }
-                            else { newRec = null; }
+                        }
+                        else
+                        {
+                            var libitem = libItems.Where(itm => itm.Id.ToString("N") == i).FirstOrDefault();
+                            long newTime;
+                            if (libitem != null)
+                            {
+                                newTime = libitem.SyncApiModified;
 
-                            if (newRec != null)
-                            {
-                                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  {0} ItemId: '{1}' for UserId: '{2}'", statusType, newRec.ItemId, newRec.UserId));
-                            }
-                            else
-                            {
-                                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped for UserId: '{1}'", i, userId));
+                                ItemRec rec = items.Find(x => x.ItemId == i && x.UserId == userId).FirstOrDefault();
+
+                                newRec = new ItemRec()
+                                {
+                                    ItemId = i,
+                                    UserId = userId,
+                                    Status = status,
+                                    LastModified = newTime,
+                                    MediaType = libitem.ItemType
+                                    //LibraryName = libitem.CollectionName
+                                };
+
+                                if (rec == null) { items.Insert(newRec); }
+                                else if (rec.LastModified < newTime)
+                                {
+                                    newRec.Id = rec.Id;
+                                    items.Update(newRec);
+                                }
+                                else { newRec = null; }
+
+                                if (newRec != null)
+                                {
+                                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  {0} ItemId: '{1}' for UserId: '{2}'", statusType, newRec.ItemId, newRec.UserId));
+                                }
+                                else
+                                {
+                                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped for UserId: '{1}'", i, userId));
+                                }
                             }
                         }
                     });
@@ -360,7 +372,7 @@ namespace Emby.Kodi.SyncQueue.Data
                                 UserId = userId,
                                 LastModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
                                 MediaType = itemref.ItemType,
-                                LibraryName = itemref.CollectionName
+                                //LibraryName = itemref.CollectionName
                             };
                             if (oldRec == null)
                             {

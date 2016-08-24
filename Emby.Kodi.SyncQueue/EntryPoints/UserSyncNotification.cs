@@ -55,46 +55,74 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             _logger.Info("Emby.Kodi.SyncQueue:  UserSyncNotification Startup...");            
         }
 
-        private bool FilterItem(BaseItem item, out string type, out string cname)
+        private bool FilterItem(BaseItem item, out int type)
         {
-            type = string.Empty;
-            cname = string.Empty;
+            type = -1;
+
+            if (!Plugin.Instance.Configuration.IsEnabled)
+            {
+                return false;
+            }
+
             if (item.LocationType == LocationType.Virtual)
             {
                 return false;
             }
-            else if (String.IsNullOrEmpty(item.GetClientTypeName()) == false &&
-                item.GetClientTypeName().Equals("Person", StringComparison.InvariantCultureIgnoreCase))
-            {
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Ignorning item type Person"));
-                return false;
-            }
+
             if (item.SourceType != SourceType.Library)
             {
                 return false;
             }
 
-            var cn = _libraryManager.GetCollectionFolders(item).FirstOrDefault();
-            if (cn != null) { cname = cn.Id.ToString("N"); }
-            else { cname = string.Empty; }
 
-            var ids = item.GetAncestorIds().ToList();
-            foreach (var id in ids)
-            {
-                var cf = _libraryManager.GetItemById(id) as ICollectionFolder;
-                if (cf != null && cf.CollectionType != null && cf.CollectionType != "")
-                {
-                    if (cf.CollectionType == "movies" || cf.CollectionType == "tvshows" || cf.CollectionType == "music" || cf.CollectionType == "musicvideos" || cf.CollectionType == "boxsets")
-                    {
-                        type = cf.CollectionType;
-                        break;
-                    }
-                }
-            }
-
-            if (type == string.Empty)
+            var typeName = item.GetClientTypeName();
+            if (string.IsNullOrEmpty(typeName))
             {
                 return false;
+            }
+
+            switch (typeName)
+            {
+                //MOVIES
+                case "Movie":
+                    if (!Plugin.Instance.Configuration.tkMovies)
+                    {
+                        return false;
+                    }
+                    type = 0;
+                    break;
+                case "Boxset":
+                    if (!Plugin.Instance.Configuration.tkBoxSets)
+                    {
+                        return false;
+                    }
+                    type = 4;
+                    break;
+                case "Episode":
+                    if (!Plugin.Instance.Configuration.tkTVShows)
+                    {
+                        return false;
+                    }
+                    type = 1;
+                    break;
+                case "Audio":
+                    if (!Plugin.Instance.Configuration.tkMusic)
+                    {
+                        return false;
+                    }
+                    type = 2;
+                    break;
+                case "MusicVideo":
+                    if (!Plugin.Instance.Configuration.tkMusicVideos)
+                    {
+                        return false;
+                    }
+                    type = 3;
+                    break;
+                default:
+                    type = -1;
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Ingoring Type {0}", typeName));
+                    return false;
             }
 
             return true;
@@ -107,53 +135,52 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 return;
             }
 
+            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
+            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
+            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  User GetClientTypeName: {0}", (e.Item as BaseItem).GetClientTypeName()));
+
+
             var cname = string.Empty;
             lock (_syncLock)
             {
-                var type = string.Empty;
+                var type = -1;
                 var testItem = e.Item as BaseItem;
 
                 if (testItem != null)
                 {
-                    if (!FilterItem(testItem, out type, out cname))
+                    if (!FilterItem(testItem, out type))
                     {
                         return;
                     }
-                }
 
-                if (UpdateTimer == null)
-                {
-                    UpdateTimer = new Timer(UpdateTimerCallback, null, UpdateDuration,
-                                                   Timeout.Infinite);
-                }
-                else
-                {
-                    UpdateTimer.Change(UpdateDuration, Timeout.Infinite);
-                }
+                    if (UpdateTimer == null)
+                    {
+                        UpdateTimer = new Timer(UpdateTimerCallback, null, UpdateDuration,
+                                                       Timeout.Infinite);
+                    }
+                    else
+                    {
+                        UpdateTimer.Change(UpdateDuration, Timeout.Infinite);
+                    }
 
-                List<IHasUserData> keys;
+                    List<IHasUserData> keys;
 
-                if (!_changedItems.TryGetValue(e.UserId, out keys))
-                {
-                    keys = new List<IHasUserData>();
-                    _changedItems[e.UserId] = keys;
-                }
+                    if (!_changedItems.TryGetValue(e.UserId, out keys))
+                    {
+                        keys = new List<IHasUserData>();
+                        _changedItems[e.UserId] = keys;
+                    }
 
-                keys.Add(e.Item);
-                
-                var baseItem = e.Item as BaseItem;
+                    keys.Add(e.Item);
 
-                // Go up one level for indicators
-                if (baseItem != null)
-                {
+                    // Go up one level for indicators
                     _itemRef.Add(new LibItem()
                     {
-                        Id = baseItem.Id,
-                        ItemType = type,
-                        CollectionName = cname
+                        Id = testItem.Id,
+                        ItemType = type,                        
                     });
 
-                    var parent = baseItem.Parent;
+                    var parent = testItem.Parent;
 
                     if (parent != null)
                     {
@@ -165,11 +192,6 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
         private void UpdateTimerCallback(object state)
         {
-            if (!Plugin.Instance.Configuration.IsEnabled)
-            {
-                return;
-            }
-
             lock (_syncLock)
             try
             {

@@ -20,8 +20,12 @@ namespace Emby.Kodi.SyncQueue.Entities
         [BsonField]
         public int Status { get; set; }
         [BsonField]
-        public string MediaType { get; set; }
-        [BsonField]
-        public string LibraryName { get; set; }
+        public int MediaType { get; set; }
+
+        // 0 = Movies
+        // 1 = TVShows
+        // 2 = Music
+        // 3 = Music Videos
+        // 4 = BoxSets
     }
 }
