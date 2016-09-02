@@ -291,53 +291,43 @@ namespace Emby.Kodi.SyncQueue.Data
                 {
                     sItems.ForEach(i =>
                     {
-                        if (statusType == "Removed")
+                        
+                        var libitem = libItems.Where(itm => itm.Id.ToString("N") == i).FirstOrDefault();
+                        long newTime;
+
+                        if (libitem != null)
                         {
-                            var rec = items.Find(x => x.ItemId == i && x.UserId == userId).FirstOrDefault();
-                            if (rec != null)
+                            newTime = libitem.SyncApiModified;
+
+                            ItemRec rec = items.Find(x => x.ItemId == i && x.UserId == userId).FirstOrDefault();
+
+                            newRec = new ItemRec()
                             {
-                                items.Delete(rec.Id);
-                                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  {0} ItemId: '{1}' for UserId: '{2}'", statusType, i, userId));
-                            }
-                        }
-                        else
-                        {
-                            var libitem = libItems.Where(itm => itm.Id.ToString("N") == i).FirstOrDefault();
-                            long newTime;
-                            if (libitem != null)
+                                ItemId = i,
+                                UserId = userId,
+                                Status = status,
+                                LastModified = newTime,
+                                MediaType = libitem.ItemType
+                                //LibraryName = libitem.CollectionName
+                            };
+
+                            if (rec == null) { items.Insert(newRec); }
+                            else if (rec.LastModified < newTime)
                             {
-                                newTime = libitem.SyncApiModified;
-
-                                ItemRec rec = items.Find(x => x.ItemId == i && x.UserId == userId).FirstOrDefault();
-
-                                newRec = new ItemRec()
-                                {
-                                    ItemId = i,
-                                    UserId = userId,
-                                    Status = status,
-                                    LastModified = newTime,
-                                    MediaType = libitem.ItemType
-                                    //LibraryName = libitem.CollectionName
-                                };
-
-                                if (rec == null) { items.Insert(newRec); }
-                                else if (rec.LastModified < newTime)
-                                {
-                                    newRec.Id = rec.Id;
-                                    items.Update(newRec);
-                                }
-                                else { newRec = null; }
-
-                                if (newRec != null)
-                                {
-                                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  {0} ItemId: '{1}' for UserId: '{2}'", statusType, newRec.ItemId, newRec.UserId));
-                                }
-                                else
-                                {
-                                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped for UserId: '{1}'", i, userId));
-                                }
+                                newRec.Id = rec.Id;
+                                items.Update(newRec);
                             }
-                        }
+                            else { newRec = null; }
+
+                            if (newRec != null)
+                            {
+                                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  {0} ItemId: '{1}' for UserId: '{2}'", statusType, newRec.ItemId, newRec.UserId));
+                            }
+                            else
+                            {
+                                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped for UserId: '{1}'", i, userId));
+                            }
+                        }                     
                     });
                     trn.Commit();
                 }

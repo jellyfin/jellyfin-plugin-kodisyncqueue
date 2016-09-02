@@ -265,8 +265,8 @@ namespace Emby.Kodi.SyncQueue.API
                 info.UserDataChanged.Add(_jsonSerializer.DeserializeFromString<UserItemDataDto>(userData));
             }
 
-            var json = _jsonSerializer.SerializeToString(info.UserDataChanged).ToString();
-            _logger.Debug(json);
+            //var json = _jsonSerializer.SerializeToString(info.UserDataChanged).ToString();
+            //_logger.Debug(json);
             TimeSpan diffDate = DateTime.UtcNow - startTime;
             _logger.Info(String.Format("Emby.Kodi.SyncQueue: Request Finished Taking {0}", diffDate.ToString("c")));
 

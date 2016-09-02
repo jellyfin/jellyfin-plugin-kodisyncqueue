@@ -79,9 +79,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemAdded(object sender, ItemChangeEventArgs e)
         {
-            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
-            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
+            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
+            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
+            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
 
             var type = -1;
             if (!FilterItem(e.Item, out type))
@@ -129,9 +129,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemUpdated(object sender, ItemChangeEventArgs e)
         {
-            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
-            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
+            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
+            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
+            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
 
             var type = -1;
             if (!FilterItem(e.Item, out type))
@@ -169,9 +169,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemRemoved(object sender, ItemChangeEventArgs e)
         {
-            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
-            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
+            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
+            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
+            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
 
             var type = -1;
             if (!FilterItem(e.Item, out type))
@@ -294,12 +294,12 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 //var json = _jsonSerializer.SerializeToString(info); //message
                 //var dejson = _jsonSerializer.DeserializeFromString<LibraryUpdateInfo>(json);
 
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  User: {0} - {1}", userName, id.ToString("N")));
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Added:          {0}", info.ItemsAdded.Count.ToString()));
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Updated:        {0}", info.ItemsUpdated.Count.ToString()));
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Removed:        {0}", info.ItemsRemoved.Count.ToString()));
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Added To:     {0}", info.FoldersAddedTo.Count.ToString()));
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Removed From: {0}", info.FoldersRemovedFrom.Count.ToString()));
+                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  User: {0} - {1}", userName, id.ToString("N")));
+                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Added:          {0}", info.ItemsAdded.Count.ToString()));
+                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Updated:        {0}", info.ItemsUpdated.Count.ToString()));
+                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Removed:        {0}", info.ItemsRemoved.Count.ToString()));
+                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Added To:     {0}", info.FoldersAddedTo.Count.ToString()));
+                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Removed From: {0}", info.FoldersRemovedFrom.Count.ToString()));
 
                 myTasksList.Add(AlterLibrary(info.ItemsAdded, itemsAdded, id.ToString("N"), userName, "ItemsAddedQueue", 0, cancellationToken));
                 myTasksList.Add(AlterLibrary(info.ItemsUpdated, itemsUpdated, id.ToString("N"), userName, "ItemsUpdatedQueue", 1, cancellationToken));

@@ -135,9 +135,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 return;
             }
 
-            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
-            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  User GetClientTypeName: {0}", (e.Item as BaseItem).GetClientTypeName()));
+            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
+            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
+            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  User GetClientTypeName: {0}", (e.Item as BaseItem).GetClientTypeName()));
 
 
             var cname = string.Empty;
@@ -245,7 +245,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                         })
                         .ToList();
 
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
+                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
 
                 myTasks.Add(SaveUserChanges(dtoList, itemRefs, user.Name, userId.ToString("N"), cancellationToken));
             }
