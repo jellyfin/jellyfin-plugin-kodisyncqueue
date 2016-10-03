@@ -86,6 +86,7 @@
     <Compile Include="Entities\LibFolder.cs" />
     <Compile Include="Entities\LibItem.cs" />
     <Compile Include="Entities\UserInfoRec.cs" />
+    <Compile Include="Entities\UserJson.cs" />
     <Compile Include="EntryPoints\UserSyncNotification.cs" />
     <Compile Include="EntryPoints\LibrarySyncNotification.cs" />
     <Compile Include="LiteDB\Core\Collections\Aggregate.cs" />
@@ -247,6 +248,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="ScheduledTasks\RetentionTask.cs" />
+    <Compile Include="Utils\ApiUserCheck.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="LiteDB\LiteDB.snk" />

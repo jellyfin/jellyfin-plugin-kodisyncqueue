@@ -10,6 +10,9 @@ using MediaBrowser.Common.Configuration;
 using Emby.Kodi.SyncQueue.Entities;
 using Emby.Kodi.SyncQueue.Data;
 using System.Globalization;
+using Emby.Kodi.SyncQueue.Utils;
+using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Entities;
 
 namespace Emby.Kodi.SyncQueue.API
 {
@@ -17,15 +20,19 @@ namespace Emby.Kodi.SyncQueue.API
     {
         private readonly ILogger _logger;
         private readonly IJsonSerializer _jsonSerializer;
-        private readonly IApplicationPaths _applicationPaths;        
+        private readonly IApplicationPaths _applicationPaths;
+        private readonly IUserManager _userManager;
+        private readonly ILibraryManager _libraryManager;
 
         //private DataHelper dataHelper;
 
-        public SyncAPI(ILogger logger, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths)
+        public SyncAPI(ILogger logger, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths, IUserManager userManager, ILibraryManager libraryManager)
         {
             _logger = logger;
             _jsonSerializer = jsonSerializer;
             _applicationPaths = applicationPaths;
+            _userManager = userManager;
+            _libraryManager = libraryManager;
 
             _logger.Info("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/{LastUpdateDT}/GetItems?format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
             _logger.Info("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/GetItems?LastUpdateDT={LastUpdateDT}&format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
@@ -171,11 +178,26 @@ namespace Emby.Kodi.SyncQueue.API
             Task<List<string>> t1 = Task.Run(() =>
             {
                 List<string> result = null;
+                List<Guid> data = null;
 
                 using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
                 {
-                    result = repo.GetItems(dtl, 0, userId, movies, tvshows, music, musicvideos, boxsets);
+                    data = repo.GetItems(dtl, 0, movies, tvshows, music, musicvideos, boxsets);
                 }
+
+                var user = _userManager.GetUserById(Guid.Parse(userId));
+
+                List<BaseItem> items = new List<BaseItem>();
+                data.ForEach(i =>
+                {
+                    var item = _libraryManager.GetItemById(i);
+                    if (item != null)
+                    {
+                        items.Add(item);
+                    }
+                });
+
+                result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager)).Select(i => i.Id.ToString("N")).Distinct().ToList();
                 
                 if (result.Count > 0)
                 {
@@ -192,10 +214,26 @@ namespace Emby.Kodi.SyncQueue.API
             Task<List<string>> t2 = Task.Run(() =>
             {
                 List<string> result = null;
-                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger))
+                List<Guid> data = null;
+
+                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
                 {
-                    result = repo.GetItems(dtl, 2, userId, movies, tvshows, music, musicvideos, boxsets);
+                    data = repo.GetItems(dtl, 2, movies, tvshows, music, musicvideos, boxsets);
                 }
+
+                var user = _userManager.GetUserById(Guid.Parse(userId));
+
+                List<BaseItem> items = new List<BaseItem>();
+                data.ForEach(i =>
+                {
+                    var item = _libraryManager.GetItemById(i);
+                    if (item != null)
+                    {
+                        items.Add(item);
+                    }
+                });
+
+                result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager, true)).Select(i => i.Id.ToString("N")).Distinct().ToList();
 
                 if (result.Count > 0)
                 {
@@ -212,11 +250,28 @@ namespace Emby.Kodi.SyncQueue.API
             Task<List<string>> t3 = Task.Run(() =>
             {
                 List<string> result = null;
-                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger))
+                List<Guid> data = null;
+
+                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
                 {
-                    result = repo.GetItems(dtl, 1, userId, movies, tvshows, music, musicvideos, boxsets);
+                    data = repo.GetItems(dtl, 1, movies, tvshows, music, musicvideos, boxsets);
                 }
-                
+
+                var user = _userManager.GetUserById(Guid.Parse(userId));
+
+                List<BaseItem> items = new List<BaseItem>();
+                data.ForEach(i =>
+                {
+                    var item = _libraryManager.GetItemById(i);
+                    if (item != null)
+                    {
+                        items.Add(item);
+                    }
+                });
+
+                result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager)).Select(i => i.Id.ToString("N")).Distinct().ToList();
+
+
                 if (result.Count > 0)
                 {
                     _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Updated Items Found: {0}", string.Join(",", result.ToArray())));
@@ -235,21 +290,24 @@ namespace Emby.Kodi.SyncQueue.API
             _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting User Data Changed Info...");
             Task<List<string>> t4 = Task.Run(() =>
             {
-                List<string> ids = null;
+                List<UserJson> data = null;          
                 List<string> result = null;
                 using (var repo = new DbRepo(_applicationPaths.DataPath, _logger))
                 {
-                    result = repo.GetUserInfos(dtl, userId, out ids, movies, tvshows, music, musicvideos, boxsets);
+                    data = repo.GetUserInfos(dtl, userId, movies, tvshows, music, musicvideos, boxsets);
                 }
-                
+
+                result = data.Select(i => i.JsonData).ToList();
+
                 if (result.Count > 0)
                 {
-                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  User Data Changed Info Found: {0}", string.Join(",", ids.ToArray())));
+                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  User Data Changed Info Found: {0}", string.Join(",", data.Select(i => i.Id).ToArray())));
                 }
                 else
                 {
                     _logger.Info("Emby.Kodi.SyncQueue:  No User Data Changed Info Found!");
                 }
+                
                 return result;
             });
 
@@ -260,13 +318,8 @@ namespace Emby.Kodi.SyncQueue.API
             info.ItemsUpdated = t3.Result;
             userDataChangedJson = t4.Result;
 
-            foreach (var userData in userDataChangedJson)
-            {
-                info.UserDataChanged.Add(_jsonSerializer.DeserializeFromString<UserItemDataDto>(userData));
-            }
+            info.UserDataChanged = userDataChangedJson.Select(i => _jsonSerializer.DeserializeFromString<UserItemDataDto>(i)).ToList();
 
-            //var json = _jsonSerializer.SerializeToString(info.UserDataChanged).ToString();
-            //_logger.Debug(json);
             TimeSpan diffDate = DateTime.UtcNow - startTime;
             _logger.Info(String.Format("Emby.Kodi.SyncQueue: Request Finished Taking {0}", diffDate.ToString("c")));
 

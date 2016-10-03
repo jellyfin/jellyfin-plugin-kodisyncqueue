@@ -1,4 +1,4 @@
-﻿
+﻿using System;
 using LiteDB;
 
 namespace Emby.Kodi.SyncQueue.Entities
@@ -12,9 +12,7 @@ namespace Emby.Kodi.SyncQueue.Entities
         [BsonId]
         public int Id { get; set; }
         [BsonField]
-        public string ItemId { get; set; }
-        [BsonField]
-        public string UserId { get; set; }
+        public Guid ItemId { get; set; }
         [BsonField]
         public long LastModified { get; set; }
         [BsonField]
