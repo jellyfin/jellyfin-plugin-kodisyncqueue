@@ -69,7 +69,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             _libraryManager.ItemUpdated += libraryManager_ItemUpdated;
             _libraryManager.ItemRemoved += libraryManager_ItemRemoved;
 
-            _logger.Info("Emby.Kodi.Sync.Queue:  LibrarySyncNotification Startup...");
+            _logger.Info("Emby.Kodi.SyncQueue:  LibrarySyncNotification Startup...");
         }
 
         /// <summary>
@@ -118,7 +118,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
                     ItemType = type,
                 };
+                _logger.Debug(string.Format("Emby.Kodi.SyncQueue: ItemAdded added for DB Saving {0}", e.Item.Id));
                 _itemsAdded.Add(item);
+                
             }
         }
 
@@ -158,7 +160,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     ItemType = type,
                 };
 
+                _logger.Debug(string.Format("Emby.Kodi.SyncQueue: ItemUpdated added for DB Saving {0}", e.Item.Id));
                 _itemsUpdated.Add(item);
+                
             }
         }
 
@@ -209,7 +213,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     ItemType = type
                 };
 
+                _logger.Debug(string.Format("Emby.Kodi.SyncQueue: ItemRemoved added for DB Saving {0}", e.Item.Id));
                 _itemsRemoved.Add(item);
+                
             }
         }
 
@@ -227,25 +233,20 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 try
                 {
                     _logger.Info("Emby.Kodi.SyncQueue: Starting Library Sync...");
-                    var startTime = DateTime.UtcNow;
-
-                    //GET DISTINCT FOLDERS
-                    //var foldersAddedTo = _foldersAddedTo.GroupBy(i => i.Id).Select(grp => grp.First()).ToList();
-                    //var foldersRemovedFrom = _foldersRemovedFrom.GroupBy(i => i.Id).Select(grp => grp.First()).ToList();
+                    var startTime = DateTime.UtcNow;                    
 
                     var itemsAdded = _itemsAdded.GroupBy(i => i.Id).Select(grp => grp.First()).ToList();
 
                     var itemsRemoved = _itemsRemoved.GroupBy(i => i.Id).Select(grp => grp.First()).ToList();
 
                     var itemsUpdated = _itemsUpdated
-                                        .Where(i => !itemsAdded.Contains(i))
+                                        .Where(i => itemsAdded.Where(a => a.Id == i.Id).FirstOrDefault() == null)
                                         .GroupBy(g => g.Id)
                                         .Select(grp => grp.First())
                                         .ToList();
-
-
-                    Task x = SendChangeNotifications(itemsAdded, itemsUpdated, itemsRemoved, cTokenSource.Token); //foldersAddedTo, foldersRemovedFrom, 
-                    Task.WaitAll(x);
+                    
+                    Task x = PushChangesToDB(itemsAdded, itemsUpdated, itemsRemoved, cTokenSource.Token);
+                    Task.WaitAll(x);                    
 
                     if (LibraryUpdateTimer != null)
                     {
@@ -269,49 +270,21 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             }
         }
 
-        /// <summary>
-        /// Sends the change notifications.
-        /// </summary>
-        /// <param name="itemsAdded">The items added.</param>
-        /// <param name="itemsUpdated">The items updated.</param>
-        /// <param name="itemsRemoved">The items removed.</param>
-        /// <param name="foldersAddedTo">The folders added to.</param>
-        /// <param name="foldersRemovedFrom">The folders removed from.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        private async Task SendChangeNotifications(List<LibItem> itemsAdded, List<LibItem> itemsUpdated, List<LibItem> itemsRemoved, CancellationToken cancellationToken) //List<LibFolder> foldersAddedTo, List<LibFolder> foldersRemovedFrom, 
+        
+
+        public async Task PushChangesToDB(List<LibItem> itemsAdded, List<LibItem> itemsUpdated, List<LibItem> itemsRemoved, CancellationToken cancellationToken)
         {
             List<Task> myTasksList = new List<Task>();
-            foreach (var user in _userManager.Users.ToList())
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var id = user.Id;
-                var userName = user.Name;
 
-                var info = GetLibraryUpdateInfo(itemsAdded, itemsUpdated, itemsRemoved, id); //, foldersAddedTo, foldersRemovedFrom, 
+            myTasksList.Add(UpdateLibrary(itemsAdded, "ItemsAddedQueue", 0, cancellationToken));
+            myTasksList.Add(UpdateLibrary(itemsUpdated, "ItemsUpdatedQueue", 1, cancellationToken));
+            myTasksList.Add(UpdateLibrary(itemsRemoved, "ItemsRemovedQueue", 2, cancellationToken));
 
-                // I am doing this to strip out information that doesn't usually make it to the websocket...
-                // Will query Luke about that at a later time...
-                //var json = _jsonSerializer.SerializeToString(info); //message
-                //var dejson = _jsonSerializer.DeserializeFromString<LibraryUpdateInfo>(json);
-
-                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  User: {0} - {1}", userName, id.ToString("N")));
-                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Added:          {0}", info.ItemsAdded.Count.ToString()));
-                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Updated:        {0}", info.ItemsUpdated.Count.ToString()));
-                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Items Removed:        {0}", info.ItemsRemoved.Count.ToString()));
-                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Added To:     {0}", info.FoldersAddedTo.Count.ToString()));
-                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Folders Removed From: {0}", info.FoldersRemovedFrom.Count.ToString()));
-
-                myTasksList.Add(AlterLibrary(info.ItemsAdded, itemsAdded, id.ToString("N"), userName, "ItemsAddedQueue", 0, cancellationToken));
-                myTasksList.Add(AlterLibrary(info.ItemsUpdated, itemsUpdated, id.ToString("N"), userName, "ItemsUpdatedQueue", 1, cancellationToken));
-                myTasksList.Add(AlterLibrary(info.ItemsRemoved, itemsRemoved, id.ToString("N"), userName, "ItemsRemovedQueue", 2, cancellationToken));
-                //await AlterLibrary(dejson.FoldersAddedTo, id.ToString(), userName, "FoldersAddedQueue", "Folders Added", cancellationToken);
-                //await AlterLibrary(dejson.FoldersRemovedFrom, id.ToString(), userName, "FoldersRemovedQueue", "Folders Removed", cancellationToken);               
-            }
             Task[] iTasks = myTasksList.ToArray();
             await Task.WhenAll(iTasks);
         }
 
-        public async Task AlterLibrary(List<string> items, List<LibItem> Items, string userId, string userName, string tableName, int status, CancellationToken cancellationToken)
+        public async Task UpdateLibrary(List<LibItem> Items, string tableName, int status, CancellationToken cancellationToken)
         {
             var statusType = string.Empty;
             if (status == 0) { statusType = "Added"; }
@@ -322,45 +295,13 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             {
                 using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
                 {
-                    repo.SetLibrarySync(items, Items, userId, userName, status, cancellationToken);
+                    repo.WriteLibrarySync(Items, status, cancellationToken);
                 }
                 return true;
             });
 
-            _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"LIBRARYSYNC\" User {0}({1}) {2} {3} items:  {4}", userId, userName, statusType, items.Count(),
-                String.Join(",", items.ToArray())));
-            //_logger.Info(String.Format("Emby.Kodi.SyncQueue: Item Id's: {0}", String.Join(",", itemIds.ToArray())));
-        }
-
-
-
-        /// <summary>
-        /// Gets the library update info.
-        /// </summary>
-        /// <param name="itemsAdded">The items added.</param>
-        /// <param name="itemsUpdated">The items updated.</param>
-        /// <param name="itemsRemoved">The items removed.</param>
-        /// <param name="foldersAddedTo">The folders added to.</param>
-        /// <param name="foldersRemovedFrom">The folders removed from.</param>
-        /// <param name="userId">The user id.</param>
-        /// <returns>LibraryUpdateInfo.</returns>
-        private LibraryUpdateInfo GetLibraryUpdateInfo(IEnumerable<LibItem> itemsAdded, IEnumerable<LibItem> itemsUpdated, IEnumerable<LibItem> itemsRemoved,
-                                                       Guid userId) //IEnumerable<LibFolder> foldersAddedTo, IEnumerable<LibFolder> foldersRemovedFrom, 
-        {
-            var user = _userManager.GetUserById(userId);
-
-            return new LibraryUpdateInfo
-            {
-                ItemsAdded = itemsAdded.SelectMany(i => TranslatePhysicalItemToUserLibrary(i, user)).Select(i => i.Id.ToString("N")).Distinct().ToList(),
-
-                ItemsUpdated = itemsUpdated.SelectMany(i => TranslatePhysicalItemToUserLibrary(i, user)).Select(i => i.Id.ToString("N")).Distinct().ToList(),
-
-                ItemsRemoved = itemsRemoved.SelectMany(i => TranslatePhysicalItemToUserLibrary(i, user, true)).Select(i => i.Id.ToString("N")).Distinct().ToList(),
-
-                FoldersAddedTo = new List<string>(), //foldersAddedTo.SelectMany(i => TranslatePhysicalItemToUserLibrary(i, user)).Select(i => i.Id.ToString("N")).Distinct().ToList(),
-
-                FoldersRemovedFrom = new List<string>() //foldersRemovedFrom.SelectMany(i => TranslatePhysicalItemToUserLibrary(i, user)).Select(i => i.Id.ToString("N")).Distinct().ToList()
-            };
+            _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"LIBRARYSYNC\" {0} {1} items:  {2}", statusType, Items.Count(),
+                String.Join(",", Items.Select(i => i.Id.ToString("N")).ToArray())));
         }
 
         private bool FilterItem(BaseItem item, out int type)
@@ -438,34 +379,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             }                                   
 
             return true;
-        }
-
-        /// <summary>
-        /// Translates the physical item to user library.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="item">The item.</param>
-        /// <param name="user">The user.</param>
-        /// <param name="includeIfNotFound">if set to <c>true</c> [include if not found].</param>
-        /// <returns>IEnumerable{``0}.</returns>
-        private IEnumerable<T> TranslatePhysicalItemToUserLibrary<T>(T item, User user, bool includeIfNotFound = false)
-            where T: LibItem
-            //where T : BaseItem
-        {
-            // If the physical root changed, return the user root
-            if (item is AggregateFolder)
-            {
-                return new[] { user.RootFolder as T };
-            }
-
-            // Return it only if it's in the user's library
-            if (includeIfNotFound || _libraryManager.GetItemById(item.Id).IsVisibleStandalone(user))
-            {
-                return new[] { item };
-            }
-
-            return new T[] { };
-        }
+        }        
 
         private void TriggerCancellation()
         {

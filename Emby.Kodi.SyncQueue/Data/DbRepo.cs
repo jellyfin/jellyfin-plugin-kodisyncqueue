@@ -12,7 +12,7 @@ namespace Emby.Kodi.SyncQueue.Data
 {
     public class DbRepo: IDisposable
     {
-        private object _createLock = new object();
+        private readonly object _createLock = new object();
         private LiteDatabase DB = null;
         private string dataPath;
         private string dataName = "Emby.Kodi.SyncQueue.1.3.ldb";
@@ -89,7 +89,7 @@ namespace Emby.Kodi.SyncQueue.Data
 
                 var itms = items.Find(x => x.LastModified > dtl &&
                                            x.Status == status).ToList();
-                itms = itms.Where(x =>
+                result = itms.Where(x =>
                                 {
                                     switch (x.MediaType)
                                     {
@@ -105,10 +105,10 @@ namespace Emby.Kodi.SyncQueue.Data
                                             if (boxsets) { return true; } else { return false; }
                                     }
                                     return false;
-                                })
+                                }).Select(i => i.ItemId).Distinct()
                                 .ToList();
 
-                result = itms.Select(i => i.ItemId).Distinct().ToList();
+                //result = itms.Select(i => i.ItemId).Distinct().ToList();
 
                 //itms.ForEach(x =>
                 //{
@@ -242,12 +242,13 @@ namespace Emby.Kodi.SyncQueue.Data
             if (status == 0) { statusType = "Added"; }
             else if (status == 1) { statusType = "Updated"; }
             else { statusType = "Removed"; }
-            using (var trn = DB.BeginTrans())
+
+            Items.ForEach(i =>
             {
-                try
+                using (var trn = DB.BeginTrans())
                 {
-                    Items.ForEach(i =>
-                    {                        
+                    try
+                    {
                         long newTime;
 
                         newTime = i.SyncApiModified;
@@ -278,24 +279,24 @@ namespace Emby.Kodi.SyncQueue.Data
                         {
                             _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped", i.Id.ToString("N")));
                         }
-                    });
-                    trn.Commit();
+                        trn.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        trn.Rollback();
+                        throw ex;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    trn.Rollback();
-                    throw ex;
-                }
-            }
+            });
         }
-        
+
         public void SetUserInfoSync(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId, CancellationToken cancellationToken)
         {
-            using (var trn = DB.BeginTrans())
+            dtos.ForEach(dto =>
             {
-                try
+                using (var trn = DB.BeginTrans())
                 {
-                    dtos.ForEach(dto =>
+                    try
                     {
                         var json = _json.SerializeToString(dto).ToString();
                         _logger.Debug("Emby.Kodi.SyncQueue:  Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
@@ -304,7 +305,7 @@ namespace Emby.Kodi.SyncQueue.Data
                         if (itemref != null)
                         {
                             UserInfoRec oldRec = userinfos.Find(x => x.ItemId == dto.ItemId && x.UserId == userId)
-                                                          .FirstOrDefault();
+                                                            .FirstOrDefault();
                             var newRec = new UserInfoRec()
                             {
                                 ItemId = dto.ItemId,
@@ -325,15 +326,15 @@ namespace Emby.Kodi.SyncQueue.Data
 
                             }
                         }
-                    });
-                    trn.Commit();
+                        trn.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        trn.Rollback();
+                        throw;
+                    }
                 }
-                catch (Exception)
-                {
-                    trn.Rollback();
-                    throw;
-                }
-            }
+            });
         }
 
         #region Dispose
