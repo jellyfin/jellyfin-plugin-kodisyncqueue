@@ -6,13 +6,14 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System.IO;
 using LiteDB;
+using LiteDB.Platform;
 using Emby.Kodi.SyncQueue.Entities;
 
 namespace Emby.Kodi.SyncQueue.Data
 {
     public class DbRepo: IDisposable
     {
-        private readonly object _createLock = new object();
+        private readonly object _createLock = new object();        
         private LiteDatabase DB = null;
         private string dataPath;
         private string dataName = "Emby.Kodi.SyncQueue.1.3.ldb";
@@ -33,6 +34,7 @@ namespace Emby.Kodi.SyncQueue.Data
         public DbRepo(string dp, ILogger logger, IJsonSerializer json = null)
         {
             DataPath = dp;
+            LitePlatform.Initialize(new LitePlatformFullDotNet());            
             var data = Path.Combine(DataPath, dataName);
  
             _logger = logger;
