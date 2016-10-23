@@ -110,13 +110,13 @@ namespace Emby.Kodi.SyncQueue.Data
                                 }).Select(i => i.ItemId).Distinct()
                                 .ToList();
 
-                itms.ForEach(i =>
-                {
-                    _logger.Debug(result.ToString());
-                    _logger.Debug(_json.SerializeToString(i));
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item {0} {1} {2:yyyy-MM-dd HH:mm:ss} for time {3}", i.ItemId, status,
-                                new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(i.LastModified), i.LastModified));
-                });
+                //itms.ForEach(i =>
+                //{
+                //    _logger.Debug(result.ToString());
+                //    _logger.Debug(_json.SerializeToString(i));
+                //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item {0} {1} {2:yyyy-MM-dd HH:mm:ss} for time {3}", i.ItemId, status,
+                //                new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(i.LastModified), i.LastModified));
+                //});
                 //result = itms.Select(i => i.ItemId).Distinct().ToList();
 
                 //itms.ForEach(x =>
