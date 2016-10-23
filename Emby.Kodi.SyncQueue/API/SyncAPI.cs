@@ -213,7 +213,7 @@ namespace Emby.Kodi.SyncQueue.API
             _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Removed Info...");
             Task<List<string>> t2 = Task.Run(() =>
             {
-                List<string> result = null;
+                List<string> result = new List<string>();
                 List<Guid> data = null;
 
                 using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
@@ -221,19 +221,27 @@ namespace Emby.Kodi.SyncQueue.API
                     data = repo.GetItems(dtl, 2, movies, tvshows, music, musicvideos, boxsets);
                 }
 
-                var user = _userManager.GetUserById(Guid.Parse(userId));
+                //var user = _userManager.GetUserById(Guid.Parse(userId));
 
-                List<BaseItem> items = new List<BaseItem>();
-                data.ForEach(i =>
+                //List<BaseItem> items = new List<BaseItem>();
+                //data.ForEach(i =>
+                //{
+                //    var item = _libraryManager.GetItemById(i);
+                //    if (item != null)
+                //    {
+                //        items.Add(item);
+                //    }
+                //});
+
+                if (data != null && data.Count() > 0)
                 {
-                    var item = _libraryManager.GetItemById(i);
-                    if (item != null)
+                    data.ForEach(i =>
                     {
-                        items.Add(item);
-                    }
-                });
+                        result.Add(i.ToString("N"));
+                    });
+                }
 
-                result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager, true)).Select(i => i.Id.ToString("N")).Distinct().ToList();
+                //result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager, true)).Select(i => i.Id.ToString("N")).Distinct().ToList();
 
                 if (result.Count > 0)
                 {
