@@ -1,6 +1,5 @@
 ﻿using System.Globalization;
 using MediaBrowser.Common.Net;
-using MediaBrowser.Common.ScheduledTasks;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
@@ -11,6 +10,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Kodi.SyncQueue.Data;
+using MediaBrowser.Model.Tasks;
 
 namespace Emby.Kodi.SyncQueue.ScheduledTasks
 {
@@ -37,13 +37,20 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Task Scheduled!");
         }
 
-        public IEnumerable<ITaskTrigger> GetDefaultTriggers()
+        public string Key
         {
+            get { return "KodiSyncFireRetentionTask"; }
+        }
 
-            //
-            return new ITaskTrigger[]
-            {
-                new DailyTrigger{ TimeOfDay = TimeSpan.FromMinutes(1) }
+        public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
+        {
+            return new[] {
+
+                new TaskTriggerInfo
+                {
+                    Type = TaskTriggerInfo.TriggerDaily,
+                    TimeOfDayTicks = TimeSpan.FromMinutes(1).Ticks
+                }
             };
         }
 
