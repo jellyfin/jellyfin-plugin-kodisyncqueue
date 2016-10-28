@@ -1,14 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using Emby.Kodi.SyncQueue.Configuration;
+using MediaBrowser.Model.Plugins;
 
 namespace Emby.Kodi.SyncQueue
 {
-    class Plugin : BasePlugin<PluginConfiguration>
+    class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         public static ILogger Logger { get; set; }
 
@@ -47,5 +49,17 @@ namespace Emby.Kodi.SyncQueue
         /// </summary>
         /// <value>The instance.</value>
         public static Plugin Instance { get; private set; }
+
+        public IEnumerable<PluginPageInfo> GetPages()
+        {
+            return new PluginPageInfo[]
+            {
+                new PluginPageInfo
+                {
+                    Name = "Emby.Kodi.SyncQueue",
+                    EmbeddedResourcePath = "Emby.Kodi.SyncQueue.Configuration.configPage.html"
+                }
+            };
+        }
     }
 }

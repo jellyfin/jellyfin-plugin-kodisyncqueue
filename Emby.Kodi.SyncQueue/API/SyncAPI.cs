@@ -13,10 +13,11 @@ using System.Globalization;
 using Emby.Kodi.SyncQueue.Utils;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Model.Services;
 
 namespace Emby.Kodi.SyncQueue.API
 {
-    public class SyncAPI : IRestfulService
+    public class SyncAPI : IService
     {
         private readonly ILogger _logger;
         private readonly IJsonSerializer _jsonSerializer;
