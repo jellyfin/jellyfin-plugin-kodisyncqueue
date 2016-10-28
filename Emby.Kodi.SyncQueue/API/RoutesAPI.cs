@@ -1,6 +1,6 @@
-﻿using ServiceStack;
-using Emby.Kodi.SyncQueue.Entities;
+﻿using Emby.Kodi.SyncQueue.Entities;
 using System.Collections.Generic;
+using MediaBrowser.Model.Services;
 
 namespace Emby.Kodi.SyncQueue.API
 {

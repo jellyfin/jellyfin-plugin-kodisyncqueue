@@ -4,10 +4,11 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System;
 using System.Globalization;
+using MediaBrowser.Model.Services;
 
 namespace Emby.Kodi.SyncQueue.API
 {
-    public class PluginSettingsAPI : IRestfulService
+    public class PluginSettingsAPI : IService
     {
         private readonly ILogger _logger;
         private readonly IJsonSerializer _jsonSerializer;
