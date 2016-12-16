@@ -6,7 +6,6 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System.IO;
 using LiteDB;
-using LiteDB.Platform;
 using Emby.Kodi.SyncQueue.Entities;
 
 namespace Emby.Kodi.SyncQueue.Data
@@ -16,7 +15,7 @@ namespace Emby.Kodi.SyncQueue.Data
         private readonly object _createLock = new object();        
         private LiteDatabase DB = null;
         private string dataPath;
-        private string dataName = "Emby.Kodi.SyncQueue.1.3.ldb";
+        private string dataName = "Emby.Kodi.SyncQueue.1.32.ldb";
 
         private readonly ILogger _logger;
         private readonly IJsonSerializer _json;
@@ -34,7 +33,7 @@ namespace Emby.Kodi.SyncQueue.Data
         public DbRepo(string dp, ILogger logger, IJsonSerializer json = null)
         {
             DataPath = dp;
-            LitePlatform.Initialize(new LitePlatformFullDotNet());            
+            //LitePlatform.Initialize(new LitePlatformFullDotNet());            
             var data = Path.Combine(DataPath, dataName);
  
             _logger = logger;
@@ -47,6 +46,14 @@ namespace Emby.Kodi.SyncQueue.Data
             if (File.Exists(Path.Combine(DataPath, "Emby.Kodi.SyncQueue.1.2.ldb")))
             {
                 File.Delete(Path.Combine(DataPath, "Emby.Kodi.SyncQueue.1.2.ldb"));
+            }
+            if (File.Exists(Path.Combine(DataPath, "Emby.Kodi.SyncQueue.1.3.ldb")))
+            {
+                File.Delete(Path.Combine(DataPath, "Emby.Kodi.SyncQueue.1.3.ldb"));
+            }
+            if (File.Exists(Path.Combine(DataPath, "Emby.Kodi.SyncQueue.1.31.ldb")))
+            {
+                File.Delete(Path.Combine(DataPath, "Emby.Kodi.SyncQueue.1.31.ldb"));
             }
 
             if (!Directory.Exists(DataPath))
