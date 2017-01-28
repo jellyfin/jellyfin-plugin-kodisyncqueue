@@ -36,6 +36,8 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         //private DbRepo Repo = null;
         private CancellationTokenSource cTokenSource = new CancellationTokenSource();
 
+        //private DbRepo dbRepo = null;
+
         public UserSyncNotification(ILibraryManager libraryManager, IUserDataManager userDataManager, ISessionManager sessionManager, ILogger logger, IUserManager userManager, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths)
         {
             _userDataManager = userDataManager;
@@ -46,6 +48,8 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             _applicationPaths = applicationPaths;
             _libraryManager = libraryManager;
             //dataHelper = new DataHelper(_logger, _jsonSerializer);
+
+            //dbRepo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer);
         }
 
         public void Run()
@@ -257,10 +261,8 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         {
             bool result = await Task.Run(() =>
             {
-                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
-                {
-                    repo.SetUserInfoSync(dtos, itemRefs, userName, userId, cancellationToken);
-                }
+                DbRepo.Instance.SetUserInfoSync(dtos, itemRefs, userName, userId, cancellationToken);
+
                 return true;
             });
             

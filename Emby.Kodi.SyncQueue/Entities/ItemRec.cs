@@ -1,5 +1,5 @@
-﻿using System;
-using LiteDB;
+﻿using NanoApi.JsonFile;
+using System;
 
 namespace Emby.Kodi.SyncQueue.Entities
 {
@@ -9,15 +9,11 @@ namespace Emby.Kodi.SyncQueue.Entities
         //Status 1 = Updated
         //Status 2 = Removed
 
-        [BsonId]
+        [PrimaryKey]
         public int Id { get; set; }
-        [BsonField]
         public Guid ItemId { get; set; }
-        [BsonField]
         public long LastModified { get; set; }
-        [BsonField]
         public int Status { get; set; }
-        [BsonField]
         public int MediaType { get; set; }
 
         // 0 = Movies

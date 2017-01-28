@@ -22,7 +22,9 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
         private readonly ILogger _logger;
         private readonly ILogManager _logManager;
         private readonly IUserDataManager _userDataManager;
-        private readonly IApplicationPaths _applicationPaths;        
+        private readonly IApplicationPaths _applicationPaths;
+
+        //private DbRepo dbRepo = null;
 
         public FireRetentionTask(ILogManager logManager, ILogger logger, IJsonSerializer jsonSerializer, IUserManager userManager, 
             IUserDataManager userDataManager, IHttpClient httpClient, IServerApplicationHost appHost, IApplicationPaths applicationPaths)
@@ -35,6 +37,8 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             _applicationPaths = applicationPaths;
 
             _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Task Scheduled!");
+
+            //dbRepo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer);
         }
 
         public string Key
@@ -78,12 +82,9 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
                 var dtl = (long)(dt.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
                 //DbRepo.DeleteOldData(dtl, _logger);
 
-                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger))
-                {                    
-                    repo.DeleteOldData(dtl);
-                }
-
-                    return true;
+                DbRepo.Instance.DeleteOldData(dtl);
+                
+                return true;
             });
         }
 

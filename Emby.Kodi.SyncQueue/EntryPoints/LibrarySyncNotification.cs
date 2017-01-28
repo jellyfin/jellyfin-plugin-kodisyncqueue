@@ -40,6 +40,8 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         private readonly List<LibItem> _itemsRemoved = new List<LibItem>();
         private readonly List<LibItem> _itemsUpdated = new List<LibItem>();
 
+        //private DbRepo dbRepo = null;
+
         private CancellationTokenSource cTokenSource = new CancellationTokenSource();
 
         /// <summary>
@@ -61,8 +63,11 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             _logger = logger;
             _jsonSerializer = jsonSerializer;
             _applicationPaths = applicationPaths;
-        }
 
+            //dbRepo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer);
+        }
+        
+        
         public void Run()
         {
             _libraryManager.ItemAdded += libraryManager_ItemAdded;
@@ -293,10 +298,8 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
             bool result = await Task.Run(() =>
             {
-                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
-                {
-                    repo.WriteLibrarySync(Items, status, cancellationToken);
-                }
+                DbRepo.Instance.WriteLibrarySync(Items, status, cancellationToken);
+                
                 return true;
             });
 

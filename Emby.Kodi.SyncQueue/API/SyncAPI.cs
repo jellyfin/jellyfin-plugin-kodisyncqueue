@@ -25,6 +25,7 @@ namespace Emby.Kodi.SyncQueue.API
         private readonly IUserManager _userManager;
         private readonly ILibraryManager _libraryManager;
 
+        //private DbRepo dbRepo = null;
         //private DataHelper dataHelper;
 
         public SyncAPI(ILogger logger, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths, IUserManager userManager, ILibraryManager libraryManager)
@@ -42,11 +43,10 @@ namespace Emby.Kodi.SyncQueue.API
             _logger.Info("Emby.Kodi.SyncQueue:  Results will be included by default and only filtered if added to the filter query...");
             _logger.Info("Emby.Kodi.SyncQueue:  the filter query must be lowercase in both the name and the items...");
 
-            ////repo = new DbRepo(_applicationPaths.DataPath);     
-            using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
-            {
-
-            }
+            //dbRepo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer);          
+            //DbRepo.dbPath = _applicationPaths.DataPath;
+            //DbRepo.logger = _logger;
+            //DbRepo.json = _jsonSerializer;
         }
 
         public SyncUpdateInfo Get(GetLibraryItems request)
@@ -181,11 +181,9 @@ namespace Emby.Kodi.SyncQueue.API
                 List<string> result = null;
                 List<Guid> data = null;
 
-                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
-                {
-                    data = repo.GetItems(dtl, 0, movies, tvshows, music, musicvideos, boxsets);
-                }
 
+                data = DbRepo.Instance.GetItems(dtl, 0, movies, tvshows, music, musicvideos, boxsets);
+                
                 var user = _userManager.GetUserById(Guid.Parse(userId));
 
                 List<BaseItem> items = new List<BaseItem>();
@@ -217,11 +215,8 @@ namespace Emby.Kodi.SyncQueue.API
                 List<string> result = new List<string>();
                 List<Guid> data = null;
 
-                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
-                {
-                    data = repo.GetItems(dtl, 2, movies, tvshows, music, musicvideos, boxsets);
-                }
-
+                data = DbRepo.Instance.GetItems(dtl, 2, movies, tvshows, music, musicvideos, boxsets);
+                
                 //var user = _userManager.GetUserById(Guid.Parse(userId));
 
                 //List<BaseItem> items = new List<BaseItem>();
@@ -261,11 +256,8 @@ namespace Emby.Kodi.SyncQueue.API
                 List<string> result = null;
                 List<Guid> data = null;
 
-                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer))
-                {
-                    data = repo.GetItems(dtl, 1, movies, tvshows, music, musicvideos, boxsets);
-                }
-
+                data = DbRepo.Instance.GetItems(dtl, 1, movies, tvshows, music, musicvideos, boxsets);
+                
                 var user = _userManager.GetUserById(Guid.Parse(userId));
 
                 List<BaseItem> items = new List<BaseItem>();
@@ -301,11 +293,9 @@ namespace Emby.Kodi.SyncQueue.API
             {
                 List<UserJson> data = null;          
                 List<string> result = null;
-                using (var repo = new DbRepo(_applicationPaths.DataPath, _logger))
-                {
-                    data = repo.GetUserInfos(dtl, userId, movies, tvshows, music, musicvideos, boxsets);
-                }
 
+                data = DbRepo.Instance.GetUserInfos(dtl, userId, movies, tvshows, music, musicvideos, boxsets);
+                
                 result = data.Select(i => i.JsonData).ToList();
 
                 if (result.Count > 0)
