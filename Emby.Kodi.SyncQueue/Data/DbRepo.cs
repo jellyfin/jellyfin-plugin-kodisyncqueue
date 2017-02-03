@@ -69,13 +69,18 @@ namespace Emby.Kodi.SyncQueue.Data
 
             folderRecs = NanoApi.JsonFile<FolderRec>.GetInstance(dataPath, dbFolder);
             folderRecs.title = "Folder Repository";
-            folderRecs.description = "This repository stores folder changes as pushed from Emby (not currently used).";
+            folderRecs.description = "This repository stores folder changes as pushed from Emby (not currently used).";            
             itemRecs = NanoApi.JsonFile<ItemRec>.GetInstance(dataPath, dbItem);
             itemRecs.title = "Item Repository";
             itemRecs.description = "This repository stores item changes per user as pushed from Emby.";
             userInfoRecs = NanoApi.JsonFile<UserInfoRec>.GetInstance(dataPath, dbUser);
             userInfoRecs.title = "User Info Repository";
             userInfoRecs.description = "This repository stores deleted items per user as pushed from Emby.";
+        }
+
+        public bool Initialize()
+        {
+            return true;
         }
 
         public List<Guid> GetItems(long dtl, int status, bool movies, bool tvshows, bool music, bool musicvideos, bool boxsets)

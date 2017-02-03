@@ -51,6 +51,7 @@ namespace Emby.Kodi.SyncQueue
             DbRepo.dbPath = applicationPaths.DataPath;
             DbRepo.json = json;
             DbRepo.logger = logger;
+            DbRepo.Instance.Initialize();
         }
 
         public static void CopyStream(Stream input, Stream output)
