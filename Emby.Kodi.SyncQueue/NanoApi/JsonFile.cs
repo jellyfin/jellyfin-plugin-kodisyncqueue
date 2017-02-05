@@ -115,6 +115,29 @@ namespace NanoApi
             return this.file.DeleteFile();
         }
 
+        public bool ChangeHeader(string version, string title, string descriptor)
+        {
+            Foo<T> foo = null;
+            try
+            {
+                foo = this.file.Read<T>();
+            }
+            catch (Exception ex)
+            {
+                foo = null;
+            }
+            if (foo == null)
+            {
+                foo = FooHelper.Create<T>();
+                foo.data = new List<T>();
+            }
+            foo._header.version = version;
+            foo._header.title = title;
+            foo._header.descriptor = descriptor;
+            this.file.Save<T>(foo);
+            return true;
+        }
+
         public int Update(Predicate<T> lambda, Action<T> action)
         {
             Foo<T> foo = this.file.Read<T>();
@@ -140,7 +163,7 @@ namespace NanoApi
                 return new List<T>();
 
             return foo.data;
-        }
+        }        
 
         public List<T> Select(Predicate<T> lambda = null)
         {

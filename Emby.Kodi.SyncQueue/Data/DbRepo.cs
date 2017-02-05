@@ -6,6 +6,7 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System.IO;
 using Emby.Kodi.SyncQueue.Entities;
+using NanoApi.Entities;
 
 namespace Emby.Kodi.SyncQueue.Data
 {
@@ -49,6 +50,7 @@ namespace Emby.Kodi.SyncQueue.Data
 
         public DbRepo(string dPath)
         {
+            logger.Info("Emby.Kodi.SyncQueue: Creating DB Repository...");
             this.DataPath = dPath;            
 
             if (File.Exists(Path.Combine(dataPath, "Emby.Kodi.SyncQueue.ldb")))
@@ -66,16 +68,15 @@ namespace Emby.Kodi.SyncQueue.Data
             {
                 Directory.CreateDirectory(dataPath);
             }
-
-            folderRecs = NanoApi.JsonFile<FolderRec>.GetInstance(dataPath, dbFolder);
-            folderRecs.title = "Folder Repository";
-            folderRecs.description = "This repository stores folder changes as pushed from Emby (not currently used).";            
-            itemRecs = NanoApi.JsonFile<ItemRec>.GetInstance(dataPath, dbItem);
-            itemRecs.title = "Item Repository";
-            itemRecs.description = "This repository stores item changes per user as pushed from Emby.";
-            userInfoRecs = NanoApi.JsonFile<UserInfoRec>.GetInstance(dataPath, dbUser);
-            userInfoRecs.title = "User Info Repository";
-            userInfoRecs.description = "This repository stores deleted items per user as pushed from Emby.";
+            
+            folderRecs = NanoApi.JsonFile<FolderRec>.GetInstance(dataPath, dbFolder, null, null, null);
+            folderRecs.ChangeHeader("1.4.0", "Folder Repository", "This repository stores folder changes as pushed from Emby (not currently used).");    
+                  
+            itemRecs = NanoApi.JsonFile<ItemRec>.GetInstance(dataPath, dbItem, null, null, null);
+            itemRecs.ChangeHeader("1.4.0", "Item Repository", "This repository stores item changes per user as pushed from Emby.");
+            
+            userInfoRecs = NanoApi.JsonFile<UserInfoRec>.GetInstance(dataPath, dbUser, null, null, null);
+            userInfoRecs.ChangeHeader("1.4.0", "User Info Repository", "This repository stores deleted items per user as pushed from Emby.");            
         }
 
         public bool Initialize()
