@@ -70,13 +70,16 @@ namespace Emby.Kodi.SyncQueue.Data
             }
             
             folderRecs = NanoApi.JsonFile<FolderRec>.GetInstance(dataPath, dbFolder, null, null, null);
-            folderRecs.ChangeHeader("1.4.0", "Folder Repository", "This repository stores folder changes as pushed from Emby (not currently used).");    
+            if (!folderRecs.CheckVersion("1.4.0"))
+                folderRecs.ChangeHeader("1.4.0", "Folder Repository", "This repository stores folder changes as pushed from Emby (not currently used).");    
                   
             itemRecs = NanoApi.JsonFile<ItemRec>.GetInstance(dataPath, dbItem, null, null, null);
-            itemRecs.ChangeHeader("1.4.0", "Item Repository", "This repository stores item changes per user as pushed from Emby.");
+            if (!itemRecs.CheckVersion("1.4.0"))
+                itemRecs.ChangeHeader("1.4.0", "Item Repository", "This repository stores item changes per user as pushed from Emby.");
             
             userInfoRecs = NanoApi.JsonFile<UserInfoRec>.GetInstance(dataPath, dbUser, null, null, null);
-            userInfoRecs.ChangeHeader("1.4.0", "User Info Repository", "This repository stores deleted items per user as pushed from Emby.");            
+            if (!userInfoRecs.CheckVersion("1.4.0"))
+                userInfoRecs.ChangeHeader("1.4.0", "User Info Repository", "This repository stores deleted items per user as pushed from Emby.");            
         }
 
         public bool Initialize()

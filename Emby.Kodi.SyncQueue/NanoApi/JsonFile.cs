@@ -138,6 +138,27 @@ namespace NanoApi
             return true;
         }
 
+        public bool CheckVersion(string version)
+        {
+            Foo<T> foo = null;
+            try
+            {
+                foo = this.file.Read<T>();
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+            if (foo == null)
+            {
+                return false;
+            }
+            if (string.Compare(foo._header.version, version, true) == 0)
+                return true;
+
+            return false;
+        }
+
         public int Update(Predicate<T> lambda, Action<T> action)
         {
             Foo<T> foo = this.file.Read<T>();
