@@ -12,7 +12,10 @@ namespace Emby.Kodi.SyncQueue.Data
 {
     public class DbRepo: IDisposable
     {
-        private readonly object _createLock = new object();                
+        private readonly object _createLock = new object();
+        private readonly object _userLock = new object();
+        private readonly object _folderLock = new object();
+        private readonly object _itemLock = new object();
 
         private const string dbFolder = "Emby.Kodi.SyncQueue.F.1.40.json";
         private const string dbItem = "Emby.Kodi.SyncQueue.I.1.40.json";
@@ -220,17 +223,26 @@ namespace Emby.Kodi.SyncQueue.Data
 
         public void DeleteOldData(long dtl)
         {
-            logger.Info("Emby.Kodi.SyncQueue.Task: Starting Folder Retention Deletion...");
-            folderRecs.Delete(x => x.LastModified < dtl);
-            logger.Info("Emby.Kodi.SyncQueue.Task: Finished Folder Retention Deletion...");
+            lock (_folderLock)
+            {
+                logger.Info("Emby.Kodi.SyncQueue.Task: Starting Folder Retention Deletion...");
+                folderRecs.Delete(x => x.LastModified < dtl);
+                logger.Info("Emby.Kodi.SyncQueue.Task: Finished Folder Retention Deletion...");
+            }
 
-            logger.Info("Emby.Kodi.SyncQueue.Task: Starting Item Retention Deletion...");
-            itemRecs.Delete(x => x.LastModified < dtl);
-            logger.Info("Emby.Kodi.SyncQueue.Task: Finished Item Retention Deletion...");
+            lock (_itemLock)
+            {
+                logger.Info("Emby.Kodi.SyncQueue.Task: Starting Item Retention Deletion...");
+                itemRecs.Delete(x => x.LastModified < dtl);
+                logger.Info("Emby.Kodi.SyncQueue.Task: Finished Item Retention Deletion...");
+            }
 
-            logger.Info("Emby.Kodi.SyncQueue.Task: Starting UserItem Retention Deletion...");
-            userInfoRecs.Delete(x => x.LastModified < dtl);
-            logger.Info("Emby.Kodi.SyncQueue.Task: Finished UserItem Retention Deletion...");
+            lock (_userLock)
+            {
+                logger.Info("Emby.Kodi.SyncQueue.Task: Starting UserItem Retention Deletion...");
+                userInfoRecs.Delete(x => x.LastModified < dtl);
+                logger.Info("Emby.Kodi.SyncQueue.Task: Finished UserItem Retention Deletion...");
+            }
         }
 
         public void WriteLibrarySync(List<LibItem> Items, int status, CancellationToken cancellationToken)
@@ -240,6 +252,9 @@ namespace Emby.Kodi.SyncQueue.Data
             if (status == 0) { statusType = "Added"; }
             else if (status == 1) { statusType = "Updated"; }
             else { statusType = "Removed"; }
+
+            var newRecs = new List<ItemRec>();
+            var upRecs = new List<ItemRec>();
 
             Items.ForEach(i =>
             {
@@ -257,17 +272,11 @@ namespace Emby.Kodi.SyncQueue.Data
                     MediaType = i.ItemType
                 };
 
-                if (rec == null) { itemRecs.Insert(newRec); }
+                if (rec == null) { newRecs.Add(newRec); } //itemRecs.Insert(newRec); }
                 else if (rec.LastModified < newTime)
                 {
                     newRec.Id = rec.Id;
-                    itemRecs.Update(x => x.Id == rec.Id, x =>
-                    {
-                        x.ItemId = newRec.ItemId;
-                        x.Status = newRec.Status;
-                        x.LastModified = newRec.LastModified;
-                        x.MediaType = newRec.MediaType;
-                    });
+                    upRecs.Add(newRec);                    
                 }
                 else { newRec = null; }
 
@@ -281,10 +290,39 @@ namespace Emby.Kodi.SyncQueue.Data
                 }
 
             });
+
+            if (newRecs.Count > 0)
+            {
+                lock(_itemLock)
+                {
+                    itemRecs.Insert(newRecs);
+                }
+                
+            }     
+            if (upRecs.Count > 0)
+            {
+                lock(_itemLock)
+                {
+                    List<ItemRec> data = itemRecs.StartUpdate();
+                    foreach(var rec in upRecs)
+                    {
+                        data = itemRecs.UpdateData(data, x => x.Id == rec.Id, x =>
+                        {
+                            x.ItemId = rec.ItemId;
+                            x.Status = rec.Status;
+                            x.LastModified = rec.LastModified;
+                            x.MediaType = rec.MediaType;
+                        });
+                    }
+                    itemRecs.Commit(data);
+                }
+            }       
         }
 
         public void SetUserInfoSync(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId, CancellationToken cancellationToken)
         {
+            var newRecs = new List<UserInfoRec>();
+            var upRecs = new List<UserInfoRec>();
             dtos.ForEach(dto =>
             {
 
@@ -306,23 +344,52 @@ namespace Emby.Kodi.SyncQueue.Data
                     };
                     if (oldRec == null)
                     {
-                        userInfoRecs.Insert(newRec);
+                        newRecs.Add(newRec);
+                        //userInfoRecs.Insert(newRec);
                     }
                     else
                     {
                         newRec.Id = oldRec.Id;
-                        userInfoRecs.Update(u => u.Id == oldRec.Id, u =>
-                        {
-                            u.ItemId = newRec.ItemId;
-                            u.Json = newRec.Json;
-                            u.UserId = newRec.UserId;
-                            u.LastModified = newRec.LastModified;
-                            u.MediaType = newRec.MediaType;
-                        });
+                        upRecs.Add(newRec);
+                        //userInfoRecs.Update(u => u.Id == oldRec.Id, u =>
+                        //{
+                        //    u.ItemId = newRec.ItemId;
+                        //    u.Json = newRec.Json;
+                        //    u.UserId = newRec.UserId;
+                        //    u.LastModified = newRec.LastModified;
+                        //    u.MediaType = newRec.MediaType;
+                        //});
                     }
                 }
 
             });
+
+            if (newRecs.Count > 0)
+            {
+                lock (_userLock)
+                {
+                    userInfoRecs.Insert(newRecs);
+                }
+            }
+            if (upRecs.Count > 0)
+            {
+                lock (_userLock)
+                {
+                    var items = userInfoRecs.StartUpdate();
+                    foreach (var rec in upRecs)
+                    {
+                        items = userInfoRecs.UpdateData(items, u => u.Id == rec.Id, u =>
+                           {
+                               u.ItemId = rec.ItemId;
+                               u.Json = rec.Json;
+                               u.UserId = rec.UserId;
+                               u.LastModified = rec.LastModified;
+                               u.MediaType = rec.MediaType;
+                           });
+                    }
+                    userInfoRecs.Commit(items);
+                }
+            }
         }
 
         #region Dispose

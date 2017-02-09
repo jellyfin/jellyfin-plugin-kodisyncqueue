@@ -177,6 +177,38 @@ namespace NanoApi
             return list.Count;
         }
 
+        public List<T> StartUpdate()
+        {
+            Foo<T> foo = this.file.Read<T>();
+            if (foo == null)
+                foo = FooHelper.Create<T>();
+            return foo.data;
+        }
+
+        public List<T> UpdateData(List<T> items, Predicate<T> lamdba, Action<T> action)
+        {
+            List<T> list = items.FindAll(lamdba);
+            if (list == null || list.Count <= 0)
+                return items;
+
+            foreach (T current in list)
+            {
+                action(current);
+            }
+
+            return items;
+        }
+
+        public bool Commit(List<T> items)
+        {
+            Foo<T> foo = this.file.Read<T>();
+            if (foo == null)
+                foo = FooHelper.Create<T>();
+            foo.data = items;
+            this.file.Save<T>(foo.data);
+            return true;
+        }
+
         public List<T> Select()
         {
             Foo<T> foo = this.file.Read<T>();
