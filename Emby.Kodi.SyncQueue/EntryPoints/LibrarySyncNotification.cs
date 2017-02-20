@@ -289,22 +289,20 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             await Task.WhenAll(iTasks);
         }
 
-        public async Task UpdateLibrary(List<LibItem> Items, string tableName, int status, CancellationToken cancellationToken)
+        public Task UpdateLibrary(List<LibItem> Items, string tableName, int status, CancellationToken cancellationToken)
         {
-            var statusType = string.Empty;
-            if (status == 0) { statusType = "Added"; }
-            else if (status == 1) { statusType = "Updated"; }
-            else { statusType = "Removed"; }
-
-            bool result = await Task.Run(() =>
+            return Task.Run(() =>
             {
-                DbRepo.Instance.WriteLibrarySync(Items, status, cancellationToken);
-                
-                return true;
-            });
+                var statusType = string.Empty;
+                if (status == 0) { statusType = "Added"; }
+                else if (status == 1) { statusType = "Updated"; }
+                else { statusType = "Removed"; }
 
-            _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"LIBRARYSYNC\" {0} {1} items:  {2}", statusType, Items.Count(),
-                String.Join(",", Items.Select(i => i.Id.ToString("N")).ToArray())));
+                DbRepo.Instance.WriteLibrarySync(Items, status, cancellationToken);
+
+                _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"LIBRARYSYNC\" {0} {1} items:  {2}", statusType, Items.Count(),
+                    String.Join(",", Items.Select(i => i.Id.ToString("N")).ToArray())));
+            });
         }
 
         private bool FilterItem(BaseItem item, out int type)

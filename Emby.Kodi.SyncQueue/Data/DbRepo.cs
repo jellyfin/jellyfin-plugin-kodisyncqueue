@@ -256,55 +256,52 @@ namespace Emby.Kodi.SyncQueue.Data
             var newRecs = new List<ItemRec>();
             var upRecs = new List<ItemRec>();
 
-            Items.ForEach(i =>
+            lock (_itemLock)
             {
-                long newTime;
-
-                newTime = i.SyncApiModified;
-
-                var rec = itemRecs.Select(x => x.ItemId == i.Id).FirstOrDefault();
-
-                newRec = new ItemRec()
+                Items.ForEach(i =>
                 {
-                    ItemId = i.Id,
-                    Status = status,
-                    LastModified = newTime,
-                    MediaType = i.ItemType
-                };
+                    long newTime;
 
-                if (rec == null) { newRecs.Add(newRec); } //itemRecs.Insert(newRec); }
-                else if (rec.LastModified < newTime)
-                {
-                    newRec.Id = rec.Id;
-                    upRecs.Add(newRec);                    
-                }
-                else { newRec = null; }
+                    newTime = i.SyncApiModified;
 
-                if (newRec != null)
-                {
-                    logger.Debug(String.Format("Emby.Kodi.SyncQueue:  {0} ItemId: '{1}'", statusType, newRec.ItemId.ToString("N")));
-                }
-                else
-                {
-                    logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped", i.Id.ToString("N")));
-                }
+                    var rec = itemRecs.Select(x => x.ItemId == i.Id).FirstOrDefault();
 
-            });
+                    newRec = new ItemRec()
+                    {
+                        ItemId = i.Id,
+                        Status = status,
+                        LastModified = newTime,
+                        MediaType = i.ItemType
+                    };
 
-            if (newRecs.Count > 0)
-            {
-                lock(_itemLock)
+                    if (rec == null) { newRecs.Add(newRec); } //itemRecs.Insert(newRec); }
+                    else if (rec.LastModified < newTime)
+                    {
+                        newRec.Id = rec.Id;
+                        upRecs.Add(newRec);
+                    }
+                    else { newRec = null; }
+
+                    if (newRec != null)
+                    {
+                        logger.Debug(String.Format("Emby.Kodi.SyncQueue:  {0} ItemId: '{1}'", statusType, newRec.ItemId.ToString("N")));
+                    }
+                    else
+                    {
+                        logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped", i.Id.ToString("N")));
+                    }
+                });
+
+                if (newRecs.Count > 0)
                 {
+
                     itemRecs.Insert(newRecs);
+
                 }
-                
-            }     
-            if (upRecs.Count > 0)
-            {
-                lock(_itemLock)
+                if (upRecs.Count > 0)
                 {
                     List<ItemRec> data = itemRecs.StartUpdate();
-                    foreach(var rec in upRecs)
+                    foreach (var rec in upRecs)
                     {
                         data = itemRecs.UpdateData(data, x => x.Id == rec.Id, x =>
                         {
@@ -323,69 +320,68 @@ namespace Emby.Kodi.SyncQueue.Data
         {
             var newRecs = new List<UserInfoRec>();
             var upRecs = new List<UserInfoRec>();
-            dtos.ForEach(dto =>
+            lock (_userLock)
             {
-
-                var sJson = json.SerializeToString(dto).ToString();
-                logger.Debug("Emby.Kodi.SyncQueue:  Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
-
-                LibItem itemref = itemRefs.Where(x => x.Id.ToString("N") == dto.ItemId).FirstOrDefault();
-                if (itemref != null)
+                dtos.ForEach(dto =>
                 {
-                    var oldRec = userInfoRecs.Select(u => u.ItemId == dto.ItemId && u.UserId == userId).FirstOrDefault();
-                    var newRec = new UserInfoRec()
-                    {
-                        ItemId = dto.ItemId,
-                        Json = sJson,
-                        UserId = userId,
-                        LastModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
-                        MediaType = itemref.ItemType,
-                        //LibraryName = itemref.CollectionName
-                    };
-                    if (oldRec == null)
-                    {
-                        newRecs.Add(newRec);
-                        //userInfoRecs.Insert(newRec);
-                    }
-                    else
-                    {
-                        newRec.Id = oldRec.Id;
-                        upRecs.Add(newRec);
-                        //userInfoRecs.Update(u => u.Id == oldRec.Id, u =>
-                        //{
-                        //    u.ItemId = newRec.ItemId;
-                        //    u.Json = newRec.Json;
-                        //    u.UserId = newRec.UserId;
-                        //    u.LastModified = newRec.LastModified;
-                        //    u.MediaType = newRec.MediaType;
-                        //});
-                    }
-                }
 
-            });
+                    var sJson = json.SerializeToString(dto).ToString();
+                    logger.Debug("Emby.Kodi.SyncQueue:  Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
 
-            if (newRecs.Count > 0)
-            {
-                lock (_userLock)
+                    LibItem itemref = itemRefs.Where(x => x.Id.ToString("N") == dto.ItemId).FirstOrDefault();
+                    if (itemref != null)
+                    {
+                        var oldRec = userInfoRecs.Select(u => u.ItemId == dto.ItemId && u.UserId == userId).FirstOrDefault();
+                        var newRec = new UserInfoRec()
+                        {
+                            ItemId = dto.ItemId,
+                            Json = sJson,
+                            UserId = userId,
+                            LastModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
+                            MediaType = itemref.ItemType,
+                            //LibraryName = itemref.CollectionName
+                        };
+                        if (oldRec == null)
+                        {
+                            newRecs.Add(newRec);
+                            //userInfoRecs.Insert(newRec);
+                        }
+                        else
+                        {
+                            newRec.Id = oldRec.Id;
+                            upRecs.Add(newRec);
+                            //userInfoRecs.Update(u => u.Id == oldRec.Id, u =>
+                            //{
+                            //    u.ItemId = newRec.ItemId;
+                            //    u.Json = newRec.Json;
+                            //    u.UserId = newRec.UserId;
+                            //    u.LastModified = newRec.LastModified;
+                            //    u.MediaType = newRec.MediaType;
+                            //});
+                        }
+                    }
+
+                });
+
+                if (newRecs.Count > 0)
                 {
+
                     userInfoRecs.Insert(newRecs);
+
                 }
-            }
-            if (upRecs.Count > 0)
-            {
-                lock (_userLock)
+                if (upRecs.Count > 0)
                 {
                     var items = userInfoRecs.StartUpdate();
                     foreach (var rec in upRecs)
                     {
                         items = userInfoRecs.UpdateData(items, u => u.Id == rec.Id, u =>
-                           {
-                               u.ItemId = rec.ItemId;
-                               u.Json = rec.Json;
-                               u.UserId = rec.UserId;
-                               u.LastModified = rec.LastModified;
-                               u.MediaType = rec.MediaType;
-                           });
+                            {
+                                u.ItemId = rec.ItemId;
+                                u.Json = rec.Json;
+                                u.UserId = rec.UserId;
+                                u.LastModified = rec.LastModified;
+                                u.MediaType = rec.MediaType;
+                            });
                     }
                     userInfoRecs.Commit(items);
                 }
