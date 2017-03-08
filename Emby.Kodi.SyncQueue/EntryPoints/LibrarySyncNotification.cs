@@ -64,7 +64,6 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             _jsonSerializer = jsonSerializer;
             _applicationPaths = applicationPaths;
 
-            //dbRepo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer);
         }
         
         
@@ -249,9 +248,13 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                                         .GroupBy(g => g.Id)
                                         .Select(grp => grp.First())
                                         .ToList();
-                    
+
                     Task x = PushChangesToDB(itemsAdded, itemsUpdated, itemsRemoved, cTokenSource.Token);
                     Task.WaitAll(x);                    
+
+                    itemsAdded.Clear();
+                    itemsRemoved.Clear();
+                    itemsUpdated.Clear();
 
                     if (LibraryUpdateTimer != null)
                     {
@@ -271,7 +274,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 _itemsRemoved.Clear();
                 _itemsUpdated.Clear();
                 _foldersAddedTo.Clear();
-                _foldersRemovedFrom.Clear();
+                _foldersRemovedFrom.Clear();                
             }
         }
 
@@ -297,7 +300,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 if (status == 0) { statusType = "Added"; }
                 else if (status == 1) { statusType = "Updated"; }
                 else { statusType = "Removed"; }
-
+            
                 DbRepo.Instance.WriteLibrarySync(Items, status, cancellationToken);
 
                 _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"LIBRARYSYNC\" {0} {1} items:  {2}", statusType, Items.Count(),

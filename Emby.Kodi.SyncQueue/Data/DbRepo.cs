@@ -7,6 +7,7 @@ using MediaBrowser.Model.Serialization;
 using System.IO;
 using Emby.Kodi.SyncQueue.Entities;
 using NanoApi.Entities;
+using System.Text;
 
 namespace Emby.Kodi.SyncQueue.Data
 {
@@ -72,15 +73,15 @@ namespace Emby.Kodi.SyncQueue.Data
                 Directory.CreateDirectory(dataPath);
             }
             
-            folderRecs = NanoApi.JsonFile<FolderRec>.GetInstance(dataPath, dbFolder, null, null, null);
+            folderRecs = NanoApi.JsonFile<FolderRec>.GetInstance(dataPath, dbFolder, Encoding.UTF8, null, null);
             if (!folderRecs.CheckVersion("1.4.0"))
                 folderRecs.ChangeHeader("1.4.0", "Folder Repository", "This repository stores folder changes as pushed from Emby (not currently used).");    
                   
-            itemRecs = NanoApi.JsonFile<ItemRec>.GetInstance(dataPath, dbItem, null, null, null);
+            itemRecs = NanoApi.JsonFile<ItemRec>.GetInstance(dataPath, dbItem, Encoding.UTF8, null, null);
             if (!itemRecs.CheckVersion("1.4.0"))
                 itemRecs.ChangeHeader("1.4.0", "Item Repository", "This repository stores item changes per user as pushed from Emby.");
             
-            userInfoRecs = NanoApi.JsonFile<UserInfoRec>.GetInstance(dataPath, dbUser, null, null, null);
+            userInfoRecs = NanoApi.JsonFile<UserInfoRec>.GetInstance(dataPath, dbUser, Encoding.UTF8, null, null);
             if (!userInfoRecs.CheckVersion("1.4.0"))
                 userInfoRecs.ChangeHeader("1.4.0", "User Info Repository", "This repository stores deleted items per user as pushed from Emby.");            
         }
@@ -253,12 +254,12 @@ namespace Emby.Kodi.SyncQueue.Data
             else if (status == 1) { statusType = "Updated"; }
             else { statusType = "Removed"; }
 
-            var newRecs = new List<ItemRec>();
-            var upRecs = new List<ItemRec>();
-
             lock (_itemLock)
             {
-                Items.ForEach(i =>
+                var newRecs = new List<ItemRec>();
+                var upRecs = new List<ItemRec>();
+
+                foreach (var i in Items)
                 {
                     long newTime;
 
@@ -274,13 +275,17 @@ namespace Emby.Kodi.SyncQueue.Data
                         MediaType = i.ItemType
                     };
 
-                    if (rec == null) { newRecs.Add(newRec); } //itemRecs.Insert(newRec); }
+                    if (rec == null) { newRecs.Add(newRec); } 
                     else if (rec.LastModified < newTime)
                     {
                         newRec.Id = rec.Id;
                         upRecs.Add(newRec);
                     }
-                    else { newRec = null; }
+                    else
+                    {
+                        logger.Debug(String.Format("Emby.Kodi.SyncQueue: NewTime: {0}  OldTime: {1}   Status: {2}", newTime, rec.LastModified, status));
+                        newRec = null;
+                    }
 
                     if (newRec != null)
                     {
@@ -290,30 +295,45 @@ namespace Emby.Kodi.SyncQueue.Data
                     {
                         logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped", i.Id.ToString("N")));
                     }
-                });
+                }
 
                 if (newRecs.Count > 0)
                 {
 
+                    logger.Debug(String.Format("Emby.Kodi.SyncQueue: {0}", json.SerializeToString(newRecs)));
                     itemRecs.Insert(newRecs);
 
                 }
                 if (upRecs.Count > 0)
                 {
-                    List<ItemRec> data = itemRecs.StartUpdate();
+                    logger.Debug("THIS IS WHERE WE ENTER UPDATE FOR EXISTING ITEMS!!!!!");
+                    var data = itemRecs.Select();
+
+
+                    logger.Debug("THIS IS WHERE WE ENTER THE LOOP");
                     foreach (var rec in upRecs)
                     {
-                        data = itemRecs.UpdateData(data, x => x.Id == rec.Id, x =>
+                        logger.Debug("THIS IS BEFORE LINQ WORK!");
+                        data.Where(d => d.Id == rec.Id).ToList().ForEach(i =>
                         {
-                            x.ItemId = rec.ItemId;
-                            x.Status = rec.Status;
-                            x.LastModified = rec.LastModified;
-                            x.MediaType = rec.MediaType;
+                            logger.Debug("THIS IS INSIDE THE LINQ UPDATING START!");
+                            i.ItemId = rec.ItemId;
+                            i.Status = rec.Status;
+                            i.LastModified = rec.LastModified;
+                            i.MediaType = rec.MediaType;
+                            logger.Debug("THIS IS INSIDE THE LINQ UPDATING END!");
                         });
                     }
+
+                    logger.Debug("THIS IS AFTER LINQ STARTING COMMIT!");
                     itemRecs.Commit(data);
+                    logger.Debug(String.Format("Emby.Kodi.SyncQueue: {0}", json.SerializeToString(data)));
+                    logger.Debug("THIS IS AFTER LINQ FINISHED COMMIT!");
+
+                    data = itemRecs.Select();
+                    logger.Debug(String.Format("Emby.Kodi.SyncQueue: {0}", json.SerializeToString(data)));                    
                 }
-            }       
+            }
         }
 
         public void SetUserInfoSync(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId, CancellationToken cancellationToken)
@@ -344,20 +364,11 @@ namespace Emby.Kodi.SyncQueue.Data
                         if (oldRec == null)
                         {
                             newRecs.Add(newRec);
-                            //userInfoRecs.Insert(newRec);
                         }
                         else
                         {
                             newRec.Id = oldRec.Id;
-                            upRecs.Add(newRec);
-                            //userInfoRecs.Update(u => u.Id == oldRec.Id, u =>
-                            //{
-                            //    u.ItemId = newRec.ItemId;
-                            //    u.Json = newRec.Json;
-                            //    u.UserId = newRec.UserId;
-                            //    u.LastModified = newRec.LastModified;
-                            //    u.MediaType = newRec.MediaType;
-                            //});
+                            upRecs.Add(newRec);                            
                         }
                     }
 
@@ -371,19 +382,20 @@ namespace Emby.Kodi.SyncQueue.Data
                 }
                 if (upRecs.Count > 0)
                 {
-                    var items = userInfoRecs.StartUpdate();
+                    var data = userInfoRecs.Select();
+
                     foreach (var rec in upRecs)
                     {
-                        items = userInfoRecs.UpdateData(items, u => u.Id == rec.Id, u =>
-                            {
-                                u.ItemId = rec.ItemId;
-                                u.Json = rec.Json;
-                                u.UserId = rec.UserId;
-                                u.LastModified = rec.LastModified;
-                                u.MediaType = rec.MediaType;
-                            });
+                        data.Where(d => d.Id == rec.Id).ToList().ForEach(u =>
+                        {
+                            u.ItemId = rec.ItemId;
+                            u.Json = rec.Json;
+                            u.UserId = rec.UserId;
+                            u.LastModified = rec.LastModified;
+                            u.MediaType = rec.MediaType;
+                        });
                     }
-                    userInfoRecs.Commit(items);
+                    userInfoRecs.Commit(data);
                 }
             }
         }

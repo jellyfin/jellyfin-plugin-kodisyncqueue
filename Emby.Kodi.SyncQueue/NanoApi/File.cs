@@ -77,6 +77,7 @@ namespace NanoApi
             foo._header.updateDate = new DateTime?(DateTime.UtcNow);
             new JsonSerializerSettings();
             string contents = JsonConvert.SerializeObject(foo, Formatting.Indented);
+            this.strDataCache = contents;
             using (this.GetImpersonate())
             {
                 Directory.CreateDirectory(this.path);

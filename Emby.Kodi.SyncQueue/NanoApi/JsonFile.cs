@@ -205,7 +205,8 @@ namespace NanoApi
             if (foo == null)
                 foo = FooHelper.Create<T>();
             foo.data = items;
-            this.file.Save<T>(foo.data);
+            //this.file.Save<T>(foo.data);
+            this.file.Save<T>(foo);
             return true;
         }
 
