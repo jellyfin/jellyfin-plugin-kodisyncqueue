@@ -64,12 +64,12 @@ namespace NanoApi
         {
             foo._header.updateDate = new DateTime?(DateTime.UtcNow);
             string contents = DbRepo.json.SerializeToString(foo);
-            Directory.CreateDirectory(this.path);
+            DbRepo.fileSystem.CreateDirectory(this.path);
             string path = Path.Combine(this.path, this.filename);
             if (this.encoding == null)
-                System.IO.File.WriteAllText(path, contents);
+                DbRepo.fileSystem.WriteAllText(path, contents);
             else
-                System.IO.File.WriteAllText(path, contents, this.encoding);
+                DbRepo.fileSystem.WriteAllText(path, contents, this.encoding);
             this.strDataCache = contents;
             return true;
         }
@@ -77,24 +77,24 @@ namespace NanoApi
         public bool DeleteFile()
         {
             string path = Path.Combine(this.path, this.filename);
-            if (System.IO.File.Exists(path))
-                System.IO.File.Delete(path);
+            if (DbRepo.fileSystem.FileExists(path))
+                DbRepo.fileSystem.DeleteFile(path);
             return true;
         }
 
         public Foo<T> Read<T>()
         {
             string path = Path.Combine(this.path, this.filename);
-            if (!System.IO.File.Exists(path))
+            if (!DbRepo.fileSystem.FileExists(path))
                 return null;
 
-            DateTime lastWriteTime = System.IO.File.GetLastWriteTime(path);
+            DateTime lastWriteTime = DbRepo.fileSystem.GetLastWriteTimeUtc(path);
             if (!this.lastTS.HasValue || this.lastTS.Value.Ticks != lastWriteTime.Ticks)
             {
                 if (this.encoding == null)
-                    this.strDataCache = System.IO.File.ReadAllText(path);
+                    this.strDataCache = DbRepo.fileSystem.ReadAllText(path);
                 else
-                    this.strDataCache = System.IO.File.ReadAllText(path, this.encoding);
+                    this.strDataCache = DbRepo.fileSystem.ReadAllText(path, this.encoding);
                 this.lastTS = new DateTime?(lastWriteTime);
             }
             Foo<T> foo = DbRepo.json.DeserializeFromString<Foo<T>>(this.strDataCache);

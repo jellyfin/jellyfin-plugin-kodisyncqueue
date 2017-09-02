@@ -8,7 +8,7 @@ using MediaBrowser.Model.Serialization;
 using Emby.Kodi.SyncQueue.Configuration;
 using MediaBrowser.Model.Plugins;
 using Emby.Kodi.SyncQueue.Data;
-using System.IO;
+using MediaBrowser.Model.IO;
 
 namespace Emby.Kodi.SyncQueue
 {
@@ -16,7 +16,7 @@ namespace Emby.Kodi.SyncQueue
     {
         public static ILogger Logger { get; set; }
 
-        public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer, ILogger logger, IJsonSerializer json)
+        public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer, ILogger logger, IJsonSerializer json, IFileSystem fileSystem)
             : base(applicationPaths, xmlSerializer)
         {
             Instance = this;
@@ -51,6 +51,7 @@ namespace Emby.Kodi.SyncQueue
             DbRepo.dbPath = applicationPaths.DataPath;
             DbRepo.json = json;
             DbRepo.logger = logger;
+            DbRepo.fileSystem = fileSystem;
             DbRepo.Instance.Initialize();
         }
 

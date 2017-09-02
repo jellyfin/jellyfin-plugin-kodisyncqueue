@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Threading;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
-using System.IO;
 using Emby.Kodi.SyncQueue.Entities;
 using NanoApi.Entities;
 using System.Text;
+using MediaBrowser.Model.IO;
 
 namespace Emby.Kodi.SyncQueue.Data
 {
@@ -38,7 +39,8 @@ namespace Emby.Kodi.SyncQueue.Data
         public static ILogger logger = null;
         public static IJsonSerializer json = null;
         public static string dbPath = "";
-        
+        public static IFileSystem fileSystem = null;
+
         public static DbRepo Instance
         {
             get
@@ -55,24 +57,10 @@ namespace Emby.Kodi.SyncQueue.Data
         public DbRepo(string dPath)
         {
             logger.Info("Emby.Kodi.SyncQueue: Creating DB Repository...");
-            this.DataPath = dPath;            
+            this.DataPath = dPath;
 
-            if (File.Exists(Path.Combine(dataPath, "Emby.Kodi.SyncQueue.ldb")))
-                File.Delete(Path.Combine(dataPath, "Emby.Kodi.SyncQueue.ldb"));
-            if (File.Exists(Path.Combine(dataPath, "Emby.Kodi.SyncQueue.1.2.ldb")))
-                File.Delete(Path.Combine(dataPath, "Emby.Kodi.SyncQueue.1.2.ldb"));
-            if (File.Exists(Path.Combine(dataPath, "Emby.Kodi.SyncQueue.1.3.ldb")))
-                File.Delete(Path.Combine(dataPath, "Emby.Kodi.SyncQueue.1.3.ldb"));
-            if (File.Exists(Path.Combine(dataPath, "Emby.Kodi.SyncQueue.1.31.ldb")))
-                File.Delete(Path.Combine(dataPath, "Emby.Kodi.SyncQueue.1.31.ldb"));
-            if (File.Exists(Path.Combine(dataPath, "Emby.Kodi.SyncQueue.1.32.ldb")))
-                File.Delete(Path.Combine(dataPath, "Emby.Kodi.SyncQueue.1.32.ldb"));
+            fileSystem.CreateDirectory(dataPath);
 
-            if (!Directory.Exists(dataPath))
-            {
-                Directory.CreateDirectory(dataPath);
-            }
-            
             folderRecs = NanoApi.JsonFile<FolderRec>.GetInstance(dataPath, dbFolder, Encoding.UTF8, null, null);
             if (!folderRecs.CheckVersion("1.4.0"))
                 folderRecs.ChangeHeader("1.4.0", "Folder Repository", "This repository stores folder changes as pushed from Emby (not currently used).");    
