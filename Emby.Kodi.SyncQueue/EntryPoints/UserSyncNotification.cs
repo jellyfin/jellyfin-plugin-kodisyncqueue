@@ -30,7 +30,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         private Timer UpdateTimer { get; set; }
         private const int UpdateDuration = 500;
 
-        private readonly Dictionary<Guid, List<IHasUserData>> _changedItems = new Dictionary<Guid, List<IHasUserData>>();
+        private readonly Dictionary<Guid, List<BaseItem>> _changedItems = new Dictionary<Guid, List<BaseItem>>();
         private List<LibItem> _itemRef = new List<LibItem>();
 
         //private DbRepo Repo = null;
@@ -167,11 +167,11 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                         UpdateTimer.Change(UpdateDuration, Timeout.Infinite);
                     }
 
-                    List<IHasUserData> keys;
+                    List<BaseItem> keys;
 
                     if (!_changedItems.TryGetValue(e.UserId, out keys))
                     {
-                        keys = new List<IHasUserData>();
+                        keys = new List<BaseItem>();
                         _changedItems[e.UserId] = keys;
                     }
 
@@ -226,7 +226,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             }
         }
 
-        private async Task SendNotifications(IEnumerable<KeyValuePair<Guid, List<IHasUserData>>> changes, List<LibItem> itemRefs, CancellationToken cancellationToken)
+        private async Task SendNotifications(IEnumerable<KeyValuePair<Guid, List<BaseItem>>> changes, List<LibItem> itemRefs, CancellationToken cancellationToken)
         {
             List<Task> myTasks = new List<Task>();
             
