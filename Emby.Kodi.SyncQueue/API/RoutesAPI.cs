@@ -39,4 +39,45 @@ namespace Emby.Kodi.SyncQueue.API
     {
 
     }
+
+    [Route("/Kodi/{Type}/{Id}/file.strm", "GET", Summary = "Create a dynamic strm")]
+    public class GetStrmFile
+    {
+        [ApiMember(Name = "Type", Description = "Media type", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
+        public string Type { get; set; }
+
+        [ApiMember(Name = "Id", Description = "Item id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
+        public string Id { get; set; }
+
+        [ApiMember(Name = "KodiId", Description = "Kodi item id", IsRequired = false, DataType = "string", ParameterType = "query", Verb = "GET")]
+        public string KodiId { get; set; }
+
+        [ApiMember(Name = "Name", Description = "Strm name", IsRequired = false, DataType = "string", ParameterType = "query", Verb = "GET")]
+        public string Name { get; set; }
+
+        [ApiMember(Name = "Handler", Description = "Optional handler", IsRequired = false, DataType = "string", ParameterType = "query", Verb = "GET")]
+        public string Handler { get; set; }
+    }
+
+    [Route("/Kodi/{Type}/{ParentId}/{Id}/file.strm", "GET", Summary = "Create a dynamic strm")]
+    public class GetStrmFileWithParent
+    {
+        [ApiMember(Name = "Type", Description = "Media type", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
+        public string Type { get; set; }
+
+        [ApiMember(Name = "ParentId", Description = "Parent id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
+        public string ParentId { get; set; }
+
+        [ApiMember(Name = "Id", Description = "Item id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
+        public string Id { get; set; }
+
+        [ApiMember(Name = "KodiId", Description = "Kodi item id", IsRequired = false, DataType = "string", ParameterType = "query", Verb = "GET")]
+        public string KodiId { get; set; }
+
+        [ApiMember(Name = "Name", Description = "Strm name0", IsRequired = false, DataType = "string", ParameterType = "query", Verb = "GET")]
+        public string Name { get; set; }
+
+        [ApiMember(Name = "Handler", Description = "Optional handler", IsRequired = false, DataType = "string", ParameterType = "query", Verb = "GET")]
+        public string Handler { get; set; }
+    }
 }
