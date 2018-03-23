@@ -13,7 +13,7 @@ namespace Emby.Kodi.SyncQueue.API
         [ApiMember(Name = "filter", Description = "Comma separated list of Collection Types to filter (movies,tvshows,music,musicvideos,boxsets", IsRequired = false, DataType = "string", ParameterType = "query", Verb = "GET")]
         public string UserID { get; set; }
         public string LastUpdateDT { get; set; }
-        public string filter { get; set; }        
+        public string filter { get; set; }
     }
 
     [Route("/Emby.Kodi.SyncQueue/{UserID}/GetItems", "GET", Summary = "Gets Items for {UserID} from {UTC DATETIME} formatted as yyyy-MM-ddTHH:mm:ssZ using queryString LastUpdateDT")]
@@ -31,7 +31,7 @@ namespace Emby.Kodi.SyncQueue.API
     [Route("/Emby.Kodi.SyncQueue/GetServerDateTime", "GET", Summary = "Gets The Server Time in UTC format as yyyy-MM-ddTHH:mm:ssZ")]
     public class GetServerTime : IReturn<ServerTimeInfo>
     {
-        
+
     }
 
     [Route("/Emby.Kodi.SyncQueue/GetPluginSettings", "GET", Summary = "Get SyncQueue Plugin Settings")]
@@ -40,8 +40,8 @@ namespace Emby.Kodi.SyncQueue.API
 
     }
 
-    [Route("/Kodi/{Type}/{Id}/file.strm", "GET", Summary = "Create a dynamic strm")]
-    public class GetStrmFile
+
+    public class StrmFile
     {
         [ApiMember(Name = "Type", Description = "Media type", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
         public string Type { get; set; }
@@ -59,25 +59,16 @@ namespace Emby.Kodi.SyncQueue.API
         public string Handler { get; set; }
     }
 
-    [Route("/Kodi/{Type}/{ParentId}/{Id}/file.strm", "GET", Summary = "Create a dynamic strm")]
-    public class GetStrmFileWithParent
+    [Route("/Kodi/{Type}/{Id}/file.strm", "GET", Summary = "Create a dynamic strm")]
+    public class GetStrmFile : StrmFile
     {
-        [ApiMember(Name = "Type", Description = "Media type", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
-        public string Type { get; set; }
+        
+    }
 
+    [Route("/Kodi/{Type}/{ParentId}/{Id}/file.strm", "GET", Summary = "Create a dynamic strm")]
+    public class GetStrmFileWithParent : StrmFile
+    {
         [ApiMember(Name = "ParentId", Description = "Parent id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
         public string ParentId { get; set; }
-
-        [ApiMember(Name = "Id", Description = "Item id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
-        public string Id { get; set; }
-
-        [ApiMember(Name = "KodiId", Description = "Kodi item id", IsRequired = false, DataType = "string", ParameterType = "query", Verb = "GET")]
-        public string KodiId { get; set; }
-
-        [ApiMember(Name = "Name", Description = "Strm name0", IsRequired = false, DataType = "string", ParameterType = "query", Verb = "GET")]
-        public string Name { get; set; }
-
-        [ApiMember(Name = "Handler", Description = "Optional handler", IsRequired = false, DataType = "string", ParameterType = "query", Verb = "GET")]
-        public string Handler { get; set; }
     }
 }
