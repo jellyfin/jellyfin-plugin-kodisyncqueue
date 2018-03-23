@@ -24,12 +24,12 @@ namespace Emby.Kodi.SyncQueue.API
 
             string strm = handler + "?mode=play&id=" + id;
 
-            if (string.IsNullOrEmpty(kodiId))
+            if (!string.IsNullOrEmpty(kodiId))
             {
                 strm += "&dbid=" + kodiId;
             }
 
-            if (string.IsNullOrEmpty(name))
+            if (!string.IsNullOrEmpty(name))
             {
                 strm += "&filename=" + name;
             }
