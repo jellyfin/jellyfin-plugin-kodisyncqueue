@@ -67,7 +67,7 @@ namespace Emby.Kodi.SyncQueue
         /// <value>The name.</value>
         public override string Name
         {
-            get { return "Emby.Kodi Sync Queue"; }
+            get { return "Kodi companion"; }
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace Emby.Kodi.SyncQueue
         {
             get
             {
-                return "Allows for shorter Sync Times on Kodi Startup";
+                return "Companion for Kodi add-ons. Provides dynamic strms and shorter sync times for Emby for Kodi.";
             }
         }
 

@@ -17,7 +17,6 @@ namespace Emby.Kodi.SyncQueue.API
 
         public string GetStrm(string handler, string id, string kodiId, string name)
         {
-
             if (string.IsNullOrEmpty(handler))
             {
                 handler = "plugin://plugin.video.emby";
