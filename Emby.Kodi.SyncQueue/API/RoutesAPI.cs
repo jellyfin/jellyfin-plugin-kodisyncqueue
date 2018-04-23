@@ -68,10 +68,4 @@ namespace Emby.Kodi.SyncQueue.API
         public string Season { get; set; }
     }
 
-    [Route("/Kodi/{Id}/MyVideos107.db", "GET", Summary = "Get Kodi video database")]
-    public class GetVideoDatabase
-    {
-        [ApiMember(Name = "Id", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
-        public string Id { get; set; }
-    }
 }
