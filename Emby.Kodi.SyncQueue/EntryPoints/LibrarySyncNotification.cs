@@ -344,7 +344,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     }
                     type = 0;
                     break;
-                case "Boxset":
+                case "BoxSet":
                     if (!Plugin.Instance.Configuration.tkBoxSets)
                     {
                         return false;
