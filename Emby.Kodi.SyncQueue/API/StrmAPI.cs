@@ -15,39 +15,24 @@ namespace Emby.Kodi.SyncQueue.API
             Logger = logger;
         }
 
-        public string GetStrm(string handler, string id, string kodiId, string name)
-        {
-            if (string.IsNullOrEmpty(handler))
-            {
-                handler = "plugin://plugin.video.emby";
-            }
-
-            string strm = handler + "?mode=play&id=" + id;
-
-            if (!string.IsNullOrEmpty(kodiId))
-            {
-                strm += "&dbid=" + kodiId;
-            }
-
-            if (!string.IsNullOrEmpty(name))
-            {
-                strm += "&filename=" + name;
-            }
-
-            return strm;
-        }
-
         public object Get(GetStrmFile request)
         {
-            string strm = GetStrm(request.Handler, request.Id, request.KodiId, request.Name);
+            if (string.IsNullOrEmpty(request.Handler))
+            {
+                request.Handler = "plugin://plugin.video.emby";
+            }
 
-            Logger.Info("returning strm: {0}", strm);
-            return strm;
-        }
+            string strm = request.Handler + "?mode=play&id=" + request.Id;
 
-        public object Get(GetStrmFileWithParent request)
-        {
-            string strm = GetStrm(request.Handler, request.Id, request.KodiId, request.Name);
+            if (!string.IsNullOrEmpty(request.KodiId))
+            {
+                strm += "&dbid=" + request.KodiId;
+            }
+
+            if (!string.IsNullOrEmpty(request.Name))
+            {
+                strm += "&filename=" + request.Name;
+            }
 
             Logger.Info("returning strm: {0}", strm);
             return strm;
