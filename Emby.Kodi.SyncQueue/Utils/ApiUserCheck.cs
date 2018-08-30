@@ -13,10 +13,9 @@ namespace Emby.Kodi.SyncQueue.Utils
         public static IEnumerable<T> TranslatePhysicalItemToUserLibrary<T>(T item, User user, ILibraryManager _libraryManager, bool includeIfNotFound = false)
             where T : BaseItem
         {
-            // If the physical root changed, return the user root
             if (item is AggregateFolder)
             {
-                return new[] { user.RootFolder as T };
+                return new T[] { };
             }
 
             // Return it only if it's in the user's library
