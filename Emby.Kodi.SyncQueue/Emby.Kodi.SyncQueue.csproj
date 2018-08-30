@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.3;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;</TargetFrameworks>
     <AssemblyVersion>2.0.3.0</AssemblyVersion>
     <FileVersion>2.0.3.0</FileVersion>
   </PropertyGroup>
@@ -15,7 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="mediabrowser.server.core" Version="3.3.20" />
+    <PackageReference Include="mediabrowser.server.core" Version="3.6.0.31-beta" />
+    <PackageReference Include="System.Memory" Version="4.5.1" />
   </ItemGroup>
 
 </Project>

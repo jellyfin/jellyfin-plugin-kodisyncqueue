@@ -169,10 +169,11 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
                     List<BaseItem> keys;
 
-                    if (!_changedItems.TryGetValue(e.UserId, out keys))
+                    var userId = e.User.Id;
+                    if (!_changedItems.TryGetValue(userId, out keys))
                     {
                         keys = new List<BaseItem>();
-                        _changedItems[e.UserId] = keys;
+                        _changedItems[userId] = keys;
                     }
 
                     keys.Add(e.Item);
