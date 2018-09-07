@@ -9,14 +9,16 @@
 
   <ItemGroup>
     <None Remove="Configuration\configPage.html" />
+    <None Remove="thumb.jpg" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Configuration\configPage.html" />
+    <EmbeddedResource Include="thumb.jpg" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="mediabrowser.server.core" Version="3.6.0.31-beta" />
+    <PackageReference Include="mediabrowser.server.core" Version="3.6.0.36-beta" />
     <PackageReference Include="System.Memory" Version="4.5.1" />
   </ItemGroup>
 

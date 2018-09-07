@@ -9,10 +9,12 @@ using Emby.Kodi.SyncQueue.Configuration;
 using MediaBrowser.Model.Plugins;
 using Emby.Kodi.SyncQueue.Data;
 using MediaBrowser.Model.IO;
+using MediaBrowser.Model.Drawing;
+using System.IO;
 
 namespace Emby.Kodi.SyncQueue
 {
-    class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
+    class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbImage
     {
         public static ILogger Logger { get; set; }
 
@@ -98,6 +100,20 @@ namespace Emby.Kodi.SyncQueue
                     EmbeddedResourcePath = "Emby.Kodi.SyncQueue.Configuration.configPage.html"
                 }
             };
+        }
+
+        public Stream GetThumbImage()
+        {
+            var type = GetType();
+            return type.Assembly.GetManifestResourceStream(type.Namespace + ".thumb.jpg");
+        }
+
+        public ImageFormat ThumbImageFormat
+        {
+            get
+            {
+                return ImageFormat.Jpg;
+            }
         }
     }
 }
