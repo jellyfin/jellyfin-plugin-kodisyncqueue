@@ -13,7 +13,7 @@ namespace NanoApi.Entities
         {
             return new DbHeader
             {
-                createDate = new DateTime?(DateTime.UtcNow),
+                createDate = DateTimeOffset.UtcNow,
                 version = "0.1.03",
                 descriptor = "Little Json format: http://www.jsonfile.com",
                 idMax = 0

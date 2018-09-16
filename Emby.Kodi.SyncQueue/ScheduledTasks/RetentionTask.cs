@@ -78,8 +78,8 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             bool result = await Task.Run(() =>
             {
                 retDays = retDays * -1;
-                var dt = DateTime.UtcNow.AddDays(retDays);
-                var dtl = (long)(dt.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
+                var dt = DateTimeOffset.UtcNow.AddDays(retDays);
+                var dtl = (long)(dt.Subtract(new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero)).TotalSeconds);
                 //DbRepo.DeleteOldData(dtl, _logger);
 
                 DbRepo.Instance.DeleteOldData(dtl);

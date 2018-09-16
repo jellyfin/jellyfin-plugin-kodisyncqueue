@@ -119,7 +119,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 var item = new LibItem()
                 {
                     Id = e.Item.Id,
-                    SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
+                    SyncApiModified = (long)(DateTimeOffset.UtcNow.Subtract(new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero)).TotalSeconds),
                     ItemType = type,
                 };
                 _logger.Debug(string.Format("Emby.Kodi.SyncQueue: ItemAdded added for DB Saving {0}", e.Item.Id));
@@ -160,7 +160,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 var item = new LibItem()
                 {
                     Id = e.Item.Id,
-                    SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
+                    SyncApiModified = (long)(DateTimeOffset.UtcNow.Subtract(new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0,TimeSpan.Zero)).TotalSeconds),
                     ItemType = type,
                 };
 
@@ -213,7 +213,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 var item = new LibItem()
                 {
                     Id = e.Item.Id,
-                    SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
+                    SyncApiModified = (long)(DateTimeOffset.UtcNow.Subtract(new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero)).TotalSeconds),
                     ItemType = type
                 };
 
@@ -237,7 +237,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 try
                 {
                     _logger.Info("Emby.Kodi.SyncQueue: Starting Library Sync...");
-                    var startTime = DateTime.UtcNow;                    
+                    var startTime = DateTimeOffset.UtcNow;                    
 
                     var itemsAdded = _itemsAdded.GroupBy(i => i.Id).Select(grp => grp.First()).ToList();
 
@@ -261,7 +261,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                         LibraryUpdateTimer.Dispose();
                         LibraryUpdateTimer = null;
                     }
-                    TimeSpan dateDiff = DateTime.UtcNow - startTime;
+                    TimeSpan dateDiff = DateTimeOffset.UtcNow - startTime;
                     _logger.Info(String.Format("Emby.Kodi.SyncQueue: Finished Library Sync Taking {0}", dateDiff.ToString("c")));
 
                 }
