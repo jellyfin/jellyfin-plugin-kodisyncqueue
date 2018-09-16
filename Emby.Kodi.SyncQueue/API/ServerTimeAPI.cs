@@ -25,8 +25,8 @@ namespace Emby.Kodi.SyncQueue.API
             var info = new ServerTimeInfo();
             _logger.Debug("Emby.Kodi.SyncQueue: Class Variable Created!");
             int retDays = 0;
-            DateTime dtNow = DateTime.UtcNow;
-            DateTime retDate;
+            DateTimeOffset dtNow = DateTimeOffset.UtcNow;
+            DateTimeOffset retDate;
 
             if (!(Int32.TryParse(Plugin.Instance.Configuration.RetDays, out retDays)))
             {
@@ -35,16 +35,16 @@ namespace Emby.Kodi.SyncQueue.API
 
             if (retDays == 0)
             {
-                retDate = new DateTime(1900, 1, 1, 0, 0, 0);
+                retDate = new DateTimeOffset(1900, 1, 1, 0, 0, 0, TimeSpan.Zero);
             }
             else
             {
                 retDays = retDays * -1;
-                retDate = new DateTime(dtNow.Year, dtNow.Month, dtNow.Day, 0, 0, 0);
+                retDate = new DateTimeOffset(dtNow.Year, dtNow.Month, dtNow.Day, 0, 0, 0, TimeSpan.Zero);
                 retDate = retDate.AddDays(retDays);
             }
             _logger.Debug("Emby.Kodi.SyncQueue: Getting Ready to Set Variables!");
-            info.ServerDateTime = String.Format("{0}", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
+            info.ServerDateTime = String.Format("{0}", DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
             info.RetentionDateTime = String.Format("{0}", retDate.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
 
             _logger.Debug(String.Format("Emby.Kodi.SyncQueue: ServerDateTime = {0}", info.ServerDateTime));

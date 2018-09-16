@@ -201,7 +201,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             try
             {
                 _logger.Info("Emby.Kodi.SyncQueue: Starting User Changes Sync...");
-                var startDate = DateTime.UtcNow;
+                var startDate = DateTimeOffset.UtcNow;
 
                 // Remove dupes in case some were saved multiple times
                 var changes = _changedItems.ToList();
@@ -217,7 +217,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     UpdateTimer.Dispose();
                     UpdateTimer = null;
                 }
-                TimeSpan dateDiff = DateTime.UtcNow - startDate;
+                TimeSpan dateDiff = DateTimeOffset.UtcNow - startDate;
                 _logger.Info(String.Format("Emby.Kodi.SyncQueue: User Changes Sync Finished Taking {0}", dateDiff.ToString("c")));
             }
             catch (Exception e)

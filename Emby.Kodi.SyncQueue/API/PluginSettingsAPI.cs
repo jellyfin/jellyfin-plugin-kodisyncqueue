@@ -25,7 +25,7 @@ namespace Emby.Kodi.SyncQueue.API
             var settings = new PluginSettings();
             _logger.Debug("Emby.Kodi.SyncQueue: Class Variable Created!");
             int retDays = 0;
-            DateTime dtNow = DateTime.UtcNow;
+            DateTimeOffset dtNow = DateTimeOffset.UtcNow;
             
             _logger.Debug("Emby.Kodi.SyncQueue: Creating Settings Object Variables!");
 
