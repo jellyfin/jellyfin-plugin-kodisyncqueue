@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emby.Kodi.SyncQueue.Data;
 using Emby.Kodi.SyncQueue.Entities;
+using MediaBrowser.Controller.Channels;
 
 namespace Emby.Kodi.SyncQueue.EntryPoints
 {
@@ -73,11 +74,10 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 return false;
             }
 
-            if (item.SourceType != SourceType.Library)
+            if (item.GetTopParent() is Channel)
             {
                 return false;
             }
-
 
             var typeName = item.GetClientTypeName();
             if (string.IsNullOrEmpty(typeName))
