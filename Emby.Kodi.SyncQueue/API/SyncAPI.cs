@@ -179,10 +179,8 @@ namespace Emby.Kodi.SyncQueue.API
             Task<List<string>> t1 = Task.Run(() =>
             {
                 List<string> result = null;
-                List<Guid> data = null;
 
-
-                data = DbRepo.Instance.GetItems(dtl, 0, movies, tvshows, music, musicvideos, boxsets);
+                var data = DbRepo.Instance.GetItems(dtl, 0, movies, tvshows, music, musicvideos, boxsets);
                 
                 var user = _userManager.GetUserById(Guid.Parse(userId));
 
@@ -196,7 +194,7 @@ namespace Emby.Kodi.SyncQueue.API
                     }
                 });
 
-                result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager)).Select(i => i.Id.ToString("N")).Distinct().ToList();
+                result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager)).Select(i => i.GetClientId()).Distinct().ToList();
                 
                 if (result.Count > 0)
                 {
@@ -213,9 +211,8 @@ namespace Emby.Kodi.SyncQueue.API
             Task<List<string>> t2 = Task.Run(() =>
             {
                 List<string> result = new List<string>();
-                List<Guid> data = null;
 
-                data = DbRepo.Instance.GetItems(dtl, 2, movies, tvshows, music, musicvideos, boxsets);
+                var data = DbRepo.Instance.GetItems(dtl, 2, movies, tvshows, music, musicvideos, boxsets);
                 
                 //var user = _userManager.GetUserById(Guid.Parse(userId));
 
@@ -229,15 +226,15 @@ namespace Emby.Kodi.SyncQueue.API
                 //    }
                 //});
 
-                if (data != null && data.Count() > 0)
+                if (data != null && data.Count > 0)
                 {
                     data.ForEach(i =>
                     {
-                        result.Add(i.ToString("N"));
+                        result.Add(i.ToString(CultureInfo.InvariantCulture));
                     });
                 }
 
-                //result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager, true)).Select(i => i.Id.ToString("N")).Distinct().ToList();
+                //result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager, true)).Select(i => i.GetClientId()).Distinct().ToList();
 
                 if (result.Count > 0)
                 {
@@ -254,10 +251,8 @@ namespace Emby.Kodi.SyncQueue.API
             Task<List<string>> t3 = Task.Run(() =>
             {
                 List<string> result = null;
-                List<Guid> data = null;
+                var data = DbRepo.Instance.GetItems(dtl, 1, movies, tvshows, music, musicvideos, boxsets);
 
-                data = DbRepo.Instance.GetItems(dtl, 1, movies, tvshows, music, musicvideos, boxsets);
-                
                 var user = _userManager.GetUserById(Guid.Parse(userId));
 
                 List<BaseItem> items = new List<BaseItem>();
@@ -270,7 +265,7 @@ namespace Emby.Kodi.SyncQueue.API
                     }
                 });
 
-                result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager)).Select(i => i.Id.ToString("N")).Distinct().ToList();
+                result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager)).Select(i => i.GetClientId()).Distinct().ToList();
 
 
                 if (result.Count > 0)
