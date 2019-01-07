@@ -183,7 +183,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
 
             var type = -1;
-            if (!FilterItem(e.Item, out type))
+            if (!FilterRemovedItem(e.Item, out type))
             {
                 return;
             }
@@ -384,7 +384,85 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             }                                   
 
             return true;
-        }        
+        }
+
+        private bool FilterRemovedItem(BaseItem item, out int type)
+        {
+            type = -1;
+
+            if (!Plugin.Instance.Configuration.IsEnabled)
+            {
+                return false;
+            }
+
+            if (item.LocationType == LocationType.Virtual)
+            {
+                return false;
+            }
+
+            if (item.GetTopParent() is Channel)
+            {
+                return false;
+            }
+
+
+            var typeName = item.GetClientTypeName();
+            if (string.IsNullOrEmpty(typeName))
+            {
+                return false;
+            }
+
+            switch (typeName)
+            {
+                //MOVIES
+                case "Movie":
+                case "Folder":
+                    if (!Plugin.Instance.Configuration.tkMovies)
+                    {
+                        return false;
+                    }
+                    type = 0;
+                    break;
+                case "BoxSet":
+                    if (!Plugin.Instance.Configuration.tkBoxSets)
+                    {
+                        return false;
+                    }
+                    type = 4;
+                    break;
+                case "Series":
+                case "Season":
+                case "Episode":
+                    if (!Plugin.Instance.Configuration.tkTVShows)
+                    {
+                        return false;
+                    }
+                    type = 1;
+                    break;
+                case "Audio":
+                case "MusicArtist":
+                case "MusicAlbum":
+                    if (!Plugin.Instance.Configuration.tkMusic)
+                    {
+                        return false;
+                    }
+                    type = 2;
+                    break;
+                case "MusicVideo":
+                    if (!Plugin.Instance.Configuration.tkMusicVideos)
+                    {
+                        return false;
+                    }
+                    type = 3;
+                    break;
+                default:
+                    type = -1;
+                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Ingoring Type {0}", typeName));
+                    return false;
+            }
+
+            return true;
+        }
 
         private void TriggerCancellation()
         {
