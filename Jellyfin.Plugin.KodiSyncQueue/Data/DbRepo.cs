@@ -78,8 +78,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             var result = new List<Guid>();
             List<ItemRec> final = new List<ItemRec>();
 
-            logger.LogDebug(String.Format("Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(dtl), dtl));
-            logger.LogDebug(String.Format("IntStatus: {0}", status));
+            logger.LogDebug("Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(dtl), dtl);
+            logger.LogDebug("IntStatus: {Status}", status);
 
             var items = itemRecs.Select(x => x.LastModified > dtl && x.Status == status).ToList();
 
@@ -208,23 +208,23 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
         {
             lock (_folderLock)
             {
-                logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Starting Folder Retention Deletion...");
+                logger.LogInformation("Starting Folder Retention Deletion...");
                 folderRecs.Delete(x => x.LastModified < dtl);
-                logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Finished Folder Retention Deletion...");
+                logger.LogInformation("Finished Folder Retention Deletion...");
             }
 
             lock (_itemLock)
             {
-                logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Starting Item Retention Deletion...");
+                logger.LogInformation("Starting Item Retention Deletion...");
                 itemRecs.Delete(x => x.LastModified < dtl);
-                logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Finished Item Retention Deletion...");
+                logger.LogInformation("Finished Item Retention Deletion...");
             }
 
             lock (_userLock)
             {
-                logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Starting UserItem Retention Deletion...");
+                logger.LogInformation("Starting UserItem Retention Deletion...");
                 userInfoRecs.Delete(x => x.LastModified < dtl);
-                logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Finished UserItem Retention Deletion...");
+                logger.LogInformation("Finished UserItem Retention Deletion...");
             }
         }
 
@@ -265,24 +265,24 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                     }
                     else
                     {
-                        logger.LogDebug(String.Format("NewTime: {0}  OldTime: {1}   Status: {2}", newTime, rec.LastModified, status));
+                        logger.LogDebug("NewTime: {NewTime}  OldTime: {LastModified}   Status: {Status}", newTime, rec.LastModified, status);
                         newRec = null;
                     }
 
                     if (newRec != null)
                     {
-                        logger.LogDebug(String.Format("{0} ItemId: '{1}'", statusType, newRec.ItemId.ToString("N")));
+                        logger.LogDebug("{StatusType} ItemId: '{ItemId}'", statusType, newRec.ItemId.ToString("N"));
                     }
                     else
                     {
-                        logger.LogDebug(String.Format("ItemId: '{0}' Skipped", i.Id.ToString("N")));
+                        logger.LogDebug("ItemId: '{ItemId}' Skipped", i.Id.ToString("N"));
                     }
                 }
 
                 if (newRecs.Count > 0)
                 {
 
-                    logger.LogDebug(String.Format("{0}", json.SerializeToString(newRecs)));
+                    logger.LogDebug("{@NewRecs}", newRecs);
                     itemRecs.Insert(newRecs);
 
                 }
@@ -309,11 +309,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
                     logger.LogDebug("THIS IS AFTER LINQ STARTING COMMIT!");
                     itemRecs.Commit(data);
-                    logger.LogDebug(String.Format("{0}", json.SerializeToString(data)));
+                    logger.LogDebug("{@Data}", data);
                     logger.LogDebug("THIS IS AFTER LINQ FINISHED COMMIT!");
 
                     data = itemRecs.Select();
-                    logger.LogDebug(String.Format("{0}", json.SerializeToString(data)));                    
+                    logger.LogDebug("{@Data}", data);                    
                 }
             }
         }

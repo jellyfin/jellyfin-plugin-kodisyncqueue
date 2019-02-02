@@ -234,7 +234,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
                 if (result.Count > 0)
                 {
-                    _logger.LogInformation("Updated Items Found: {UpdatedItems}", string.Join(",", result.ToArray()));
+                    _logger.LogInformation("Updated Items Found: {UpdatedItems}", string.Join(",", result));
                 }
                 else
                 {
