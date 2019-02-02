@@ -319,7 +319,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             info.UserDataChanged = userDataChangedJson.Select(i => _jsonSerializer.DeserializeFromString<UserItemDataDto>(i)).ToList();
 
             TimeSpan diffDate = DateTime.UtcNow - startTime;
-            _logger.LogInformation(String.Format("Jellyfin.Plugin.KodiSyncQueue: Request Finished Taking {0}", diffDate.ToString("c")));
+            _logger.LogInformation(String.Format("Request Finished Taking {0}", diffDate.ToString("c")));
 
             return info;
         }

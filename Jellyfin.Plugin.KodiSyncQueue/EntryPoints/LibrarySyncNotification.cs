@@ -123,7 +123,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
                     ItemType = type,
                 };
-                _logger.LogDebug(string.Format("Jellyfin.Plugin.KodiSyncQueue: ItemAdded added for DB Saving {0}", e.Item.Id));
+                _logger.LogDebug(string.Format("ItemAdded added for DB Saving {0}", e.Item.Id));
                 _itemsAdded.Add(item);
                 
             }
@@ -165,7 +165,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     ItemType = type,
                 };
 
-                _logger.LogDebug(string.Format("Jellyfin.Plugin.KodiSyncQueue: ItemUpdated added for DB Saving {0}", e.Item.Id));
+                _logger.LogDebug(string.Format("ItemUpdated added for DB Saving {0}", e.Item.Id));
                 _itemsUpdated.Add(item);
                 
             }
@@ -218,7 +218,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     ItemType = type
                 };
 
-                _logger.LogDebug(string.Format("Jellyfin.Plugin.KodiSyncQueue: ItemRemoved added for DB Saving {0}", e.Item.Id));
+                _logger.LogDebug(string.Format("ItemRemoved added for DB Saving {0}", e.Item.Id));
                 _itemsRemoved.Add(item);
                 
             }
@@ -237,7 +237,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 // Remove dupes in case some were saved multiple times
                 try
                 {
-                    _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue: Starting Library Sync...");
+                    _logger.LogInformation("Starting Library Sync...");
                     var startTime = DateTime.UtcNow;                    
 
                     var itemsAdded = _itemsAdded.GroupBy(i => i.Id).Select(grp => grp.First()).ToList();
@@ -263,12 +263,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                         LibraryUpdateTimer = null;
                     }
                     TimeSpan dateDiff = DateTime.UtcNow - startTime;
-                    _logger.LogInformation(String.Format("Jellyfin.Plugin.KodiSyncQueue: Finished Library Sync Taking {0}", dateDiff.ToString("c")));
+                    _logger.LogInformation(String.Format("Finished Library Sync Taking {0}", dateDiff.ToString("c")));
 
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "Jellyfin.Plugin.KodiSyncQueue: An Error Has Occurred in LibraryUpdateTimerCallback");
+                    _logger.LogError(e, "An Error Has Occurred in LibraryUpdateTimerCallback");
                 }
                 _itemsAdded.Clear();
                 _itemsRemoved.Clear();
@@ -303,7 +303,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             
                 DbRepo.Instance.WriteLibrarySync(Items, status, cancellationToken);
 
-                _logger.LogInformation(String.Format("Jellyfin.Plugin.KodiSyncQueue: \"LIBRARYSYNC\" {0} {1} items:  {2}", statusType, Items.Count(),
+                _logger.LogInformation(String.Format("\"LIBRARYSYNC\" {0} {1} items:  {2}", statusType, Items.Count(),
                     String.Join(",", Items.Select(i => i.Id.ToString("N")).ToArray())));
             });
         }

@@ -199,7 +199,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             lock (_syncLock)
             try
             {
-                _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue: Starting User Changes Sync...");
+                _logger.LogInformation("Starting User Changes Sync...");
                 var startDate = DateTime.UtcNow;
 
                 // Remove dupes in case some were saved multiple times
@@ -217,11 +217,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     UpdateTimer = null;
                 }
                 TimeSpan dateDiff = DateTime.UtcNow - startDate;
-                _logger.LogInformation(String.Format("Jellyfin.Plugin.KodiSyncQueue: User Changes Sync Finished Taking {0}", dateDiff.ToString("c")));
+                _logger.LogInformation(String.Format("User Changes Sync Finished Taking {0}", dateDiff.ToString("c")));
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Jellyfin.Plugin.KodiSyncQueue: An Error Has Occurred in UserUpdateTimerCallback");
+                _logger.LogError(e, "An Error Has Occurred in UserUpdateTimerCallback");
             }
         }
 
@@ -267,7 +267,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             
             List<string> ids = dtos.Select(s => s.ItemId).ToList();
 
-            _logger.LogInformation(String.Format("Jellyfin.Plugin.KodiSyncQueue: \"USERSYNC\" User {0}({1}) posted {2} Updates:  {3}", userId, userName, ids.Count(), String.Join(",", ids.ToArray())));
+            _logger.LogInformation(String.Format("\"USERSYNC\" User {0}({1}) posted {2} Updates:  {3}", userId, userName, ids.Count(), String.Join(",", ids.ToArray())));
         }
 
         private void TriggerCancellation()

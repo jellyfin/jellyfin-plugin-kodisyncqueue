@@ -22,7 +22,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue
 
             Logger = logger;
 
-            //Logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue: Write Out Reference if it Doesn't Exist!");
+            //Logger.LogInformation("Write Out Reference if it Doesn't Exist!");
 
             //if (!File.Exists(Path.Combine(applicationPaths.ProgramSystemPath, "Emby.Kodi.NanoApi.dll")) ||
             //    !File.Exists(Path.Combine(applicationPaths.ProgramSystemPath, "Emby.Kodi.SyncJson.dll")))
@@ -30,7 +30,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue
             //    var names = Assembly.GetEntryAssembly().GetManifestResourceNames();
             //    foreach (var name in names)
             //    {
-            //        Logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue: " + name);
+            //        Logger.LogInformation("" + name);
             //    }
             //    using (Stream input = Assembly.GetExecutingAssembly().GetManifestResourceStream("Jellyfin.Plugin.KodiSyncQueue.Resources.Emby.Kodi.NanoApi.dll"))
             //    using (Stream output = File.Create(Path.Combine(applicationPaths.ProgramSystemPath, "NanoApi.JsonFile.dll")))

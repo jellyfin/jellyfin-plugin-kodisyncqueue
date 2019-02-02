@@ -55,7 +55,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
         public DbRepo(string dPath)
         {
-            logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue: Creating DB Repository...");
+            logger.LogInformation("Creating DB Repository...");
             this.DataPath = dPath;
 
             Directory.CreateDirectory(dataPath);
@@ -270,7 +270,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                     }
                     else
                     {
-                        logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue: NewTime: {0}  OldTime: {1}   Status: {2}", newTime, rec.LastModified, status));
+                        logger.LogDebug(String.Format("NewTime: {0}  OldTime: {1}   Status: {2}", newTime, rec.LastModified, status));
                         newRec = null;
                     }
 
@@ -287,7 +287,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                 if (newRecs.Count > 0)
                 {
 
-                    logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue: {0}", json.SerializeToString(newRecs)));
+                    logger.LogDebug(String.Format("{0}", json.SerializeToString(newRecs)));
                     itemRecs.Insert(newRecs);
 
                 }
@@ -314,11 +314,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
                     logger.LogDebug("THIS IS AFTER LINQ STARTING COMMIT!");
                     itemRecs.Commit(data);
-                    logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue: {0}", json.SerializeToString(data)));
+                    logger.LogDebug(String.Format("{0}", json.SerializeToString(data)));
                     logger.LogDebug("THIS IS AFTER LINQ FINISHED COMMIT!");
 
                     data = itemRecs.Select();
-                    logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue: {0}", json.SerializeToString(data)));                    
+                    logger.LogDebug(String.Format("{0}", json.SerializeToString(data)));                    
                 }
             }
         }
