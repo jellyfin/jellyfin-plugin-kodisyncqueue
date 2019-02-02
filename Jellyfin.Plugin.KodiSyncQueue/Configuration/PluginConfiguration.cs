@@ -4,13 +4,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Configuration
 {
     public class PluginConfiguration : BasePluginConfiguration
     {
-        public string RetDays { get; set; }
-        public bool IsEnabled { get; set; }
-        public bool tkMovies { get; set; }
-        public bool tkTVShows { get; set; }
-        public bool tkMusic { get; set; }
-        public bool tkMusicVideos { get; set; }
-        public bool tkBoxSets { get; set; }
+        public string RetDays { get; }
+        public bool IsEnabled { get; }
+        public bool tkMovies { get; }
+        public bool tkTVShows { get; }
+        public bool tkMusic { get; }
+        public bool tkMusicVideos { get; }
+        public bool tkBoxSets { get; }
 
         public PluginConfiguration()
         {

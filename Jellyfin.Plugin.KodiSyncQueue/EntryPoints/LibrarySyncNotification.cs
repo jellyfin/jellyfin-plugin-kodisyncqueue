@@ -232,11 +232,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
         public async Task PushChangesToDB(List<LibItem> itemsAdded, List<LibItem> itemsUpdated, List<LibItem> itemsRemoved, CancellationToken cancellationToken)
         {
-            List<Task> myTasksList = new List<Task>();
-
-            myTasksList.Add(UpdateLibrary(itemsAdded, "ItemsAddedQueue", 0, cancellationToken));
-            myTasksList.Add(UpdateLibrary(itemsUpdated, "ItemsUpdatedQueue", 1, cancellationToken));
-            myTasksList.Add(UpdateLibrary(itemsRemoved, "ItemsRemovedQueue", 2, cancellationToken));
+            List<Task> myTasksList = new List<Task>
+            {
+                UpdateLibrary(itemsAdded, "ItemsAddedQueue", 0, cancellationToken),
+                UpdateLibrary(itemsUpdated, "ItemsUpdatedQueue", 1, cancellationToken),
+                UpdateLibrary(itemsRemoved, "ItemsRemovedQueue", 2, cancellationToken)
+            };
 
             Task[] iTasks = myTasksList.ToArray();
             await Task.WhenAll(iTasks);
@@ -262,17 +263,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         {
             type = -1;
 
-            if (!Plugin.Instance.Configuration.IsEnabled)
-            {
-                return false;
-            }
-
-            if (item.LocationType == LocationType.Virtual)
-            {
-                return false;
-            }
-
-            if (item.SourceType != SourceType.Library)
+            if (!Plugin.Instance.Configuration.IsEnabled ||
+                item.LocationType == LocationType.Virtual ||
+                item.SourceType != SourceType.Library)
             {
                 return false;
             }

@@ -33,7 +33,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue
             DbRepo.json = json;
             DbRepo.logger = logger;
             DbRepo.fileSystem = fileSystem;
-            DbRepo.Instance.Initialize();
         }
 
         private Guid _id = new Guid("b0daa30f-2e09-4083-a6ce-459d9fecdd80");

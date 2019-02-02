@@ -56,7 +56,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
         public DbRepo(string dPath)
         {
             logger.LogInformation("Creating DB Repository...");
-            this.DataPath = dPath;
+            DataPath = dPath;
 
             Directory.CreateDirectory(dataPath);
 
@@ -71,11 +71,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             userInfoRecs = NanoApi.JsonFile<UserInfoRec>.GetInstance(dataPath, dbUser, Encoding.UTF8, null, null);
             if (!userInfoRecs.CheckVersion("1.4.0"))
                 userInfoRecs.ChangeHeader("1.4.0", "User Info Repository", "This repository stores deleted items per user as pushed from Jellyfin.");            
-        }
-
-        public bool Initialize()
-        {
-            return true;
         }
 
         public List<Guid> GetItems(long dtl, int status, bool movies, bool tvshows, bool music, bool musicvideos, bool boxsets)
