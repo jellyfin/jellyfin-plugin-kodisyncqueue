@@ -4,7 +4,6 @@ using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Session;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System;
 using System.Collections.Generic;
@@ -13,6 +12,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emby.Kodi.SyncQueue.Data;
 using Emby.Kodi.SyncQueue.Entities;
+using MediaBrowser.Controller.Channels;
+using Microsoft.Extensions.Logging;
 
 namespace Emby.Kodi.SyncQueue.EntryPoints
 {
@@ -73,7 +74,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             _libraryManager.ItemUpdated += libraryManager_ItemUpdated;
             _libraryManager.ItemRemoved += libraryManager_ItemRemoved;
 
-            _logger.Info("Emby.Kodi.SyncQueue:  LibrarySyncNotification Startup...");
+            _logger.LogInformation("Emby.Kodi.SyncQueue:  LibrarySyncNotification Startup...");
         }
 
         /// <summary>
@@ -83,9 +84,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemAdded(object sender, ItemChangeEventArgs e)
         {
-            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
-            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
+            //_logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
+            //_logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
+            //_logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
 
             var type = -1;
             if (!FilterItem(e.Item, out type))
@@ -122,7 +123,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
                     ItemType = type,
                 };
-                _logger.Debug(string.Format("Emby.Kodi.SyncQueue: ItemAdded added for DB Saving {0}", e.Item.Id));
+                _logger.LogDebug(string.Format("Emby.Kodi.SyncQueue: ItemAdded added for DB Saving {0}", e.Item.Id));
                 _itemsAdded.Add(item);
                 
             }
@@ -135,9 +136,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemUpdated(object sender, ItemChangeEventArgs e)
         {
-            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
-            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
+            //_logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
+            //_logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
+            //_logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
 
             var type = -1;
             if (!FilterItem(e.Item, out type))
@@ -164,7 +165,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     ItemType = type,
                 };
 
-                _logger.Debug(string.Format("Emby.Kodi.SyncQueue: ItemUpdated added for DB Saving {0}", e.Item.Id));
+                _logger.LogDebug(string.Format("Emby.Kodi.SyncQueue: ItemUpdated added for DB Saving {0}", e.Item.Id));
                 _itemsUpdated.Add(item);
                 
             }
@@ -177,9 +178,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemRemoved(object sender, ItemChangeEventArgs e)
         {
-            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
-            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
+            //_logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
+            //_logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
+            //_logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
 
             var type = -1;
             if (!FilterRemovedItem(e.Item, out type))
@@ -217,7 +218,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     ItemType = type
                 };
 
-                _logger.Debug(string.Format("Emby.Kodi.SyncQueue: ItemRemoved added for DB Saving {0}", e.Item.Id));
+                _logger.LogDebug(string.Format("Emby.Kodi.SyncQueue: ItemRemoved added for DB Saving {0}", e.Item.Id));
                 _itemsRemoved.Add(item);
                 
             }
@@ -236,7 +237,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 // Remove dupes in case some were saved multiple times
                 try
                 {
-                    _logger.Info("Emby.Kodi.SyncQueue: Starting Library Sync...");
+                    _logger.LogInformation("Emby.Kodi.SyncQueue: Starting Library Sync...");
                     var startTime = DateTime.UtcNow;                    
 
                     var itemsAdded = _itemsAdded.GroupBy(i => i.Id).Select(grp => grp.First()).ToList();
@@ -262,13 +263,12 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                         LibraryUpdateTimer = null;
                     }
                     TimeSpan dateDiff = DateTime.UtcNow - startTime;
-                    _logger.Info(String.Format("Emby.Kodi.SyncQueue: Finished Library Sync Taking {0}", dateDiff.ToString("c")));
+                    _logger.LogInformation(String.Format("Emby.Kodi.SyncQueue: Finished Library Sync Taking {0}", dateDiff.ToString("c")));
 
                 }
                 catch (Exception e)
                 {
-                    _logger.Error(String.Format("Emby.Kodi.SyncQueue: An Error Has Occurred in LibraryUpdateTimerCallback: {0}", e.Message));
-                    _logger.ErrorException(e.Message, e);
+                    _logger.LogError(e, "Emby.Kodi.SyncQueue: An Error Has Occurred in LibraryUpdateTimerCallback");
                 }
                 _itemsAdded.Clear();
                 _itemsRemoved.Clear();
@@ -303,7 +303,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             
                 DbRepo.Instance.WriteLibrarySync(Items, status, cancellationToken);
 
-                _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"LIBRARYSYNC\" {0} {1} items:  {2}", statusType, Items.Count(),
+                _logger.LogInformation(String.Format("Emby.Kodi.SyncQueue: \"LIBRARYSYNC\" {0} {1} items:  {2}", statusType, Items.Count(),
                     String.Join(",", Items.Select(i => i.Id.ToString("N")).ToArray())));
             });
         }
@@ -378,7 +378,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     break;
                 default:
                     type = -1;
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Ingoring Type {0}", typeName));
+                    _logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Ingoring Type {0}", typeName));
                     return false;
             }                                   
 
@@ -456,7 +456,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     break;
                 default:
                     type = -1;
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Ingoring Type {0}", typeName));
+                    _logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Ingoring Type {0}", typeName));
                     return false;
             }
 

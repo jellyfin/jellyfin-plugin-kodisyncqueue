@@ -2,8 +2,6 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MediaBrowser.Controller.Net;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Serialization;
 using MediaBrowser.Common.Configuration;
@@ -14,6 +12,7 @@ using Emby.Kodi.SyncQueue.Utils;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Model.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Emby.Kodi.SyncQueue.API
 {
@@ -36,12 +35,12 @@ namespace Emby.Kodi.SyncQueue.API
             _userManager = userManager;
             _libraryManager = libraryManager;
 
-            _logger.Info("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/{LastUpdateDT}/GetItems?format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
-            _logger.Info("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/GetItems?LastUpdateDT={LastUpdateDT}&format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
-            _logger.Info("Emby.Kodi.SyncQueue:  The following parameters also exist to filter the results:");
-            _logger.Info("Emby.Kodi.SyncQueue:  filter=movies,tvshows,music,musicvideos,boxsets");
-            _logger.Info("Emby.Kodi.SyncQueue:  Results will be included by default and only filtered if added to the filter query...");
-            _logger.Info("Emby.Kodi.SyncQueue:  the filter query must be lowercase in both the name and the items...");
+            _logger.LogInformation("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/{LastUpdateDT}/GetItems?format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
+            _logger.LogInformation("Emby.Kodi.SyncQueue:  SyncAPI Created and Listening at \"/Emby.Kodi.SyncQueue/{UserID}/GetItems?LastUpdateDT={LastUpdateDT}&format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
+            _logger.LogInformation("Emby.Kodi.SyncQueue:  The following parameters also exist to filter the results:");
+            _logger.LogInformation("Emby.Kodi.SyncQueue:  filter=movies,tvshows,music,musicvideos,boxsets");
+            _logger.LogInformation("Emby.Kodi.SyncQueue:  Results will be included by default and only filtered if added to the filter query...");
+            _logger.LogInformation("Emby.Kodi.SyncQueue:  the filter query must be lowercase in both the name and the items...");
 
             //dbRepo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer);          
             //DbRepo.dbPath = _applicationPaths.DataPath;
@@ -51,8 +50,8 @@ namespace Emby.Kodi.SyncQueue.API
 
         public SyncUpdateInfo Get(GetLibraryItems request)
         {
-            _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
-            _logger.Debug("Emby.Kodi.SyncQueue:  Processing message...");
+            _logger.LogInformation(String.Format("Emby.Kodi.SyncQueue:  Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
+            _logger.LogDebug("Emby.Kodi.SyncQueue:  Processing message...");
             var info = new SyncUpdateInfo();
             if (request.LastUpdateDT == null || request.LastUpdateDT == "")
                 request.LastUpdateDT = "1900-01-01T00:00:00Z";
@@ -100,14 +99,14 @@ namespace Emby.Kodi.SyncQueue.API
                                                         );
             Task.WhenAll(x);
             
-            _logger.Debug("Emby.Kodi.SyncQueue:  Request processed... Returning result...");
+            _logger.LogDebug("Emby.Kodi.SyncQueue:  Request processed... Returning result...");
             return x.Result;
         }
 
         public SyncUpdateInfo Get(GetLibraryItemsQuery request)
         {
-            _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
-            _logger.Debug("Emby.Kodi.SyncQueue:  Processing message...");
+            _logger.LogInformation(String.Format("Emby.Kodi.SyncQueue:  Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
+            _logger.LogDebug("Emby.Kodi.SyncQueue:  Processing message...");
             if (request.LastUpdateDT == null || request.LastUpdateDT == "")
                 request.LastUpdateDT = "1900-01-01T00:00:00Z";
             bool movies = true;
@@ -154,7 +153,7 @@ namespace Emby.Kodi.SyncQueue.API
                                                         );
             Task.WhenAll(x);
 
-            _logger.Debug("Emby.Kodi.SyncQueue:  Request processed... Returning result...");
+            _logger.LogDebug("Emby.Kodi.SyncQueue:  Request processed... Returning result...");
             return x.Result;
         }        
 
@@ -164,7 +163,7 @@ namespace Emby.Kodi.SyncQueue.API
         {
             var startTime = DateTime.UtcNow;
 
-            _logger.Debug("Emby.Kodi.SyncQueue:  Starting PopulateLibraryInfo...");
+            _logger.LogDebug("Emby.Kodi.SyncQueue:  Starting PopulateLibraryInfo...");
             var userDataChangedJson = new List<string>();
             var tmpList = new List<string>();
 
@@ -175,7 +174,7 @@ namespace Emby.Kodi.SyncQueue.API
 
             var dtl = (long)(userDT.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
 
-            _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Added Info...");
+            _logger.LogDebug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Added Info...");
             Task<List<string>> t1 = Task.Run(() =>
             {
                 List<string> result = null;
@@ -200,16 +199,16 @@ namespace Emby.Kodi.SyncQueue.API
                 
                 if (result.Count > 0)
                 {
-                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Added Items Found: {0}", string.Join(",", result.ToArray())));
+                    _logger.LogInformation(String.Format("Emby.Kodi.SyncQueue:  Added Items Found: {0}", string.Join(",", result.ToArray())));
                 }
                 else
                 {
-                    _logger.Info("Emby.Kodi.SyncQueue:  No Added Items Found!");
+                    _logger.LogInformation("Emby.Kodi.SyncQueue:  No Added Items Found!");
                 }
                 return result;
             });
 
-            _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Removed Info...");
+            _logger.LogDebug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Removed Info...");
             Task<List<string>> t2 = Task.Run(() =>
             {
                 List<string> result = new List<string>();
@@ -241,16 +240,16 @@ namespace Emby.Kodi.SyncQueue.API
 
                 if (result.Count > 0)
                 {
-                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Removed Items Found: {0}", string.Join(",", result.ToArray())));
+                    _logger.LogInformation(String.Format("Emby.Kodi.SyncQueue:  Removed Items Found: {0}", string.Join(",", result.ToArray())));
                 }
                 else
                 {
-                    _logger.Info("Emby.Kodi.SyncQueue:  No Removed Items Found!");
+                    _logger.LogInformation("Emby.Kodi.SyncQueue:  No Removed Items Found!");
                 }
                 return result;
             });
 
-            _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Updated Info...");
+            _logger.LogDebug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Updated Info...");
             Task<List<string>> t3 = Task.Run(() =>
             {
                 List<string> result = null;
@@ -275,20 +274,20 @@ namespace Emby.Kodi.SyncQueue.API
 
                 if (result.Count > 0)
                 {
-                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  Updated Items Found: {0}", string.Join(",", result.ToArray())));
+                    _logger.LogInformation(String.Format("Emby.Kodi.SyncQueue:  Updated Items Found: {0}", string.Join(",", result.ToArray())));
                 }
                 else
                 {
-                    _logger.Info("Emby.Kodi.SyncQueue:  No Updated Items Found!");
+                    _logger.LogInformation("Emby.Kodi.SyncQueue:  No Updated Items Found!");
                 }
                 return result;
             });
 
-            _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Folders Added To Info...");
+            _logger.LogDebug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Folders Added To Info...");
             info.FoldersAddedTo.Clear();
-            _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Folders Removed From Info...");
+            _logger.LogDebug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Folders Removed From Info...");
             info.FoldersRemovedFrom.Clear();
-            _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting User Data Changed Info...");
+            _logger.LogDebug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting User Data Changed Info...");
             Task<List<string>> t4 = Task.Run(() =>
             {
                 List<UserJson> data = null;          
@@ -300,11 +299,11 @@ namespace Emby.Kodi.SyncQueue.API
 
                 if (result.Count > 0)
                 {
-                    _logger.Info(String.Format("Emby.Kodi.SyncQueue:  User Data Changed Info Found: {0}", string.Join(",", data.Select(i => i.Id).ToArray())));
+                    _logger.LogInformation(String.Format("Emby.Kodi.SyncQueue:  User Data Changed Info Found: {0}", string.Join(",", data.Select(i => i.Id).ToArray())));
                 }
                 else
                 {
-                    _logger.Info("Emby.Kodi.SyncQueue:  No User Data Changed Info Found!");
+                    _logger.LogInformation("Emby.Kodi.SyncQueue:  No User Data Changed Info Found!");
                 }
                 
                 return result;
@@ -320,7 +319,7 @@ namespace Emby.Kodi.SyncQueue.API
             info.UserDataChanged = userDataChangedJson.Select(i => _jsonSerializer.DeserializeFromString<UserItemDataDto>(i)).ToList();
 
             TimeSpan diffDate = DateTime.UtcNow - startTime;
-            _logger.Info(String.Format("Emby.Kodi.SyncQueue: Request Finished Taking {0}", diffDate.ToString("c")));
+            _logger.LogInformation(String.Format("Emby.Kodi.SyncQueue: Request Finished Taking {0}", diffDate.ToString("c")));
 
             return info;
         }

@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using MediaBrowser.Model.Logging;
-using MediaBrowser.Model.Services;
+﻿using MediaBrowser.Model.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Emby.Kodi.SyncQueue.API
 {
@@ -34,7 +31,7 @@ namespace Emby.Kodi.SyncQueue.API
                 strm += "&filename=" + request.Name;
             }
 
-            Logger.Info("returning strm: {0}", strm);
+            Logger.LogInformation("returning strm: {0}", strm);
             return strm;
         }
     }

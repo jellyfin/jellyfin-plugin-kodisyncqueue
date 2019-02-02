@@ -64,12 +64,12 @@ namespace NanoApi
         {
             foo._header.updateDate = new DateTime?(DateTime.UtcNow);
             string contents = DbRepo.json.SerializeToString(foo);
-            DbRepo.fileSystem.CreateDirectory(this.path);
+            Directory.CreateDirectory(this.path);
             string path = Path.Combine(this.path, this.filename);
             if (this.encoding == null)
-                DbRepo.fileSystem.WriteAllText(path, contents);
+                System.IO.File.WriteAllText(path, contents);
             else
-                DbRepo.fileSystem.WriteAllText(path, contents, this.encoding);
+                System.IO.File.WriteAllText(path, contents, this.encoding);
             this.strDataCache = contents;
             return true;
         }

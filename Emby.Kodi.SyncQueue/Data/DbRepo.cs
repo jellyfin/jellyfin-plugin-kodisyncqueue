@@ -3,12 +3,11 @@ using System.Threading;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using Emby.Kodi.SyncQueue.Entities;
-using NanoApi.Entities;
 using System.Text;
 using MediaBrowser.Model.IO;
+using Microsoft.Extensions.Logging;
 
 namespace Emby.Kodi.SyncQueue.Data
 {
@@ -56,10 +55,10 @@ namespace Emby.Kodi.SyncQueue.Data
 
         public DbRepo(string dPath)
         {
-            logger.Info("Emby.Kodi.SyncQueue: Creating DB Repository...");
+            logger.LogInformation("Emby.Kodi.SyncQueue: Creating DB Repository...");
             this.DataPath = dPath;
 
-            fileSystem.CreateDirectory(dataPath);
+            Directory.CreateDirectory(dataPath);
 
             folderRecs = NanoApi.JsonFile<FolderRec>.GetInstance(dataPath, dbFolder, Encoding.UTF8, null, null);
             if (!folderRecs.CheckVersion("1.4.0"))
@@ -84,8 +83,8 @@ namespace Emby.Kodi.SyncQueue.Data
             var result = new List<Guid>();
             List<ItemRec> final = new List<ItemRec>();
 
-            logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(dtl), dtl));
-            logger.Debug(String.Format("Emby.Kodi.SyncQueue:  IntStatus: {0}", status));
+            logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(dtl), dtl));
+            logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  IntStatus: {0}", status));
 
             var items = itemRecs.Select(x => x.LastModified > dtl && x.Status == status).ToList();
 
@@ -110,9 +109,9 @@ namespace Emby.Kodi.SyncQueue.Data
 
             //itms.ForEach(i =>
             //{
-            //    _logger.Debug(result.ToString());
-            //    _logger.Debug(_json.SerializeToString(i));
-            //    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item {0} {1} {2:yyyy-MM-dd HH:mm:ss} for time {3}", i.ItemId, status,
+            //    _logger.LogDebug(result.ToString());
+            //    _logger.LogDebug(_json.SerializeToString(i));
+            //    _logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Item {0} {1} {2:yyyy-MM-dd HH:mm:ss} for time {3}", i.ItemId, status,
             //                new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(i.LastModified), i.LastModified));
             //});
             //result = itms.Select(i => i.ItemId).Distinct().ToList();
@@ -121,7 +120,7 @@ namespace Emby.Kodi.SyncQueue.Data
             //{
             //    if (result.Where(i => i == x.ItemId.ToString("N")).FirstOrDefault() == null)
             //    {
-            //        _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item {0} Modified {1:yyyy-MM-dd HH:mm:ss} for time {2}", x.ItemId, 
+            //        _logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Item {0} Modified {1:yyyy-MM-dd HH:mm:ss} for time {2}", x.ItemId, 
             //                new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(x.LastModified), x.LastModified));
             //        result.Add(x.ItemId);
             //    }
@@ -214,23 +213,23 @@ namespace Emby.Kodi.SyncQueue.Data
         {
             lock (_folderLock)
             {
-                logger.Info("Emby.Kodi.SyncQueue.Task: Starting Folder Retention Deletion...");
+                logger.LogInformation("Emby.Kodi.SyncQueue.Task: Starting Folder Retention Deletion...");
                 folderRecs.Delete(x => x.LastModified < dtl);
-                logger.Info("Emby.Kodi.SyncQueue.Task: Finished Folder Retention Deletion...");
+                logger.LogInformation("Emby.Kodi.SyncQueue.Task: Finished Folder Retention Deletion...");
             }
 
             lock (_itemLock)
             {
-                logger.Info("Emby.Kodi.SyncQueue.Task: Starting Item Retention Deletion...");
+                logger.LogInformation("Emby.Kodi.SyncQueue.Task: Starting Item Retention Deletion...");
                 itemRecs.Delete(x => x.LastModified < dtl);
-                logger.Info("Emby.Kodi.SyncQueue.Task: Finished Item Retention Deletion...");
+                logger.LogInformation("Emby.Kodi.SyncQueue.Task: Finished Item Retention Deletion...");
             }
 
             lock (_userLock)
             {
-                logger.Info("Emby.Kodi.SyncQueue.Task: Starting UserItem Retention Deletion...");
+                logger.LogInformation("Emby.Kodi.SyncQueue.Task: Starting UserItem Retention Deletion...");
                 userInfoRecs.Delete(x => x.LastModified < dtl);
-                logger.Info("Emby.Kodi.SyncQueue.Task: Finished UserItem Retention Deletion...");
+                logger.LogInformation("Emby.Kodi.SyncQueue.Task: Finished UserItem Retention Deletion...");
             }
         }
 
@@ -271,55 +270,55 @@ namespace Emby.Kodi.SyncQueue.Data
                     }
                     else
                     {
-                        logger.Debug(String.Format("Emby.Kodi.SyncQueue: NewTime: {0}  OldTime: {1}   Status: {2}", newTime, rec.LastModified, status));
+                        logger.LogDebug(String.Format("Emby.Kodi.SyncQueue: NewTime: {0}  OldTime: {1}   Status: {2}", newTime, rec.LastModified, status));
                         newRec = null;
                     }
 
                     if (newRec != null)
                     {
-                        logger.Debug(String.Format("Emby.Kodi.SyncQueue:  {0} ItemId: '{1}'", statusType, newRec.ItemId.ToString("N")));
+                        logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  {0} ItemId: '{1}'", statusType, newRec.ItemId.ToString("N")));
                     }
                     else
                     {
-                        logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped", i.Id.ToString("N")));
+                        logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped", i.Id.ToString("N")));
                     }
                 }
 
                 if (newRecs.Count > 0)
                 {
 
-                    logger.Debug(String.Format("Emby.Kodi.SyncQueue: {0}", json.SerializeToString(newRecs)));
+                    logger.LogDebug(String.Format("Emby.Kodi.SyncQueue: {0}", json.SerializeToString(newRecs)));
                     itemRecs.Insert(newRecs);
 
                 }
                 if (upRecs.Count > 0)
                 {
-                    logger.Debug("THIS IS WHERE WE ENTER UPDATE FOR EXISTING ITEMS!!!!!");
+                    logger.LogDebug("THIS IS WHERE WE ENTER UPDATE FOR EXISTING ITEMS!!!!!");
                     var data = itemRecs.Select();
 
 
-                    logger.Debug("THIS IS WHERE WE ENTER THE LOOP");
+                    logger.LogDebug("THIS IS WHERE WE ENTER THE LOOP");
                     foreach (var rec in upRecs)
                     {
-                        logger.Debug("THIS IS BEFORE LINQ WORK!");
+                        logger.LogDebug("THIS IS BEFORE LINQ WORK!");
                         data.Where(d => d.Id == rec.Id).ToList().ForEach(i =>
                         {
-                            logger.Debug("THIS IS INSIDE THE LINQ UPDATING START!");
+                            logger.LogDebug("THIS IS INSIDE THE LINQ UPDATING START!");
                             i.ItemId = rec.ItemId;
                             i.Status = rec.Status;
                             i.LastModified = rec.LastModified;
                             i.MediaType = rec.MediaType;
-                            logger.Debug("THIS IS INSIDE THE LINQ UPDATING END!");
+                            logger.LogDebug("THIS IS INSIDE THE LINQ UPDATING END!");
                         });
                     }
 
-                    logger.Debug("THIS IS AFTER LINQ STARTING COMMIT!");
+                    logger.LogDebug("THIS IS AFTER LINQ STARTING COMMIT!");
                     itemRecs.Commit(data);
-                    logger.Debug(String.Format("Emby.Kodi.SyncQueue: {0}", json.SerializeToString(data)));
-                    logger.Debug("THIS IS AFTER LINQ FINISHED COMMIT!");
+                    logger.LogDebug(String.Format("Emby.Kodi.SyncQueue: {0}", json.SerializeToString(data)));
+                    logger.LogDebug("THIS IS AFTER LINQ FINISHED COMMIT!");
 
                     data = itemRecs.Select();
-                    logger.Debug(String.Format("Emby.Kodi.SyncQueue: {0}", json.SerializeToString(data)));                    
+                    logger.LogDebug(String.Format("Emby.Kodi.SyncQueue: {0}", json.SerializeToString(data)));                    
                 }
             }
         }
@@ -334,7 +333,7 @@ namespace Emby.Kodi.SyncQueue.Data
                 {
 
                     var sJson = json.SerializeToString(dto).ToString();
-                    logger.Debug("Emby.Kodi.SyncQueue:  Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
+                    logger.LogDebug("Emby.Kodi.SyncQueue:  Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
 
                     LibItem itemref = itemRefs.Where(x => x.Id.ToString("N") == dto.ItemId).FirstOrDefault();
                     if (itemref != null)
