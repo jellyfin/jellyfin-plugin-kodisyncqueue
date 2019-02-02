@@ -56,7 +56,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         {
             _userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
 
-            _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue:  UserSyncNotification Startup...");            
+            _logger.LogInformation("UserSyncNotification Startup...");            
         }
 
         private bool FilterItem(BaseItem item, out int type)
@@ -125,7 +125,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     break;
                 default:
                     type = -1;
-                    _logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Ingoring Type {0}", typeName));
+                    _logger.LogDebug(String.Format("Ingoring Type {0}", typeName));
                     return false;
             }
 
@@ -139,9 +139,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 return;
             }
 
-            //_logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
-            //_logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            //_logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  User GetClientTypeName: {0}", (e.Item as BaseItem).GetClientTypeName()));
+            //_logger.LogDebug(String.Format("Item ID: {0}", e.Item.Id.ToString()));
+            //_logger.LogDebug(String.Format("JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
+            //_logger.LogDebug(String.Format("User GetClientTypeName: {0}", (e.Item as BaseItem).GetClientTypeName()));
 
 
             var cname = string.Empty;
@@ -233,7 +233,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var userId = pair.Key;
-                _logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Starting to save items for {0}", userId.ToString()));
+                _logger.LogDebug(String.Format("Starting to save items for {0}", userId.ToString()));
 
                 var user = _userManager.GetUserById(userId);
 
@@ -248,7 +248,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                         })
                         .ToList();
 
-                //_logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
+                //_logger.LogDebug(String.Format("SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
 
                 myTasks.Add(SaveUserChanges(dtoList, itemRefs, user.Name, userId.ToString("N"), cancellationToken));
             }

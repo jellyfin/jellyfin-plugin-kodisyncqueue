@@ -35,12 +35,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             _userManager = userManager;
             _libraryManager = libraryManager;
 
-            _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue:  SyncAPI Created and Listening at \"/Jellyfin.Plugin.KodiSyncQueue/{UserID}/{LastUpdateDT}/GetItems?format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
-            _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue:  SyncAPI Created and Listening at \"/Jellyfin.Plugin.KodiSyncQueue/{UserID}/GetItems?LastUpdateDT={LastUpdateDT}&format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
-            _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue:  The following parameters also exist to filter the results:");
-            _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue:  filter=movies,tvshows,music,musicvideos,boxsets");
-            _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue:  Results will be included by default and only filtered if added to the filter query...");
-            _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue:  the filter query must be lowercase in both the name and the items...");
+            _logger.LogInformation("SyncAPI Created and Listening at \"/Jellyfin.Plugin.KodiSyncQueue/{UserID}/{LastUpdateDT}/GetItems?format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
+            _logger.LogInformation("SyncAPI Created and Listening at \"/Jellyfin.Plugin.KodiSyncQueue/{UserID}/GetItems?LastUpdateDT={LastUpdateDT}&format=json\" - {LastUpdateDT} must be a UTC DateTime formatted as yyyy-MM-ddTHH:mm:ssZ");
+            _logger.LogInformation("The following parameters also exist to filter the results:");
+            _logger.LogInformation("filter=movies,tvshows,music,musicvideos,boxsets");
+            _logger.LogInformation("Results will be included by default and only filtered if added to the filter query...");
+            _logger.LogInformation("the filter query must be lowercase in both the name and the items...");
 
             //dbRepo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer);          
             //DbRepo.dbPath = _applicationPaths.DataPath;
@@ -50,8 +50,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
         public SyncUpdateInfo Get(GetLibraryItems request)
         {
-            _logger.LogInformation(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
-            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue:  Processing message...");
+            _logger.LogInformation(String.Format("Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
+            _logger.LogDebug("Processing message...");
             var info = new SyncUpdateInfo();
             if (request.LastUpdateDT == null || request.LastUpdateDT == "")
                 request.LastUpdateDT = "1900-01-01T00:00:00Z";
@@ -99,14 +99,14 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                                                         );
             Task.WhenAll(x);
             
-            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue:  Request processed... Returning result...");
+            _logger.LogDebug("Request processed... Returning result...");
             return x.Result;
         }
 
         public SyncUpdateInfo Get(GetLibraryItemsQuery request)
         {
-            _logger.LogInformation(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
-            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue:  Processing message...");
+            _logger.LogInformation(String.Format("Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
+            _logger.LogDebug("Processing message...");
             if (request.LastUpdateDT == null || request.LastUpdateDT == "")
                 request.LastUpdateDT = "1900-01-01T00:00:00Z";
             bool movies = true;
@@ -153,7 +153,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                                                         );
             Task.WhenAll(x);
 
-            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue:  Request processed... Returning result...");
+            _logger.LogDebug("Request processed... Returning result...");
             return x.Result;
         }        
 
@@ -163,7 +163,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         {
             var startTime = DateTime.UtcNow;
 
-            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue:  Starting PopulateLibraryInfo...");
+            _logger.LogDebug("Starting PopulateLibraryInfo...");
             var userDataChangedJson = new List<string>();
             var tmpList = new List<string>();
 
@@ -174,7 +174,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
             var dtl = (long)(userDT.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
 
-            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue:  PopulateLibraryInfo:  Getting Items Added Info...");
+            _logger.LogDebug("PopulateLibraryInfo:  Getting Items Added Info...");
             Task<List<string>> t1 = Task.Run(() =>
             {
                 List<string> result = null;
@@ -199,16 +199,16 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                 
                 if (result.Count > 0)
                 {
-                    _logger.LogInformation(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Added Items Found: {0}", string.Join(",", result.ToArray())));
+                    _logger.LogInformation(String.Format("Added Items Found: {0}", string.Join(",", result.ToArray())));
                 }
                 else
                 {
-                    _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue:  No Added Items Found!");
+                    _logger.LogInformation("No Added Items Found!");
                 }
                 return result;
             });
 
-            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue:  PopulateLibraryInfo:  Getting Items Removed Info...");
+            _logger.LogDebug("PopulateLibraryInfo:  Getting Items Removed Info...");
             Task<List<string>> t2 = Task.Run(() =>
             {
                 List<string> result = new List<string>();
@@ -240,16 +240,16 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
                 if (result.Count > 0)
                 {
-                    _logger.LogInformation(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Removed Items Found: {0}", string.Join(",", result.ToArray())));
+                    _logger.LogInformation(String.Format("Removed Items Found: {0}", string.Join(",", result.ToArray())));
                 }
                 else
                 {
-                    _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue:  No Removed Items Found!");
+                    _logger.LogInformation("No Removed Items Found!");
                 }
                 return result;
             });
 
-            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue:  PopulateLibraryInfo:  Getting Items Updated Info...");
+            _logger.LogDebug("PopulateLibraryInfo:  Getting Items Updated Info...");
             Task<List<string>> t3 = Task.Run(() =>
             {
                 List<string> result = null;
@@ -274,20 +274,20 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
                 if (result.Count > 0)
                 {
-                    _logger.LogInformation(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Updated Items Found: {0}", string.Join(",", result.ToArray())));
+                    _logger.LogInformation(String.Format("Updated Items Found: {0}", string.Join(",", result.ToArray())));
                 }
                 else
                 {
-                    _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue:  No Updated Items Found!");
+                    _logger.LogInformation("No Updated Items Found!");
                 }
                 return result;
             });
 
-            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue:  PopulateLibraryInfo:  Getting Folders Added To Info...");
+            _logger.LogDebug("PopulateLibraryInfo:  Getting Folders Added To Info...");
             info.FoldersAddedTo.Clear();
-            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue:  PopulateLibraryInfo:  Getting Folders Removed From Info...");
+            _logger.LogDebug("PopulateLibraryInfo:  Getting Folders Removed From Info...");
             info.FoldersRemovedFrom.Clear();
-            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue:  PopulateLibraryInfo:  Getting User Data Changed Info...");
+            _logger.LogDebug("PopulateLibraryInfo:  Getting User Data Changed Info...");
             Task<List<string>> t4 = Task.Run(() =>
             {
                 List<UserJson> data = null;          
@@ -299,11 +299,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
                 if (result.Count > 0)
                 {
-                    _logger.LogInformation(String.Format("Jellyfin.Plugin.KodiSyncQueue:  User Data Changed Info Found: {0}", string.Join(",", data.Select(i => i.Id).ToArray())));
+                    _logger.LogInformation(String.Format("User Data Changed Info Found: {0}", string.Join(",", data.Select(i => i.Id).ToArray())));
                 }
                 else
                 {
-                    _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue:  No User Data Changed Info Found!");
+                    _logger.LogInformation("No User Data Changed Info Found!");
                 }
                 
                 return result;

@@ -83,8 +83,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             var result = new List<Guid>();
             List<ItemRec> final = new List<ItemRec>();
 
-            logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(dtl), dtl));
-            logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  IntStatus: {0}", status));
+            logger.LogDebug(String.Format("Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(dtl), dtl));
+            logger.LogDebug(String.Format("IntStatus: {0}", status));
 
             var items = itemRecs.Select(x => x.LastModified > dtl && x.Status == status).ToList();
 
@@ -111,7 +111,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             //{
             //    _logger.LogDebug(result.ToString());
             //    _logger.LogDebug(_json.SerializeToString(i));
-            //    _logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Item {0} {1} {2:yyyy-MM-dd HH:mm:ss} for time {3}", i.ItemId, status,
+            //    _logger.LogDebug(String.Format("Item {0} {1} {2:yyyy-MM-dd HH:mm:ss} for time {3}", i.ItemId, status,
             //                new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(i.LastModified), i.LastModified));
             //});
             //result = itms.Select(i => i.ItemId).Distinct().ToList();
@@ -120,7 +120,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             //{
             //    if (result.Where(i => i == x.ItemId.ToString("N")).FirstOrDefault() == null)
             //    {
-            //        _logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Item {0} Modified {1:yyyy-MM-dd HH:mm:ss} for time {2}", x.ItemId, 
+            //        _logger.LogDebug(String.Format("Item {0} Modified {1:yyyy-MM-dd HH:mm:ss} for time {2}", x.ItemId, 
             //                new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(x.LastModified), x.LastModified));
             //        result.Add(x.ItemId);
             //    }
@@ -276,11 +276,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
                     if (newRec != null)
                     {
-                        logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  {0} ItemId: '{1}'", statusType, newRec.ItemId.ToString("N")));
+                        logger.LogDebug(String.Format("{0} ItemId: '{1}'", statusType, newRec.ItemId.ToString("N")));
                     }
                     else
                     {
-                        logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  ItemId: '{0}' Skipped", i.Id.ToString("N")));
+                        logger.LogDebug(String.Format("ItemId: '{0}' Skipped", i.Id.ToString("N")));
                     }
                 }
 
@@ -333,7 +333,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                 {
 
                     var sJson = json.SerializeToString(dto).ToString();
-                    logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue:  Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
+                    logger.LogDebug("Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
 
                     LibItem itemref = itemRefs.Where(x => x.Id.ToString("N") == dto.ItemId).FirstOrDefault();
                     if (itemref != null)

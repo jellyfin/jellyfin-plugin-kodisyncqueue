@@ -74,7 +74,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             _libraryManager.ItemUpdated += libraryManager_ItemUpdated;
             _libraryManager.ItemRemoved += libraryManager_ItemRemoved;
 
-            _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue:  LibrarySyncNotification Startup...");
+            _logger.LogInformation("LibrarySyncNotification Startup...");
         }
 
         /// <summary>
@@ -84,9 +84,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemAdded(object sender, ItemChangeEventArgs e)
         {
-            //_logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
-            //_logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            //_logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
+            //_logger.LogDebug(String.Format("Item ID: {0}", e.Item.Id.ToString()));
+            //_logger.LogDebug(String.Format("JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
+            //_logger.LogDebug(String.Format("Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
 
             var type = -1;
             if (!FilterItem(e.Item, out type))
@@ -136,9 +136,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemUpdated(object sender, ItemChangeEventArgs e)
         {
-            //_logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
-            //_logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            //_logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
+            //_logger.LogDebug(String.Format("Item ID: {0}", e.Item.Id.ToString()));
+            //_logger.LogDebug(String.Format("JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
+            //_logger.LogDebug(String.Format("Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
 
             var type = -1;
             if (!FilterItem(e.Item, out type))
@@ -178,9 +178,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemRemoved(object sender, ItemChangeEventArgs e)
         {
-            //_logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
-            //_logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            //_logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
+            //_logger.LogDebug(String.Format("Item ID: {0}", e.Item.Id.ToString()));
+            //_logger.LogDebug(String.Format("JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
+            //_logger.LogDebug(String.Format("Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
 
             var type = -1;
             if (!FilterRemovedItem(e.Item, out type))
@@ -378,7 +378,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     break;
                 default:
                     type = -1;
-                    _logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Ingoring Type {0}", typeName));
+                    _logger.LogDebug(String.Format("Ingoring Type {0}", typeName));
                     return false;
             }                                   
 
@@ -456,7 +456,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     break;
                 default:
                     type = -1;
-                    _logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Ingoring Type {0}", typeName));
+                    _logger.LogDebug(String.Format("Ingoring Type {0}", typeName));
                     return false;
             }
 
