@@ -77,7 +77,7 @@ namespace NanoApi
         public bool DeleteFile()
         {
             string path = Path.Combine(this.path, this.filename);
-            if (DbRepo.fileSystem.FileExists(path))
+            if (System.IO.File.Exists(path))
                 DbRepo.fileSystem.DeleteFile(path);
             return true;
         }
@@ -85,16 +85,16 @@ namespace NanoApi
         public Foo<T> Read<T>()
         {
             string path = Path.Combine(this.path, this.filename);
-            if (!DbRepo.fileSystem.FileExists(path))
+            if (!System.IO.File.Exists(path))
                 return null;
 
             DateTime lastWriteTime = DbRepo.fileSystem.GetLastWriteTimeUtc(path);
             if (!this.lastTS.HasValue || this.lastTS.Value.Ticks != lastWriteTime.Ticks)
             {
                 if (this.encoding == null)
-                    this.strDataCache = DbRepo.fileSystem.ReadAllText(path);
+                    this.strDataCache = System.IO.File.ReadAllText(path);
                 else
-                    this.strDataCache = DbRepo.fileSystem.ReadAllText(path, this.encoding);
+                    this.strDataCache = System.IO.File.ReadAllText(path, this.encoding);
                 this.lastTS = new DateTime?(lastWriteTime);
             }
             Foo<T> foo = DbRepo.json.DeserializeFromString<Foo<T>>(this.strDataCache);
