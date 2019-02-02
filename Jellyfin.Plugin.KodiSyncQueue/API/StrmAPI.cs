@@ -16,7 +16,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         {
             if (string.IsNullOrEmpty(request.Handler))
             {
-                request.Handler = "plugin://plugin.video.emby";
+                request.Handler = "plugin://plugin.video.jellyfin";
             }
 
             string strm = request.Handler + "?mode=play&id=" + request.Id;

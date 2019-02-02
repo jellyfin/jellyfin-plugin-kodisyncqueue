@@ -62,15 +62,15 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
             folderRecs = NanoApi.JsonFile<FolderRec>.GetInstance(dataPath, dbFolder, Encoding.UTF8, null, null);
             if (!folderRecs.CheckVersion("1.4.0"))
-                folderRecs.ChangeHeader("1.4.0", "Folder Repository", "This repository stores folder changes as pushed from Emby (not currently used).");    
+                folderRecs.ChangeHeader("1.4.0", "Folder Repository", "This repository stores folder changes as pushed from Jellyfin (not currently used).");    
                   
             itemRecs = NanoApi.JsonFile<ItemRec>.GetInstance(dataPath, dbItem, Encoding.UTF8, null, null);
             if (!itemRecs.CheckVersion("1.4.0"))
-                itemRecs.ChangeHeader("1.4.0", "Item Repository", "This repository stores item changes per user as pushed from Emby.");
+                itemRecs.ChangeHeader("1.4.0", "Item Repository", "This repository stores item changes per user as pushed from Jellyfin.");
             
             userInfoRecs = NanoApi.JsonFile<UserInfoRec>.GetInstance(dataPath, dbUser, Encoding.UTF8, null, null);
             if (!userInfoRecs.CheckVersion("1.4.0"))
-                userInfoRecs.ChangeHeader("1.4.0", "User Info Repository", "This repository stores deleted items per user as pushed from Emby.");            
+                userInfoRecs.ChangeHeader("1.4.0", "User Info Repository", "This repository stores deleted items per user as pushed from Jellyfin.");            
         }
 
         public bool Initialize()

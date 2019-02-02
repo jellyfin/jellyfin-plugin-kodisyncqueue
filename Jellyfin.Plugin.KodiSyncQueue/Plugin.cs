@@ -77,7 +77,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue
         {
             get
             {
-                return "Companion for Kodi add-ons. Provides dynamic strms and shorter sync times for Emby for Kodi.";
+                return "Companion for Kodi add-ons. Provides dynamic strms and shorter sync times for Jellyfin for Kodi.";
             }
         }
 
