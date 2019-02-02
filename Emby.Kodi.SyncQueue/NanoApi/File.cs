@@ -10,7 +10,7 @@ namespace NanoApi
 {
     internal class File
     {
-        private DateTimeOffset? lastTS;
+        private DateTime? lastTS;
         private string strDataCache;
         private static Dictionary<string, File> pool = new Dictionary<string, File>();
         private Impersonate impersonate;
@@ -62,7 +62,7 @@ namespace NanoApi
 
         public bool Save<T>(Foo<T> foo)
         {
-            foo._header.updateDate = DateTimeOffset.UtcNow;
+            foo._header.updateDate = new DateTime?(DateTime.UtcNow);
             string contents = DbRepo.json.SerializeToString(foo);
             DbRepo.fileSystem.CreateDirectory(this.path);
             string path = Path.Combine(this.path, this.filename);
@@ -88,14 +88,14 @@ namespace NanoApi
             if (!DbRepo.fileSystem.FileExists(path))
                 return null;
 
-            DateTimeOffset lastWriteTime = DbRepo.fileSystem.GetLastWriteTimeUtc(path);
+            DateTime lastWriteTime = DbRepo.fileSystem.GetLastWriteTimeUtc(path);
             if (!this.lastTS.HasValue || this.lastTS.Value.Ticks != lastWriteTime.Ticks)
             {
                 if (this.encoding == null)
                     this.strDataCache = DbRepo.fileSystem.ReadAllText(path);
                 else
                     this.strDataCache = DbRepo.fileSystem.ReadAllText(path, this.encoding);
-                this.lastTS = new DateTimeOffset?(lastWriteTime);
+                this.lastTS = new DateTime?(lastWriteTime);
             }
             Foo<T> foo = DbRepo.json.DeserializeFromString<Foo<T>>(this.strDataCache);
             if (foo._header == null)

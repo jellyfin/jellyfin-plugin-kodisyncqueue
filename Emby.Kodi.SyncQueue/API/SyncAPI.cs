@@ -162,7 +162,7 @@ namespace Emby.Kodi.SyncQueue.API
                                                               bool movies, bool tvshows, bool music,
                                                               bool musicvideos, bool boxsets)
         {
-            var startTime = DateTimeOffset.UtcNow;
+            var startTime = DateTime.UtcNow;
 
             _logger.Debug("Emby.Kodi.SyncQueue:  Starting PopulateLibraryInfo...");
             var userDataChangedJson = new List<string>();
@@ -171,9 +171,9 @@ namespace Emby.Kodi.SyncQueue.API
             var info = new SyncUpdateInfo();
 
             //var userDT = Convert.ToDateTime(lastDT);
-            var userDT = DateTimeOffset.Parse(lastDT, CultureInfo.CurrentCulture, DateTimeStyles.AssumeUniversal);
+            var userDT = DateTime.Parse(lastDT, CultureInfo.CurrentCulture, DateTimeStyles.AssumeUniversal);
 
-            var dtl = (long)(userDT.ToUniversalTime().Subtract(new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero)).TotalSeconds);
+            var dtl = (long)(userDT.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
 
             _logger.Debug("Emby.Kodi.SyncQueue:  PopulateLibraryInfo:  Getting Items Added Info...");
             Task<List<string>> t1 = Task.Run(() =>
@@ -319,7 +319,7 @@ namespace Emby.Kodi.SyncQueue.API
 
             info.UserDataChanged = userDataChangedJson.Select(i => _jsonSerializer.DeserializeFromString<UserItemDataDto>(i)).ToList();
 
-            TimeSpan diffDate = DateTimeOffset.UtcNow - startTime;
+            TimeSpan diffDate = DateTime.UtcNow - startTime;
             _logger.Info(String.Format("Emby.Kodi.SyncQueue: Request Finished Taking {0}", diffDate.ToString("c")));
 
             return info;

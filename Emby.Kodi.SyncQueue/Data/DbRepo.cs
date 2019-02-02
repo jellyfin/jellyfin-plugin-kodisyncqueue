@@ -84,7 +84,7 @@ namespace Emby.Kodi.SyncQueue.Data
             var result = new List<Guid>();
             List<ItemRec> final = new List<ItemRec>();
 
-            logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero).AddSeconds(dtl), dtl));
+            logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(dtl), dtl));
             logger.Debug(String.Format("Emby.Kodi.SyncQueue:  IntStatus: {0}", status));
 
             var items = itemRecs.Select(x => x.LastModified > dtl && x.Status == status).ToList();
@@ -345,7 +345,7 @@ namespace Emby.Kodi.SyncQueue.Data
                             ItemId = dto.ItemId,
                             Json = sJson,
                             UserId = userId,
-                            LastModified = (long)(DateTimeOffset.UtcNow.Subtract(new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero)).TotalSeconds),
+                            LastModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
                             MediaType = itemref.ItemType,
                             //LibraryName = itemref.CollectionName
                         };

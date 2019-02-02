@@ -7,8 +7,8 @@ namespace NanoApi.Entities
         public string descriptor { get; set; }
         public string version { get; set; }
         public string title { get; set; }
-        public DateTimeOffset? createDate { get; set; }
-        public DateTimeOffset? updateDate { get; set; }
+        public DateTime? createDate { get; set; }
+        public DateTime? updateDate { get; set; }
         public int idMax { get; set; }
     }
 }
