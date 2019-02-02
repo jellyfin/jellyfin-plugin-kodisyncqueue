@@ -18,13 +18,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 {
     class UserSyncNotification : IServerEntryPoint
     {
-        private readonly ISessionManager _sessionManager;
         private readonly ILogger _logger;
         private readonly IUserDataManager _userDataManager;
         private readonly IUserManager _userManager;
-        private readonly IJsonSerializer _jsonSerializer;
-        private readonly IApplicationPaths _applicationPaths;
-        private readonly ILibraryManager _libraryManager;
 
         private readonly object _syncLock = new object();
         private Timer UpdateTimer { get; set; }
@@ -33,23 +29,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         private readonly Dictionary<Guid, List<BaseItem>> _changedItems = new Dictionary<Guid, List<BaseItem>>();
         private List<LibItem> _itemRef = new List<LibItem>();
 
-        //private DbRepo Repo = null;
         private CancellationTokenSource cTokenSource = new CancellationTokenSource();
 
-        //private DbRepo dbRepo = null;
-
-        public UserSyncNotification(ILibraryManager libraryManager, IUserDataManager userDataManager, ISessionManager sessionManager, ILogger logger, IUserManager userManager, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths)
+        public UserSyncNotification(IUserDataManager userDataManager, ILogger logger, IUserManager userManager)
         {
             _userDataManager = userDataManager;
-            _sessionManager = sessionManager;
             _logger = logger;
             _userManager = userManager;
-            _jsonSerializer = jsonSerializer;
-            _applicationPaths = applicationPaths;
-            _libraryManager = libraryManager;
-            //dataHelper = new DataHelper(_logger, _jsonSerializer);
-
-            //dbRepo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer);
         }
 
         public void Run()
@@ -87,7 +73,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
             switch (typeName)
             {
-                //MOVIES
                 case "Movie":
                     if (!Plugin.Instance.Configuration.tkMovies)
                     {
@@ -139,20 +124,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 return;
             }
 
-            //_logger.LogDebug(String.Format("Item ID: {0}", e.Item.Id.ToString()));
-            //_logger.LogDebug(String.Format("JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            //_logger.LogDebug(String.Format("User GetClientTypeName: {0}", (e.Item as BaseItem).GetClientTypeName()));
-
-
-            var cname = string.Empty;
             lock (_syncLock)
             {
-                var type = -1;
-                var testItem = e.Item as BaseItem;
+                var testItem = e.Item;
 
                 if (testItem != null)
                 {
-                    if (!FilterItem(testItem, out type))
+                    if (!FilterItem(testItem, out var type))
                     {
                         return;
                     }
@@ -167,9 +145,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                         UpdateTimer.Change(UpdateDuration, Timeout.Infinite);
                     }
 
-                    List<BaseItem> keys;
-
-                    if (!_changedItems.TryGetValue(e.UserId, out keys))
+                    if (!_changedItems.TryGetValue(e.UserId, out var keys))
                     {
                         keys = new List<BaseItem>();
                         _changedItems[e.UserId] = keys;
@@ -178,7 +154,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     keys.Add(e.Item);
 
                     // Go up one level for indicators
-                    _itemRef.Add(new LibItem()
+                    _itemRef.Add(new LibItem
                     {
                         Id = testItem.Id,
                         ItemType = type,                        
@@ -208,8 +184,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 _changedItems.Clear();
                 _itemRef.Clear();
 
-                Task x = SendNotifications(changes, itemRef, cTokenSource.Token);
-                Task.WaitAll(x);
+                Task sendNotificationsTask = SendNotifications(changes, itemRef, cTokenSource.Token);
+                Task.WaitAll(sendNotificationsTask);
 
                 if (UpdateTimer != null)
                 {
@@ -217,7 +193,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     UpdateTimer = null;
                 }
                 TimeSpan dateDiff = DateTime.UtcNow - startDate;
-                _logger.LogInformation(String.Format("User Changes Sync Finished Taking {0}", dateDiff.ToString("c")));
+                _logger.LogInformation("User Changes Sync Finished Taking {TimeTaken}", dateDiff.ToString("c"));
             }
             catch (Exception e)
             {
@@ -233,7 +209,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var userId = pair.Key;
-                _logger.LogDebug(String.Format("Starting to save items for {0}", userId.ToString()));
+                _logger.LogDebug("Starting to save items for {userId}", userId.ToString());
 
                 var user = _userManager.GetUserById(userId);
 
@@ -248,8 +224,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                         })
                         .ToList();
 
-                //_logger.LogDebug(String.Format("SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
-
                 myTasks.Add(SaveUserChanges(dtoList, itemRefs, user.Name, userId.ToString("N"), cancellationToken));
             }
             Task[] iTasks = myTasks.ToArray();
@@ -258,16 +232,16 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
         private async Task SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId, CancellationToken cancellationToken)
         {
-            bool result = await Task.Run(() =>
+            await Task.Run(() =>
             {
                 DbRepo.Instance.SetUserInfoSync(dtos, itemRefs, userName, userId, cancellationToken);
 
                 return true;
-            });
+            }, cancellationToken);
             
             List<string> ids = dtos.Select(s => s.ItemId).ToList();
 
-            _logger.LogInformation(String.Format("\"USERSYNC\" User {0}({1}) posted {2} Updates:  {3}", userId, userName, ids.Count(), String.Join(",", ids.ToArray())));
+            _logger.LogInformation("\"USERSYNC\" User {UserId}({Username}) posted {NumberOfUpdates} Updates: {Updates}", userId, userName, ids.Count, string.Join(",", ids.ToArray()));
         }
 
         private void TriggerCancellation()

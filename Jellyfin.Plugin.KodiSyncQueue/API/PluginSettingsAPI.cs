@@ -9,12 +9,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
     public class PluginSettingsAPI : IService
     {
         private readonly ILogger _logger;
-        private readonly IJsonSerializer _jsonSerializer;
 
-        public PluginSettingsAPI(ILogger logger, IJsonSerializer jsonSerializer)
+        public PluginSettingsAPI(ILogger logger)
         {
             _logger = logger;
-            _jsonSerializer = jsonSerializer;
         }
 
         public PluginSettings Get(GetPluginSettings request)
@@ -22,12 +20,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             _logger.LogInformation("Plugin Settings Requested...");
             var settings = new PluginSettings();
             _logger.LogDebug("Class Variable Created!");
-            int retDays = 0;
-            DateTime dtNow = DateTime.UtcNow;
-            
+
             _logger.LogDebug("Creating Settings Object Variables!");
 
-            if (!(Int32.TryParse(Plugin.Instance.Configuration.RetDays, out retDays)))
+            if (!int.TryParse(Plugin.Instance.Configuration.RetDays, out var retDays))
             {
                 retDays = 0;
             }

@@ -41,19 +41,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             _logger.LogInformation("filter=movies,tvshows,music,musicvideos,boxsets");
             _logger.LogInformation("Results will be included by default and only filtered if added to the filter query...");
             _logger.LogInformation("the filter query must be lowercase in both the name and the items...");
-
-            //dbRepo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer);          
-            //DbRepo.dbPath = _applicationPaths.DataPath;
-            //DbRepo.logger = _logger;
-            //DbRepo.json = _jsonSerializer;
         }
 
         public SyncUpdateInfo Get(GetLibraryItems request)
         {
-            _logger.LogInformation(String.Format("Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
+            _logger.LogInformation("Sync Requested for UserID: '{UserId}' with LastUpdateDT: '{LastUpdateDT}'", request.UserID, request.LastUpdateDT);
             _logger.LogDebug("Processing message...");
-            var info = new SyncUpdateInfo();
-            if (request.LastUpdateDT == null || request.LastUpdateDT == "")
+            if (string.IsNullOrEmpty(request.LastUpdateDT))
                 request.LastUpdateDT = "1900-01-01T00:00:00Z";
             bool movies = true;
             bool tvshows = true;
@@ -61,7 +55,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             bool musicvideos = true;
             bool boxsets = true;
 
-            if (request.filter != null && request.filter != "")
+            if (!string.IsNullOrEmpty(request.filter))
             {
                 var filter = request.filter.ToLower().Split(',');
                 foreach (var f in filter)
@@ -88,26 +82,26 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                 }
             }
 
-            Task<SyncUpdateInfo> x = PopulateLibraryInfo(
-                                                            request.UserID,
-                                                            request.LastUpdateDT,
-                                                            movies,
-                                                            tvshows,
-                                                            music,
-                                                            musicvideos,
-                                                            boxsets
-                                                        );
-            Task.WhenAll(x);
+            Task<SyncUpdateInfo> updateTasks = PopulateLibraryInfo(
+                request.UserID,
+                request.LastUpdateDT,
+                movies,
+                tvshows,
+                music,
+                musicvideos,
+                boxsets
+            );
+            Task.WhenAll(updateTasks);
             
             _logger.LogDebug("Request processed... Returning result...");
-            return x.Result;
+            return updateTasks.Result;
         }
 
         public SyncUpdateInfo Get(GetLibraryItemsQuery request)
         {
-            _logger.LogInformation(String.Format("Sync Requested for UserID: '{0}' with LastUpdateDT: '{1}'", request.UserID, request.LastUpdateDT));
+            _logger.LogInformation("Sync Requested for UserID: '{UserId}' with LastUpdateDT: '{LastUpdateDT}'", request.UserID, request.LastUpdateDT);
             _logger.LogDebug("Processing message...");
-            if (request.LastUpdateDT == null || request.LastUpdateDT == "")
+            if (string.IsNullOrEmpty(request.LastUpdateDT))
                 request.LastUpdateDT = "1900-01-01T00:00:00Z";
             bool movies = true;
             bool tvshows = true;
@@ -115,7 +109,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             bool musicvideos = true;
             bool boxsets = true;
 
-            if (request.filter != null && request.filter != "")
+            if (!string.IsNullOrEmpty(request.filter))
             {
                 var filter = request.filter.ToLower().Split(',');
                 foreach (var f in filter)
@@ -142,19 +136,19 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                 }
             }
 
-            Task<SyncUpdateInfo> x = PopulateLibraryInfo(
-                                                            request.UserID, 
-                                                            request.LastUpdateDT,
-                                                            movies,
-                                                            tvshows,
-                                                            music,
-                                                            musicvideos,
-                                                            boxsets
-                                                        );
-            Task.WhenAll(x);
+            Task<SyncUpdateInfo> updateTasks = PopulateLibraryInfo(
+                request.UserID,
+                request.LastUpdateDT,
+                movies,
+                tvshows,
+                music,
+                musicvideos,
+                boxsets
+            );
+            Task.WhenAll(updateTasks);
 
             _logger.LogDebug("Request processed... Returning result...");
-            return x.Result;
+            return updateTasks.Result;
         }        
 
         public async Task<SyncUpdateInfo> PopulateLibraryInfo(string userId, string lastDT, 
@@ -165,7 +159,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
             _logger.LogDebug("Starting PopulateLibraryInfo...");
             var userDataChangedJson = new List<string>();
-            var tmpList = new List<string>();
 
             var info = new SyncUpdateInfo();
 
@@ -215,32 +208,15 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                 List<Guid> data = null;
 
                 data = DbRepo.Instance.GetItems(dtl, 2, movies, tvshows, music, musicvideos, boxsets);
-                
-                //var user = _userManager.GetUserById(Guid.Parse(userId));
 
-                //List<BaseItem> items = new List<BaseItem>();
-                //data.ForEach(i =>
-                //{
-                //    var item = _libraryManager.GetItemById(i);
-                //    if (item != null)
-                //    {
-                //        items.Add(item);
-                //    }
-                //});
-
-                if (data != null && data.Count() > 0)
+                if (data != null && data.Any())
                 {
-                    data.ForEach(i =>
-                    {
-                        result.Add(i.ToString("N"));
-                    });
+                    data.ForEach(i => result.Add(i.ToString("N")));
                 }
-
-                //result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager, true)).Select(i => i.Id.ToString("N")).Distinct().ToList();
 
                 if (result.Count > 0)
                 {
-                    _logger.LogInformation(String.Format("Removed Items Found: {0}", string.Join(",", result.ToArray())));
+                    _logger.LogInformation("Removed Items Found: {RemovedItems}", string.Join(",", result.ToArray()));
                 }
                 else
                 {
@@ -252,8 +228,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             _logger.LogDebug("PopulateLibraryInfo:  Getting Items Updated Info...");
             Task<List<string>> t3 = Task.Run(() =>
             {
-                List<string> result = null;
-                List<Guid> data = null;
+                List<string> result;
+                List<Guid> data;
 
                 data = DbRepo.Instance.GetItems(dtl, 1, movies, tvshows, music, musicvideos, boxsets);
                 
@@ -274,7 +250,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
                 if (result.Count > 0)
                 {
-                    _logger.LogInformation(String.Format("Updated Items Found: {0}", string.Join(",", result.ToArray())));
+                    _logger.LogInformation("Updated Items Found: {UpdatedItems}", string.Join(",", result.ToArray()));
                 }
                 else
                 {
@@ -290,8 +266,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             _logger.LogDebug("PopulateLibraryInfo:  Getting User Data Changed Info...");
             Task<List<string>> t4 = Task.Run(() =>
             {
-                List<UserJson> data = null;          
-                List<string> result = null;
+                List<UserJson> data;          
+                List<string> result;
 
                 data = DbRepo.Instance.GetUserInfos(dtl, userId, movies, tvshows, music, musicvideos, boxsets);
                 
@@ -299,7 +275,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
                 if (result.Count > 0)
                 {
-                    _logger.LogInformation(String.Format("User Data Changed Info Found: {0}", string.Join(",", data.Select(i => i.Id).ToArray())));
+                    _logger.LogInformation("User Data Changed Info Found: {ChangedData}", string.Join(",", data.Select(i => i.Id).ToArray()));
                 }
                 else
                 {
@@ -319,7 +295,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             info.UserDataChanged = userDataChangedJson.Select(i => _jsonSerializer.DeserializeFromString<UserItemDataDto>(i)).ToList();
 
             TimeSpan diffDate = DateTime.UtcNow - startTime;
-            _logger.LogInformation(String.Format("Request Finished Taking {0}", diffDate.ToString("c")));
+            _logger.LogInformation("Request Finished Taking {TimeTaken}", diffDate.ToString("c"));
 
             return info;
         }

@@ -10,12 +10,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
     public class ServerTimeAPI : IService
     {
         private readonly ILogger _logger;
-        private readonly IJsonSerializer _jsonSerializer;
 
-        public ServerTimeAPI(ILogger logger, IJsonSerializer jsonSerializer)
+        public ServerTimeAPI(ILogger logger)
         {
             _logger = logger;
-            _jsonSerializer = jsonSerializer;
         }
 
         public ServerTimeInfo Get(GetServerTime request)
@@ -23,11 +21,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             _logger.LogInformation("Server Time Requested...");
             var info = new ServerTimeInfo();
             _logger.LogDebug("Class Variable Created!");
-            int retDays = 0;
             DateTime dtNow = DateTime.UtcNow;
             DateTime retDate;
 
-            if (!(Int32.TryParse(Plugin.Instance.Configuration.RetDays, out retDays)))
+            if (!int.TryParse(Plugin.Instance.Configuration.RetDays, out var retDays))
             {
                 retDays = 0;
             }
@@ -43,11 +40,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                 retDate = retDate.AddDays(retDays);
             }
             _logger.LogDebug("Getting Ready to Set Variables!");
-            info.ServerDateTime = String.Format("{0}", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
-            info.RetentionDateTime = String.Format("{0}", retDate.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
+            info.ServerDateTime = $"{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture)}";
+            info.RetentionDateTime = $"{retDate.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture)}";
 
-            _logger.LogDebug(String.Format("ServerDateTime = {0}", info.ServerDateTime));
-            _logger.LogDebug(String.Format("RetentionDateTime = {0}", info.RetentionDateTime));
+            _logger.LogDebug("ServerDateTime = {ServerDateTime}, RetentionDateTime = {RetentionDateTime}", info.ServerDateTime, info.RetentionDateTime);
 
             return info;
         }

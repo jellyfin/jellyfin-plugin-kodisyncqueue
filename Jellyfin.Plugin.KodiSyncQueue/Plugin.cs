@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using Jellyfin.Plugin.KodiSyncQueue.Configuration;
+using Jellyfin.Plugin.KodiSyncQueue.Data;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
-using MediaBrowser.Model.Serialization;
-using Jellyfin.Plugin.KodiSyncQueue.Configuration;
-using MediaBrowser.Model.Plugins;
-using Jellyfin.Plugin.KodiSyncQueue.Data;
 using MediaBrowser.Model.IO;
+using MediaBrowser.Model.Plugins;
+using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue
@@ -15,38 +15,20 @@ namespace Jellyfin.Plugin.KodiSyncQueue
     {
         public static ILogger Logger { get; set; }
 
-        public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer, ILogger logger, IJsonSerializer json, IFileSystem fileSystem)
-            : base(applicationPaths, xmlSerializer)
+        public Plugin(
+            IApplicationPaths applicationPaths,
+            IXmlSerializer xmlSerializer,
+            ILogger logger,
+            IJsonSerializer json,
+            IFileSystem fileSystem
+            ) : base(applicationPaths, xmlSerializer)
         {
             Instance = this;
 
             Logger = logger;
-
-            //Logger.LogInformation("Write Out Reference if it Doesn't Exist!");
-
-            //if (!File.Exists(Path.Combine(applicationPaths.ProgramSystemPath, "Emby.Kodi.NanoApi.dll")) ||
-            //    !File.Exists(Path.Combine(applicationPaths.ProgramSystemPath, "Emby.Kodi.SyncJson.dll")))
-            //{
-            //    var names = Assembly.GetEntryAssembly().GetManifestResourceNames();
-            //    foreach (var name in names)
-            //    {
-            //        Logger.LogInformation("" + name);
-            //    }
-            //    using (Stream input = Assembly.GetExecutingAssembly().GetManifestResourceStream("Jellyfin.Plugin.KodiSyncQueue.Resources.Emby.Kodi.NanoApi.dll"))
-            //    using (Stream output = File.Create(Path.Combine(applicationPaths.ProgramSystemPath, "NanoApi.JsonFile.dll")))
-            //    {
-            //        CopyStream(input, output);
-            //    }
-
-            //    using (Stream input = Assembly.GetExecutingAssembly().GetManifestResourceStream("Jellyfin.Plugin.KodiSyncQueue.Resources.Emby.Kodi.SyncJson.dll"))
-            //    using (Stream output = File.Create(Path.Combine(applicationPaths.ProgramSystemPath, "NanoApi.JsonFile.dll")))
-            //    {
-            //        CopyStream(input, output);
-            //    }
-            //}
-
             Logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue IS NOW STARTING!!!");
-
+            
+            // TODO this is just sad
             DbRepo.dbPath = applicationPaths.DataPath;
             DbRepo.json = json;
             DbRepo.logger = logger;
@@ -55,31 +37,20 @@ namespace Jellyfin.Plugin.KodiSyncQueue
         }
 
         private Guid _id = new Guid("b0daa30f-2e09-4083-a6ce-459d9fecdd80");
-        public override Guid Id
-        {
-            get { return _id; }
-        }
+        public override Guid Id => _id;
 
         /// <summary>
         /// Gets the name of the plugin
         /// </summary>
         /// <value>The name.</value>
-        public override string Name
-        {
-            get { return "Kodi companion"; }
-        }
+        public override string Name => "Kodi companion";
 
         /// <summary>
         /// Gets the description.
         /// </summary>
         /// <value>The description.</value>
         public override string Description
-        {
-            get
-            {
-                return "Companion for Kodi add-ons. Provides dynamic strms and shorter sync times for Jellyfin for Kodi.";
-            }
-        }
+            => "Companion for Kodi add-ons. Provides dynamic strms and shorter sync times for Jellyfin for Kodi.";
 
         /// <summary>
         /// Gets the instance.
@@ -89,7 +60,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue
 
         public IEnumerable<PluginPageInfo> GetPages()
         {
-            return new PluginPageInfo[]
+            return new[]
             {
                 new PluginPageInfo
                 {

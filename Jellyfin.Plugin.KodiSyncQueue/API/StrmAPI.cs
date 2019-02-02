@@ -5,11 +5,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 {
     class StrmAPI : IService
     {
-        private readonly ILogger Logger;
+        private readonly ILogger _logger;
 
         public StrmAPI(ILogger logger)
         {
-            Logger = logger;
+            _logger = logger;
         }
 
         public object Get(GetStrmFile request)
@@ -31,7 +31,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                 strm += "&filename=" + request.Name;
             }
 
-            Logger.LogInformation("returning strm: {0}", strm);
+            _logger.LogInformation("returning strm: {0}", strm);
             return strm;
         }
     }

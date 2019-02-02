@@ -6,7 +6,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Configuration
 {
     public class PluginConfiguration : BasePluginConfiguration
     {
-        public String RetDays { get; set; }
+        public string RetDays { get; set; }
         public bool IsEnabled { get; set; }
         public bool tkMovies { get; set; }
         public bool tkTVShows { get; set; }

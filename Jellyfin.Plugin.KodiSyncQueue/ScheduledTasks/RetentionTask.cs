@@ -15,35 +15,15 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
 {
     public class FireRetentionTask : IScheduledTask
     {
-        //private readonly IHttpClient _httpClient;
-        private readonly IJsonSerializer _jsonSerializer;
-        private readonly IUserManager _userManager;
         private readonly ILogger _logger;
-        private readonly ILoggerFactory _logManager;
-        private readonly IUserDataManager _userDataManager;
-        private readonly IApplicationPaths _applicationPaths;
 
-        //private DbRepo dbRepo = null;
-
-        public FireRetentionTask(ILoggerFactory logManager, ILogger logger, IJsonSerializer jsonSerializer, IUserManager userManager, 
-            IUserDataManager userDataManager, IHttpClient httpClient, IServerApplicationHost appHost, IApplicationPaths applicationPaths)
+        public FireRetentionTask(ILogger logger)
         {
-            _jsonSerializer = jsonSerializer;
-            _userManager = userManager;
-            _userDataManager = userDataManager;
             _logger = logger;
-            _logManager = logManager;
-            _applicationPaths = applicationPaths;
-
             _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Retention Task Scheduled!");
-
-            //dbRepo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer);
         }
 
-        public string Key
-        {
-            get { return "KodiSyncFireRetentionTask"; }
-        }
+        public string Key => "KodiSyncFireRetentionTask";
 
         public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
         {
@@ -60,9 +40,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
         public async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
         {
             //Is retDays 0.. If So Exit...
-            int retDays;
-
-            if (!(Int32.TryParse(Plugin.Instance.Configuration.RetDays, out retDays))) {
+            if (!int.TryParse(Plugin.Instance.Configuration.RetDays, out var retDays)) {
                 _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Retention Deletion Not Possible When Retention Days = 0!");
                 return;
             }
@@ -74,40 +52,23 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
             }
 
             //Check Database
-            bool result = await Task.Run(() =>
+            await Task.Run(() =>
             {
                 retDays = retDays * -1;
                 var dt = DateTime.UtcNow.AddDays(retDays);
-                var dtl = (long)(dt.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
-                //DbRepo.DeleteOldData(dtl, _logger);
+                var dtl = (long)dt.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
 
                 DbRepo.Instance.DeleteOldData(dtl);
                 
                 return true;
-            });
+            }, cancellationToken);
         }
 
-        public string Name
-        {
-            get { return "Remove Old Sync Data"; }
-        }
+        public string Name => "Remove Old Sync Data";
 
-        public string Category
-        {
-            get
-            {
-                return "Jellyfin.Plugin.KodiSyncQueue";
-            }
-        }
+        public string Category => "Jellyfin.Plugin.KodiSyncQueue";
 
-        public string Description
-        {
-            get
-            {
-                return
-                    "If Retention Days > 0 then this will remove the old data to keep information flowing quickly";
-            }
-        }
+        public string Description => "If Retention Days > 0 then this will remove the old data to keep information flowing quickly";
     }
 
 }

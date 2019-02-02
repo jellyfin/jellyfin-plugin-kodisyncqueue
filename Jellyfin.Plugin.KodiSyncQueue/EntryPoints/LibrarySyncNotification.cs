@@ -23,12 +23,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// The _library manager
         /// </summary>
         private readonly ILibraryManager _libraryManager;
-
-        private readonly ISessionManager _sessionManager;
-        private readonly IUserManager _userManager;
         private readonly ILogger _logger;
-        private readonly IJsonSerializer _jsonSerializer;
-        private readonly IApplicationPaths _applicationPaths;
 
         /// <summary>
         /// The _library changed sync lock
@@ -56,15 +51,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// </summary>
         private const int LibraryUpdateDuration = 5000;
 
-        public LibrarySyncNotification(ILibraryManager libraryManager, ISessionManager sessionManager, IUserManager userManager, ILogger logger, IJsonSerializer jsonSerializer, IApplicationPaths applicationPaths)
+        public LibrarySyncNotification(ILibraryManager libraryManager, ILogger logger)
         {
             _libraryManager = libraryManager;
-            _sessionManager = sessionManager;
-            _userManager = userManager;
             _logger = logger;
-            _jsonSerializer = jsonSerializer;
-            _applicationPaths = applicationPaths;
-
         }
         
         
@@ -84,12 +74,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemAdded(object sender, ItemChangeEventArgs e)
         {
-            //_logger.LogDebug(String.Format("Item ID: {0}", e.Item.Id.ToString()));
-            //_logger.LogDebug(String.Format("JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            //_logger.LogDebug(String.Format("Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
-
-            var type = -1;
-            if (!FilterItem(e.Item, out type))
+            if (!FilterItem(e.Item, out var type))
             {
                 return;
             }
@@ -106,24 +91,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     LibraryUpdateTimer.Change(LibraryUpdateDuration, Timeout.Infinite);
                 }
 
-                //if (e.Item.Parent != null)
-                //{
-                //    var folder = new LibFolder()
-                //    {
-                //        Id = e.Item.Parent.Id,
-                //        SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds)
-
-                //    };
-                //    _foldersAddedTo.Add(folder);
-                //}
-
-                var item = new LibItem()
+                var item = new LibItem
                 {
                     Id = e.Item.Id,
                     SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
                     ItemType = type,
                 };
-                _logger.LogDebug(string.Format("ItemAdded added for DB Saving {0}", e.Item.Id));
+                _logger.LogDebug("ItemAdded added for DB Saving {ItemId}", e.Item.Id);
                 _itemsAdded.Add(item);
                 
             }
@@ -136,12 +110,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemUpdated(object sender, ItemChangeEventArgs e)
         {
-            //_logger.LogDebug(String.Format("Item ID: {0}", e.Item.Id.ToString()));
-            //_logger.LogDebug(String.Format("JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            //_logger.LogDebug(String.Format("Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
-
-            var type = -1;
-            if (!FilterItem(e.Item, out type))
+            if (!FilterItem(e.Item, out var type))
             {
                 return;
             }
@@ -158,14 +127,14 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     LibraryUpdateTimer.Change(LibraryUpdateDuration, Timeout.Infinite);
                 }
 
-                var item = new LibItem()
+                var item = new LibItem
                 {
                     Id = e.Item.Id,
-                    SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
-                    ItemType = type,
+                    SyncApiModified = (long)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds,
+                    ItemType = type
                 };
 
-                _logger.LogDebug(string.Format("ItemUpdated added for DB Saving {0}", e.Item.Id));
+                _logger.LogDebug("ItemUpdated added for DB Saving {ItemId}", e.Item.Id);
                 _itemsUpdated.Add(item);
                 
             }
@@ -178,12 +147,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemRemoved(object sender, ItemChangeEventArgs e)
         {
-            //_logger.LogDebug(String.Format("Item ID: {0}", e.Item.Id.ToString()));
-            //_logger.LogDebug(String.Format("JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            //_logger.LogDebug(String.Format("Library GetClientTypeName: {0}", e.Item.GetClientTypeName()));
-
-            var type = -1;
-            if (!FilterRemovedItem(e.Item, out type))
+            if (!FilterRemovedItem(e.Item, out var type))
             {
                 return;
             }
@@ -200,25 +164,14 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     LibraryUpdateTimer.Change(LibraryUpdateDuration, Timeout.Infinite);
                 }
 
-                //if (e.Item.Parent != null)
-                //{
-                //    var folder = new LibFolder()
-                //    {
-                //        Id = e.Item.Parent.Id,
-                //        SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds)
-
-                //    };
-                //    _foldersRemovedFrom.Add(folder);
-                //}
-
-                var item = new LibItem()
+                var item = new LibItem
                 {
                     Id = e.Item.Id,
-                    SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
+                    SyncApiModified = (long)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds,
                     ItemType = type
                 };
 
-                _logger.LogDebug(string.Format("ItemRemoved added for DB Saving {0}", e.Item.Id));
+                _logger.LogDebug("ItemRemoved added for DB Saving {ItemId}", e.Item.Id);
                 _itemsRemoved.Add(item);
                 
             }
@@ -245,13 +198,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     var itemsRemoved = _itemsRemoved.GroupBy(i => i.Id).Select(grp => grp.First()).ToList();
 
                     var itemsUpdated = _itemsUpdated
-                                        .Where(i => itemsAdded.Where(a => a.Id == i.Id).FirstOrDefault() == null)
+                                        .Where(i => itemsAdded.FirstOrDefault(a => a.Id == i.Id) == null)
                                         .GroupBy(g => g.Id)
                                         .Select(grp => grp.First())
                                         .ToList();
 
-                    Task x = PushChangesToDB(itemsAdded, itemsUpdated, itemsRemoved, cTokenSource.Token);
-                    Task.WaitAll(x);                    
+                    Task pushToDbTask = PushChangesToDB(itemsAdded, itemsUpdated, itemsRemoved, cTokenSource.Token);
+                    Task.WaitAll(pushToDbTask);                    
 
                     itemsAdded.Clear();
                     itemsRemoved.Clear();
@@ -263,7 +216,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                         LibraryUpdateTimer = null;
                     }
                     TimeSpan dateDiff = DateTime.UtcNow - startTime;
-                    _logger.LogInformation(String.Format("Finished Library Sync Taking {0}", dateDiff.ToString("c")));
+                    _logger.LogInformation("Finished Library Sync Taking {TimeTaken}", dateDiff.ToString("c"));
 
                 }
                 catch (Exception e)
@@ -303,8 +256,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             
                 DbRepo.Instance.WriteLibrarySync(Items, status, cancellationToken);
 
-                _logger.LogInformation(String.Format("\"LIBRARYSYNC\" {0} {1} items:  {2}", statusType, Items.Count(),
-                    String.Join(",", Items.Select(i => i.Id.ToString("N")).ToArray())));
+                _logger.LogInformation("\"LIBRARYSYNC\" {StatusType} {NumberOfItems} items:  {Items}", statusType, Items.Count,
+                    string.Join(",", Items.Select(i => i.Id.ToString("N")).ToArray()));
             });
         }
 
@@ -336,7 +289,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
             switch (typeName)
             {
-                //MOVIES
                 case "Movie":
                     if (!Plugin.Instance.Configuration.tkMovies)
                     {
@@ -378,7 +330,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     break;
                 default:
                     type = -1;
-                    _logger.LogDebug(String.Format("Ingoring Type {0}", typeName));
+                    _logger.LogDebug("Ingoring Type {TypeName}", typeName);
                     return false;
             }                                   
 
@@ -413,7 +365,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
             switch (typeName)
             {
-                //MOVIES
                 case "Movie":
                 case "Folder":
                     if (!Plugin.Instance.Configuration.tkMovies)
@@ -456,7 +407,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     break;
                 default:
                     type = -1;
-                    _logger.LogDebug(String.Format("Ingoring Type {0}", typeName));
+                    _logger.LogDebug("Ingoring Type {TypeName}", typeName);
                     return false;
             }
 
