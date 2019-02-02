@@ -20,9 +20,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
         public ServerTimeInfo Get(GetServerTime request)
         {
-            _logger.LogInformation("Emby.Kodi.SyncQueue: Server Time Requested...");
+            _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue: Server Time Requested...");
             var info = new ServerTimeInfo();
-            _logger.LogDebug("Emby.Kodi.SyncQueue: Class Variable Created!");
+            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue: Class Variable Created!");
             int retDays = 0;
             DateTime dtNow = DateTime.UtcNow;
             DateTime retDate;
@@ -42,12 +42,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                 retDate = new DateTime(dtNow.Year, dtNow.Month, dtNow.Day, 0, 0, 0);
                 retDate = retDate.AddDays(retDays);
             }
-            _logger.LogDebug("Emby.Kodi.SyncQueue: Getting Ready to Set Variables!");
+            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue: Getting Ready to Set Variables!");
             info.ServerDateTime = String.Format("{0}", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
             info.RetentionDateTime = String.Format("{0}", retDate.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
 
-            _logger.LogDebug(String.Format("Emby.Kodi.SyncQueue: ServerDateTime = {0}", info.ServerDateTime));
-            _logger.LogDebug(String.Format("Emby.Kodi.SyncQueue: RetentionDateTime = {0}", info.RetentionDateTime));
+            _logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue: ServerDateTime = {0}", info.ServerDateTime));
+            _logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue: RetentionDateTime = {0}", info.RetentionDateTime));
 
             return info;
         }

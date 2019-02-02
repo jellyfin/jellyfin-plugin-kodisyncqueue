@@ -5,7 +5,7 @@ using MediaBrowser.Model.Services;
 namespace Jellyfin.Plugin.KodiSyncQueue.API
 {
     //OLD METHOD LEFT IN FOR BACKWARDS COMPATIBILITY
-    [Route("/Emby.Kodi.SyncQueue/{UserID}/{LastUpdateDT}/GetItems", "GET", Summary = "Gets Items for {USER} from {UTC DATETIME} formatted as yyyy-MM-ddThh:mm:ssZ")]
+    [Route("/Jellyfin.Plugin.KodiSyncQueue/{UserID}/{LastUpdateDT}/GetItems", "GET", Summary = "Gets Items for {USER} from {UTC DATETIME} formatted as yyyy-MM-ddThh:mm:ssZ")]
     public class GetLibraryItems : IReturn<SyncUpdateInfo>
     {
         [ApiMember(Name = "UserID", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
@@ -16,7 +16,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         public string filter { get; set; }
     }
 
-    [Route("/Emby.Kodi.SyncQueue/{UserID}/GetItems", "GET", Summary = "Gets Items for {UserID} from {UTC DATETIME} formatted as yyyy-MM-ddTHH:mm:ssZ using queryString LastUpdateDT")]
+    [Route("/Jellyfin.Plugin.KodiSyncQueue/{UserID}/GetItems", "GET", Summary = "Gets Items for {UserID} from {UTC DATETIME} formatted as yyyy-MM-ddTHH:mm:ssZ using queryString LastUpdateDT")]
     public class GetLibraryItemsQuery : IReturn<SyncUpdateInfo>
     {
         [ApiMember(Name = "UserID", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
@@ -28,13 +28,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
     }
 
-    [Route("/Emby.Kodi.SyncQueue/GetServerDateTime", "GET", Summary = "Gets The Server Time in UTC format as yyyy-MM-ddTHH:mm:ssZ")]
+    [Route("/Jellyfin.Plugin.KodiSyncQueue/GetServerDateTime", "GET", Summary = "Gets The Server Time in UTC format as yyyy-MM-ddTHH:mm:ssZ")]
     public class GetServerTime : IReturn<ServerTimeInfo>
     {
 
     }
 
-    [Route("/Emby.Kodi.SyncQueue/GetPluginSettings", "GET", Summary = "Get SyncQueue Plugin Settings")]
+    [Route("/Jellyfin.Plugin.KodiSyncQueue/GetPluginSettings", "GET", Summary = "Get SyncQueue Plugin Settings")]
     public class GetPluginSettings : IReturn<PluginSettings>
     {
 

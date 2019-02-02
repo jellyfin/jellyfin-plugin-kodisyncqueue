@@ -19,13 +19,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
         public PluginSettings Get(GetPluginSettings request)
         {
-            _logger.LogInformation("Emby.Kodi.SyncQueue: Plugin Settings Requested...");
+            _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue: Plugin Settings Requested...");
             var settings = new PluginSettings();
-            _logger.LogDebug("Emby.Kodi.SyncQueue: Class Variable Created!");
+            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue: Class Variable Created!");
             int retDays = 0;
             DateTime dtNow = DateTime.UtcNow;
             
-            _logger.LogDebug("Emby.Kodi.SyncQueue: Creating Settings Object Variables!");
+            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue: Creating Settings Object Variables!");
 
             if (!(Int32.TryParse(Plugin.Instance.Configuration.RetDays, out retDays)))
             {
@@ -40,7 +40,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             settings.TrackMusic = Plugin.Instance.Configuration.tkMusic;
             settings.TrackMusicVideos = Plugin.Instance.Configuration.tkMusicVideos;
             
-            _logger.LogDebug("Emby.Kodi.SyncQueue: Sending Settings Object Back.");
+            _logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue: Sending Settings Object Back.");
 
             return settings;
         }

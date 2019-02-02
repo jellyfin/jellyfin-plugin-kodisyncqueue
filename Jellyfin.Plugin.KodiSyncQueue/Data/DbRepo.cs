@@ -18,9 +18,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
         private readonly object _folderLock = new object();
         private readonly object _itemLock = new object();
 
-        private const string dbFolder = "Emby.Kodi.SyncQueue.F.1.40.json";
-        private const string dbItem = "Emby.Kodi.SyncQueue.I.1.40.json";
-        private const string dbUser = "Emby.Kodi.SyncQueue.U.1.40.json";
+        private const string dbFolder = "Jellyfin.Plugin.KodiSyncQueue.F.1.40.json";
+        private const string dbItem = "Jellyfin.Plugin.KodiSyncQueue.I.1.40.json";
+        private const string dbUser = "Jellyfin.Plugin.KodiSyncQueue.U.1.40.json";
                 
         private string dataPath = "";        
         
@@ -55,7 +55,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
         public DbRepo(string dPath)
         {
-            logger.LogInformation("Emby.Kodi.SyncQueue: Creating DB Repository...");
+            logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue: Creating DB Repository...");
             this.DataPath = dPath;
 
             Directory.CreateDirectory(dataPath);
@@ -83,8 +83,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             var result = new List<Guid>();
             List<ItemRec> final = new List<ItemRec>();
 
-            logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(dtl), dtl));
-            logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  IntStatus: {0}", status));
+            logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(dtl), dtl));
+            logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  IntStatus: {0}", status));
 
             var items = itemRecs.Select(x => x.LastModified > dtl && x.Status == status).ToList();
 
@@ -111,7 +111,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             //{
             //    _logger.LogDebug(result.ToString());
             //    _logger.LogDebug(_json.SerializeToString(i));
-            //    _logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Item {0} {1} {2:yyyy-MM-dd HH:mm:ss} for time {3}", i.ItemId, status,
+            //    _logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Item {0} {1} {2:yyyy-MM-dd HH:mm:ss} for time {3}", i.ItemId, status,
             //                new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(i.LastModified), i.LastModified));
             //});
             //result = itms.Select(i => i.ItemId).Distinct().ToList();
@@ -120,7 +120,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             //{
             //    if (result.Where(i => i == x.ItemId.ToString("N")).FirstOrDefault() == null)
             //    {
-            //        _logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Item {0} Modified {1:yyyy-MM-dd HH:mm:ss} for time {2}", x.ItemId, 
+            //        _logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  Item {0} Modified {1:yyyy-MM-dd HH:mm:ss} for time {2}", x.ItemId, 
             //                new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(x.LastModified), x.LastModified));
             //        result.Add(x.ItemId);
             //    }
@@ -213,23 +213,23 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
         {
             lock (_folderLock)
             {
-                logger.LogInformation("Emby.Kodi.SyncQueue.Task: Starting Folder Retention Deletion...");
+                logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Starting Folder Retention Deletion...");
                 folderRecs.Delete(x => x.LastModified < dtl);
-                logger.LogInformation("Emby.Kodi.SyncQueue.Task: Finished Folder Retention Deletion...");
+                logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Finished Folder Retention Deletion...");
             }
 
             lock (_itemLock)
             {
-                logger.LogInformation("Emby.Kodi.SyncQueue.Task: Starting Item Retention Deletion...");
+                logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Starting Item Retention Deletion...");
                 itemRecs.Delete(x => x.LastModified < dtl);
-                logger.LogInformation("Emby.Kodi.SyncQueue.Task: Finished Item Retention Deletion...");
+                logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Finished Item Retention Deletion...");
             }
 
             lock (_userLock)
             {
-                logger.LogInformation("Emby.Kodi.SyncQueue.Task: Starting UserItem Retention Deletion...");
+                logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Starting UserItem Retention Deletion...");
                 userInfoRecs.Delete(x => x.LastModified < dtl);
-                logger.LogInformation("Emby.Kodi.SyncQueue.Task: Finished UserItem Retention Deletion...");
+                logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Finished UserItem Retention Deletion...");
             }
         }
 
@@ -270,24 +270,24 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                     }
                     else
                     {
-                        logger.LogDebug(String.Format("Emby.Kodi.SyncQueue: NewTime: {0}  OldTime: {1}   Status: {2}", newTime, rec.LastModified, status));
+                        logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue: NewTime: {0}  OldTime: {1}   Status: {2}", newTime, rec.LastModified, status));
                         newRec = null;
                     }
 
                     if (newRec != null)
                     {
-                        logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  {0} ItemId: '{1}'", statusType, newRec.ItemId.ToString("N")));
+                        logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  {0} ItemId: '{1}'", statusType, newRec.ItemId.ToString("N")));
                     }
                     else
                     {
-                        logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped", i.Id.ToString("N")));
+                        logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue:  ItemId: '{0}' Skipped", i.Id.ToString("N")));
                     }
                 }
 
                 if (newRecs.Count > 0)
                 {
 
-                    logger.LogDebug(String.Format("Emby.Kodi.SyncQueue: {0}", json.SerializeToString(newRecs)));
+                    logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue: {0}", json.SerializeToString(newRecs)));
                     itemRecs.Insert(newRecs);
 
                 }
@@ -314,11 +314,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
                     logger.LogDebug("THIS IS AFTER LINQ STARTING COMMIT!");
                     itemRecs.Commit(data);
-                    logger.LogDebug(String.Format("Emby.Kodi.SyncQueue: {0}", json.SerializeToString(data)));
+                    logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue: {0}", json.SerializeToString(data)));
                     logger.LogDebug("THIS IS AFTER LINQ FINISHED COMMIT!");
 
                     data = itemRecs.Select();
-                    logger.LogDebug(String.Format("Emby.Kodi.SyncQueue: {0}", json.SerializeToString(data)));                    
+                    logger.LogDebug(String.Format("Jellyfin.Plugin.KodiSyncQueue: {0}", json.SerializeToString(data)));                    
                 }
             }
         }
@@ -333,7 +333,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                 {
 
                     var sJson = json.SerializeToString(dto).ToString();
-                    logger.LogDebug("Emby.Kodi.SyncQueue:  Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
+                    logger.LogDebug("Jellyfin.Plugin.KodiSyncQueue:  Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
 
                     LibItem itemref = itemRefs.Where(x => x.Id.ToString("N") == dto.ItemId).FirstOrDefault();
                     if (itemref != null)

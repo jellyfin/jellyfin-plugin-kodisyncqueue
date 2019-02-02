@@ -35,7 +35,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
             _logManager = logManager;
             _applicationPaths = applicationPaths;
 
-            _logger.LogInformation("Emby.Kodi.SyncQueue.Task: Retention Task Scheduled!");
+            _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Retention Task Scheduled!");
 
             //dbRepo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer);
         }
@@ -63,13 +63,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
             int retDays;
 
             if (!(Int32.TryParse(Plugin.Instance.Configuration.RetDays, out retDays))) {
-                _logger.LogInformation("Emby.Kodi.SyncQueue.Task: Retention Deletion Not Possible When Retention Days = 0!");
+                _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Retention Deletion Not Possible When Retention Days = 0!");
                 return;
             }
 
             if (retDays == 0)
             {
-                _logger.LogInformation("Emby.Kodi.SyncQueue.Task: Retention Deletion Not Possible When Retention Days = 0!");
+                _logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue.Task: Retention Deletion Not Possible When Retention Days = 0!");
                 return;
             }
 
@@ -96,7 +96,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
         {
             get
             {
-                return "Emby.Kodi.SyncQueue";
+                return "Jellyfin.Plugin.KodiSyncQueue";
             }
         }
 

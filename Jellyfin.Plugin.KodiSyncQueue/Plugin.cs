@@ -22,7 +22,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue
 
             Logger = logger;
 
-            //Logger.LogInformation("Emby.Kodi.SyncQueue: Write Out Reference if it Doesn't Exist!");
+            //Logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue: Write Out Reference if it Doesn't Exist!");
 
             //if (!File.Exists(Path.Combine(applicationPaths.ProgramSystemPath, "Emby.Kodi.NanoApi.dll")) ||
             //    !File.Exists(Path.Combine(applicationPaths.ProgramSystemPath, "Emby.Kodi.SyncJson.dll")))
@@ -30,22 +30,22 @@ namespace Jellyfin.Plugin.KodiSyncQueue
             //    var names = Assembly.GetEntryAssembly().GetManifestResourceNames();
             //    foreach (var name in names)
             //    {
-            //        Logger.LogInformation("Emby.Kodi.SyncQueue: " + name);
+            //        Logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue: " + name);
             //    }
-            //    using (Stream input = Assembly.GetExecutingAssembly().GetManifestResourceStream("Emby.Kodi.SyncQueue.Resources.Emby.Kodi.NanoApi.dll"))
+            //    using (Stream input = Assembly.GetExecutingAssembly().GetManifestResourceStream("Jellyfin.Plugin.KodiSyncQueue.Resources.Emby.Kodi.NanoApi.dll"))
             //    using (Stream output = File.Create(Path.Combine(applicationPaths.ProgramSystemPath, "NanoApi.JsonFile.dll")))
             //    {
             //        CopyStream(input, output);
             //    }
 
-            //    using (Stream input = Assembly.GetExecutingAssembly().GetManifestResourceStream("Emby.Kodi.SyncQueue.Resources.Emby.Kodi.SyncJson.dll"))
+            //    using (Stream input = Assembly.GetExecutingAssembly().GetManifestResourceStream("Jellyfin.Plugin.KodiSyncQueue.Resources.Emby.Kodi.SyncJson.dll"))
             //    using (Stream output = File.Create(Path.Combine(applicationPaths.ProgramSystemPath, "NanoApi.JsonFile.dll")))
             //    {
             //        CopyStream(input, output);
             //    }
             //}
 
-            Logger.LogInformation("Emby.Kodi.SyncQueue IS NOW STARTING!!!");
+            Logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue IS NOW STARTING!!!");
 
             DbRepo.dbPath = applicationPaths.DataPath;
             DbRepo.json = json;
@@ -93,8 +93,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue
             {
                 new PluginPageInfo
                 {
-                    Name = "Emby.Kodi.SyncQueue",
-                    EmbeddedResourcePath = "Emby.Kodi.SyncQueue.Configuration.configPage.html"
+                    Name = "Jellyfin.Plugin.KodiSyncQueue",
+                    EmbeddedResourcePath = "Jellyfin.Plugin.KodiSyncQueue.Configuration.configPage.html"
                 }
             };
         }
