@@ -1,5 +1,4 @@
-﻿
-using NanoApi.JsonFile;
+﻿using NanoApi.JsonFile;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.Entities
 {

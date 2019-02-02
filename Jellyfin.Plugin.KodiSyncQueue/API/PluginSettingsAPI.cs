@@ -1,6 +1,4 @@
 ﻿using Jellyfin.Plugin.KodiSyncQueue.Entities;
-using MediaBrowser.Model.Serialization;
-using System;
 using MediaBrowser.Model.Services;
 using Microsoft.Extensions.Logging;
 

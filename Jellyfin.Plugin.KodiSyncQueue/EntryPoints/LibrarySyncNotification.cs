@@ -1,10 +1,7 @@
 ﻿using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
-using MediaBrowser.Controller.Session;
-using MediaBrowser.Common.Configuration;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -330,7 +327,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     break;
                 default:
                     type = -1;
-                    _logger.LogDebug("Ingoring Type {TypeName}", typeName);
+                    _logger.LogDebug("Ignoring Type {TypeName}", typeName);
                     return false;
             }                                   
 

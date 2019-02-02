@@ -1,5 +1,4 @@
-﻿using MediaBrowser.Controller.Entities;
-using System;
+﻿using System;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.Entities
 {

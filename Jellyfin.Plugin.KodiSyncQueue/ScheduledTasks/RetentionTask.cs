@@ -1,9 +1,4 @@
-﻿using MediaBrowser.Common.Net;
-using MediaBrowser.Controller;
-using MediaBrowser.Controller.Library;
-using MediaBrowser.Model.Serialization;
-using MediaBrowser.Common.Configuration;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
