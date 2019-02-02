@@ -119,7 +119,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
                 var item = new LibItem()
                 {
-                    Id = e.Item.GetClientId(),
+                    Id = e.Item.Id,
                     SyncApiModified = (long)(DateTimeOffset.UtcNow.Subtract(new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero)).TotalSeconds),
                     ItemType = type,
                 };
@@ -160,7 +160,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
                 var item = new LibItem()
                 {
-                    Id = e.Item.GetClientId(),
+                    Id = e.Item.Id,
                     SyncApiModified = (long)(DateTimeOffset.UtcNow.Subtract(new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0,TimeSpan.Zero)).TotalSeconds),
                     ItemType = type,
                 };
@@ -213,7 +213,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
                 var item = new LibItem()
                 {
-                    Id = e.Item.GetClientId(),
+                    Id = e.Item.Id,
                     SyncApiModified = (long)(DateTimeOffset.UtcNow.Subtract(new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero)).TotalSeconds),
                     ItemType = type
                 };
@@ -305,7 +305,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 DbRepo.Instance.WriteLibrarySync(Items, status, cancellationToken);
 
                 _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"LIBRARYSYNC\" {0} {1} items:  {2}", statusType, Items.Count(),
-                    String.Join(",", Items.Select(i => i.Id).ToArray())));
+                    String.Join(",", Items.Select(i => i.Id.ToString("N")).ToArray())));
             });
         }
 

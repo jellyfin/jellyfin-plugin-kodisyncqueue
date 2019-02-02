@@ -11,7 +11,7 @@ namespace Emby.Kodi.SyncQueue.Entities
 
         [PrimaryKey]
         public int Id { get; set; }
-        public string ItemId { get; set; }
+        public Guid ItemId { get; set; }
         public long LastModified { get; set; }
         public int Status { get; set; }
         public int MediaType { get; set; }

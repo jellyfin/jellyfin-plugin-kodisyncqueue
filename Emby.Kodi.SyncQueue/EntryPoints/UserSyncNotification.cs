@@ -181,7 +181,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     // Go up one level for indicators
                     _itemRef.Add(new LibItem()
                     {
-                        Id = testItem.GetClientId(),
+                        Id = testItem.Id,
                         ItemType = type,                        
                     });
 
@@ -245,12 +245,12 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                         .Select(i =>
                         {
                             var dto = _userDataManager.GetUserDataDto(i, user);
-                            dto.ItemId = i.GetClientId();
+                            dto.ItemId = i.Id.ToString("N");
                             return dto;
                         })
                         .ToList();
 
-                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId, _jsonSerializer.SerializeToString(dtoList).ToString()));
+                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
 
                 myTasks.Add(SaveUserChanges(dtoList, itemRefs, user.Name, userId.ToString("N"), cancellationToken));
             }

@@ -5,7 +5,7 @@ namespace Emby.Kodi.SyncQueue.Entities
 {
     public class LibItem
     {
-        public string Id { get; set; }
+        public Guid Id { get; set; }
         public long SyncApiModified { get; set; }
         public int ItemType { get; set; }
 

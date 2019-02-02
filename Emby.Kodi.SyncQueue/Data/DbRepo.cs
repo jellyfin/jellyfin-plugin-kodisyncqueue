@@ -9,7 +9,6 @@ using Emby.Kodi.SyncQueue.Entities;
 using NanoApi.Entities;
 using System.Text;
 using MediaBrowser.Model.IO;
-using System.Globalization;
 
 namespace Emby.Kodi.SyncQueue.Data
 {
@@ -80,9 +79,9 @@ namespace Emby.Kodi.SyncQueue.Data
             return true;
         }
 
-        public List<string> GetItems(long dtl, int status, bool movies, bool tvshows, bool music, bool musicvideos, bool boxsets)
+        public List<Guid> GetItems(long dtl, int status, bool movies, bool tvshows, bool music, bool musicvideos, bool boxsets)
         {
-            var result = new List<string>();
+            var result = new List<Guid>();
             List<ItemRec> final = new List<ItemRec>();
 
             logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero).AddSeconds(dtl), dtl));
@@ -278,11 +277,11 @@ namespace Emby.Kodi.SyncQueue.Data
 
                     if (newRec != null)
                     {
-                        logger.Debug(String.Format("Emby.Kodi.SyncQueue:  {0} ItemId: '{1}'", statusType, newRec.ItemId));
+                        logger.Debug(String.Format("Emby.Kodi.SyncQueue:  {0} ItemId: '{1}'", statusType, newRec.ItemId.ToString("N")));
                     }
                     else
                     {
-                        logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped", i.Id));
+                        logger.Debug(String.Format("Emby.Kodi.SyncQueue:  ItemId: '{0}' Skipped", i.Id.ToString("N")));
                     }
                 }
 
@@ -337,7 +336,7 @@ namespace Emby.Kodi.SyncQueue.Data
                     var sJson = json.SerializeToString(dto).ToString();
                     logger.Debug("Emby.Kodi.SyncQueue:  Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
 
-                    LibItem itemref = itemRefs.Where(x => x.Id == dto.ItemId).FirstOrDefault();
+                    LibItem itemref = itemRefs.Where(x => x.Id.ToString("N") == dto.ItemId).FirstOrDefault();
                     if (itemref != null)
                     {
                         var oldRec = userInfoRecs.Select(u => u.ItemId == dto.ItemId && u.UserId == userId).FirstOrDefault();
