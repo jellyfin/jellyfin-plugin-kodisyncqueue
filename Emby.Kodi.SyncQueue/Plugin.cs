@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using Emby.Kodi.SyncQueue.Configuration;
 using MediaBrowser.Model.Plugins;
 using Emby.Kodi.SyncQueue.Data;
 using MediaBrowser.Model.IO;
-using MediaBrowser.Model.Drawing;
-using System.IO;
+using Microsoft.Extensions.Logging;
 
 namespace Emby.Kodi.SyncQueue
 {
-    class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbImage
+    class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         public static ILogger Logger { get; set; }
 
@@ -25,7 +22,7 @@ namespace Emby.Kodi.SyncQueue
 
             Logger = logger;
 
-            //Logger.Info("Emby.Kodi.SyncQueue: Write Out Reference if it Doesn't Exist!");
+            //Logger.LogInformation("Emby.Kodi.SyncQueue: Write Out Reference if it Doesn't Exist!");
 
             //if (!File.Exists(Path.Combine(applicationPaths.ProgramSystemPath, "Emby.Kodi.NanoApi.dll")) ||
             //    !File.Exists(Path.Combine(applicationPaths.ProgramSystemPath, "Emby.Kodi.SyncJson.dll")))
@@ -33,7 +30,7 @@ namespace Emby.Kodi.SyncQueue
             //    var names = Assembly.GetEntryAssembly().GetManifestResourceNames();
             //    foreach (var name in names)
             //    {
-            //        Logger.Info("Emby.Kodi.SyncQueue: " + name);
+            //        Logger.LogInformation("Emby.Kodi.SyncQueue: " + name);
             //    }
             //    using (Stream input = Assembly.GetExecutingAssembly().GetManifestResourceStream("Emby.Kodi.SyncQueue.Resources.Emby.Kodi.NanoApi.dll"))
             //    using (Stream output = File.Create(Path.Combine(applicationPaths.ProgramSystemPath, "NanoApi.JsonFile.dll")))
@@ -48,7 +45,7 @@ namespace Emby.Kodi.SyncQueue
             //    }
             //}
 
-            Logger.Info("Emby.Kodi.SyncQueue IS NOW STARTING!!!");
+            Logger.LogInformation("Emby.Kodi.SyncQueue IS NOW STARTING!!!");
 
             DbRepo.dbPath = applicationPaths.DataPath;
             DbRepo.json = json;
@@ -100,20 +97,6 @@ namespace Emby.Kodi.SyncQueue
                     EmbeddedResourcePath = "Emby.Kodi.SyncQueue.Configuration.configPage.html"
                 }
             };
-        }
-
-        public Stream GetThumbImage()
-        {
-            var type = GetType();
-            return type.Assembly.GetManifestResourceStream(type.Namespace + ".thumb.jpg");
-        }
-
-        public ImageFormat ThumbImageFormat
-        {
-            get
-            {
-                return ImageFormat.Jpg;
-            }
         }
     }
 }

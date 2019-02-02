@@ -1,10 +1,8 @@
 ﻿using Emby.Kodi.SyncQueue.Entities;
-using MediaBrowser.Controller.Net;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System;
-using System.Globalization;
 using MediaBrowser.Model.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Emby.Kodi.SyncQueue.API
 {
@@ -21,13 +19,13 @@ namespace Emby.Kodi.SyncQueue.API
 
         public PluginSettings Get(GetPluginSettings request)
         {
-            _logger.Info("Emby.Kodi.SyncQueue: Plugin Settings Requested...");
+            _logger.LogInformation("Emby.Kodi.SyncQueue: Plugin Settings Requested...");
             var settings = new PluginSettings();
-            _logger.Debug("Emby.Kodi.SyncQueue: Class Variable Created!");
+            _logger.LogDebug("Emby.Kodi.SyncQueue: Class Variable Created!");
             int retDays = 0;
-            DateTimeOffset dtNow = DateTimeOffset.UtcNow;
+            DateTime dtNow = DateTime.UtcNow;
             
-            _logger.Debug("Emby.Kodi.SyncQueue: Creating Settings Object Variables!");
+            _logger.LogDebug("Emby.Kodi.SyncQueue: Creating Settings Object Variables!");
 
             if (!(Int32.TryParse(Plugin.Instance.Configuration.RetDays, out retDays)))
             {
@@ -42,7 +40,7 @@ namespace Emby.Kodi.SyncQueue.API
             settings.TrackMusic = Plugin.Instance.Configuration.tkMusic;
             settings.TrackMusicVideos = Plugin.Instance.Configuration.tkMusicVideos;
             
-            _logger.Debug("Emby.Kodi.SyncQueue: Sending Settings Object Back.");
+            _logger.LogDebug("Emby.Kodi.SyncQueue: Sending Settings Object Back.");
 
             return settings;
         }

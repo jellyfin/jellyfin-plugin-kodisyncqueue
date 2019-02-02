@@ -4,7 +4,6 @@ using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Session;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System;
 using System.Collections.Generic;
@@ -13,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emby.Kodi.SyncQueue.Data;
 using Emby.Kodi.SyncQueue.Entities;
-using MediaBrowser.Controller.Channels;
+using Microsoft.Extensions.Logging;
 
 namespace Emby.Kodi.SyncQueue.EntryPoints
 {
@@ -57,7 +56,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
         {
             _userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
 
-            _logger.Info("Emby.Kodi.SyncQueue:  UserSyncNotification Startup...");            
+            _logger.LogInformation("Emby.Kodi.SyncQueue:  UserSyncNotification Startup...");            
         }
 
         private bool FilterItem(BaseItem item, out int type)
@@ -74,10 +73,11 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 return false;
             }
 
-            if (item.GetTopParent() is Channel)
+            if (item.SourceType != SourceType.Library)
             {
                 return false;
             }
+
 
             var typeName = item.GetClientTypeName();
             if (string.IsNullOrEmpty(typeName))
@@ -125,7 +125,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     break;
                 default:
                     type = -1;
-                    _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Ingoring Type {0}", typeName));
+                    _logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Ingoring Type {0}", typeName));
                     return false;
             }
 
@@ -139,9 +139,9 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                 return;
             }
 
-            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
-            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
-            //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  User GetClientTypeName: {0}", (e.Item as BaseItem).GetClientTypeName()));
+            //_logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Item ID: {0}", e.Item.Id.ToString()));
+            //_logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  JsonObject: {0}", _jsonSerializer.SerializeToString(e.Item)));
+            //_logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  User GetClientTypeName: {0}", (e.Item as BaseItem).GetClientTypeName()));
 
 
             var cname = string.Empty;
@@ -169,11 +169,10 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
 
                     List<BaseItem> keys;
 
-                    var userId = e.User.Id;
-                    if (!_changedItems.TryGetValue(userId, out keys))
+                    if (!_changedItems.TryGetValue(e.UserId, out keys))
                     {
                         keys = new List<BaseItem>();
-                        _changedItems[userId] = keys;
+                        _changedItems[e.UserId] = keys;
                     }
 
                     keys.Add(e.Item);
@@ -181,7 +180,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     // Go up one level for indicators
                     _itemRef.Add(new LibItem()
                     {
-                        Id = testItem.GetClientId(),
+                        Id = testItem.Id,
                         ItemType = type,                        
                     });
 
@@ -200,8 +199,8 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             lock (_syncLock)
             try
             {
-                _logger.Info("Emby.Kodi.SyncQueue: Starting User Changes Sync...");
-                var startDate = DateTimeOffset.UtcNow;
+                _logger.LogInformation("Emby.Kodi.SyncQueue: Starting User Changes Sync...");
+                var startDate = DateTime.UtcNow;
 
                 // Remove dupes in case some were saved multiple times
                 var changes = _changedItems.ToList();
@@ -217,13 +216,12 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                     UpdateTimer.Dispose();
                     UpdateTimer = null;
                 }
-                TimeSpan dateDiff = DateTimeOffset.UtcNow - startDate;
-                _logger.Info(String.Format("Emby.Kodi.SyncQueue: User Changes Sync Finished Taking {0}", dateDiff.ToString("c")));
+                TimeSpan dateDiff = DateTime.UtcNow - startDate;
+                _logger.LogInformation(String.Format("Emby.Kodi.SyncQueue: User Changes Sync Finished Taking {0}", dateDiff.ToString("c")));
             }
             catch (Exception e)
             {
-                _logger.Error(String.Format("Emby.Kodi.SyncQueue: An Error Has Occurred in UserUpdateTimerCallback: {0}", e.Message));
-                _logger.ErrorException(e.Message, e);
+                _logger.LogError(e, "Emby.Kodi.SyncQueue: An Error Has Occurred in UserUpdateTimerCallback");
             }
         }
 
@@ -235,7 +233,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var userId = pair.Key;
-                _logger.Debug(String.Format("Emby.Kodi.SyncQueue:  Starting to save items for {0}", userId.ToString()));
+                _logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  Starting to save items for {0}", userId.ToString()));
 
                 var user = _userManager.GetUserById(userId);
 
@@ -245,12 +243,12 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
                         .Select(i =>
                         {
                             var dto = _userDataManager.GetUserDataDto(i, user);
-                            dto.ItemId = i.GetClientId();
+                            dto.ItemId = i.Id.ToString("N");
                             return dto;
                         })
                         .ToList();
 
-                //_logger.Debug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId, _jsonSerializer.SerializeToString(dtoList).ToString()));
+                //_logger.LogDebug(String.Format("Emby.Kodi.SyncQueue:  SendNotification:  User = '{0}' dtoList = '{1}'", userId.ToString("N"), _jsonSerializer.SerializeToString(dtoList).ToString()));
 
                 myTasks.Add(SaveUserChanges(dtoList, itemRefs, user.Name, userId.ToString("N"), cancellationToken));
             }
@@ -269,7 +267,7 @@ namespace Emby.Kodi.SyncQueue.EntryPoints
             
             List<string> ids = dtos.Select(s => s.ItemId).ToList();
 
-            _logger.Info(String.Format("Emby.Kodi.SyncQueue: \"USERSYNC\" User {0}({1}) posted {2} Updates:  {3}", userId, userName, ids.Count(), String.Join(",", ids.ToArray())));
+            _logger.LogInformation(String.Format("Emby.Kodi.SyncQueue: \"USERSYNC\" User {0}({1}) posted {2} Updates:  {3}", userId, userName, ids.Count(), String.Join(",", ids.ToArray())));
         }
 
         private void TriggerCancellation()

@@ -1,8 +1,6 @@
-﻿using System.Globalization;
-using MediaBrowser.Common.Net;
+﻿using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using MediaBrowser.Common.Configuration;
 using System;
@@ -11,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emby.Kodi.SyncQueue.Data;
 using MediaBrowser.Model.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Emby.Kodi.SyncQueue.ScheduledTasks
 {
@@ -20,13 +19,13 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IUserManager _userManager;
         private readonly ILogger _logger;
-        private readonly ILogManager _logManager;
+        private readonly ILoggerFactory _logManager;
         private readonly IUserDataManager _userDataManager;
         private readonly IApplicationPaths _applicationPaths;
 
         //private DbRepo dbRepo = null;
 
-        public FireRetentionTask(ILogManager logManager, ILogger logger, IJsonSerializer jsonSerializer, IUserManager userManager, 
+        public FireRetentionTask(ILoggerFactory logManager, ILogger logger, IJsonSerializer jsonSerializer, IUserManager userManager, 
             IUserDataManager userDataManager, IHttpClient httpClient, IServerApplicationHost appHost, IApplicationPaths applicationPaths)
         {
             _jsonSerializer = jsonSerializer;
@@ -36,7 +35,7 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             _logManager = logManager;
             _applicationPaths = applicationPaths;
 
-            _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Task Scheduled!");
+            _logger.LogInformation("Emby.Kodi.SyncQueue.Task: Retention Task Scheduled!");
 
             //dbRepo = new DbRepo(_applicationPaths.DataPath, _logger, _jsonSerializer);
         }
@@ -64,13 +63,13 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             int retDays;
 
             if (!(Int32.TryParse(Plugin.Instance.Configuration.RetDays, out retDays))) {
-                _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Deletion Not Possible When Retention Days = 0!");
+                _logger.LogInformation("Emby.Kodi.SyncQueue.Task: Retention Deletion Not Possible When Retention Days = 0!");
                 return;
             }
 
             if (retDays == 0)
             {
-                _logger.Info("Emby.Kodi.SyncQueue.Task: Retention Deletion Not Possible When Retention Days = 0!");
+                _logger.LogInformation("Emby.Kodi.SyncQueue.Task: Retention Deletion Not Possible When Retention Days = 0!");
                 return;
             }
 
@@ -78,8 +77,8 @@ namespace Emby.Kodi.SyncQueue.ScheduledTasks
             bool result = await Task.Run(() =>
             {
                 retDays = retDays * -1;
-                var dt = DateTimeOffset.UtcNow.AddDays(retDays);
-                var dtl = (long)(dt.Subtract(new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero)).TotalSeconds);
+                var dt = DateTime.UtcNow.AddDays(retDays);
+                var dtl = (long)(dt.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
                 //DbRepo.DeleteOldData(dtl, _logger);
 
                 DbRepo.Instance.DeleteOldData(dtl);
