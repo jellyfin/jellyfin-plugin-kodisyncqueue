@@ -34,9 +34,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             }
             else
             {
-                retDays = retDays * -1;
                 retDate = new DateTime(dtNow.Year, dtNow.Month, dtNow.Day, 0, 0, 0);
-                retDate = retDate.AddDays(retDays);
+                retDate = retDate.AddDays(-retDays);
             }
             _logger.LogDebug("Getting Ready to Set Variables!");
             info.ServerDateTime = $"{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture)}";

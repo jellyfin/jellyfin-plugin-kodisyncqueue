@@ -35,7 +35,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue
             DbRepo.fileSystem = fileSystem;
         }
 
-        private Guid _id = new Guid("b0daa30f-2e09-4083-a6ce-459d9fecdd80");
+        private Guid _id = new Guid("067984FB-D975-4163-A08E-403C0C073FC2");
         public override Guid Id => _id;
 
         /// <summary>

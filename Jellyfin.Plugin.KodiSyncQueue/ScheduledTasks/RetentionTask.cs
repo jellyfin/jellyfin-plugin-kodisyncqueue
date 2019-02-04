@@ -43,8 +43,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
             //Check Database
             await Task.Run(() =>
             {
-                retDays = retDays * -1;
-                var dt = DateTime.UtcNow.AddDays(retDays);
+                var dt = DateTime.UtcNow.AddDays(-retDays);
                 var dtl = (long)dt.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
 
                 DbRepo.Instance.DeleteOldData(dtl);

@@ -35,11 +35,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             _userManager = userManager;
         }
 
-        public void Run()
+        public Task RunAsync()
         {
             _userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
 
-            _logger.LogInformation("UserSyncNotification Startup...");            
+            _logger.LogInformation("UserSyncNotification Startup...");
+            return Task.CompletedTask;
         }
 
         private bool FilterItem(BaseItem item, out int type)

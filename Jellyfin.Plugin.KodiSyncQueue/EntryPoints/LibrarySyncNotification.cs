@@ -27,13 +27,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// </summary>
         private readonly object _libraryChangedSyncLock = new object();
 
-        private readonly List<LibFolder> _foldersAddedTo = new List<LibFolder>();
-        private readonly List<LibFolder> _foldersRemovedFrom = new List<LibFolder>();
         private readonly List<LibItem> _itemsAdded = new List<LibItem>();
         private readonly List<LibItem> _itemsRemoved = new List<LibItem>();
         private readonly List<LibItem> _itemsUpdated = new List<LibItem>();
-
-        //private DbRepo dbRepo = null;
 
         private CancellationTokenSource cTokenSource = new CancellationTokenSource();
 
@@ -55,13 +51,14 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         }
         
         
-        public void Run()
+        public Task RunAsync()
         {
             _libraryManager.ItemAdded += libraryManager_ItemAdded;
             _libraryManager.ItemUpdated += libraryManager_ItemUpdated;
             _libraryManager.ItemRemoved += libraryManager_ItemRemoved;
 
             _logger.LogInformation("LibrarySyncNotification Startup...");
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -222,15 +219,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 }
                 _itemsAdded.Clear();
                 _itemsRemoved.Clear();
-                _itemsUpdated.Clear();
-                _foldersAddedTo.Clear();
-                _foldersRemovedFrom.Clear();                
+                _itemsUpdated.Clear();          
             }
         }
 
-        
 
-        public async Task PushChangesToDB(List<LibItem> itemsAdded, List<LibItem> itemsUpdated, List<LibItem> itemsRemoved, CancellationToken cancellationToken)
+        private async Task PushChangesToDB(List<LibItem> itemsAdded, List<LibItem> itemsUpdated, List<LibItem> itemsRemoved, CancellationToken cancellationToken)
         {
             List<Task> myTasksList = new List<Task>
             {
@@ -243,11 +237,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             await Task.WhenAll(iTasks);
         }
 
-        public Task UpdateLibrary(List<LibItem> Items, string tableName, int status, CancellationToken cancellationToken)
+        private Task UpdateLibrary(List<LibItem> Items, string tableName, int status, CancellationToken cancellationToken)
         {
             return Task.Run(() =>
             {
-                var statusType = string.Empty;
+                string statusType;
                 if (status == 0) { statusType = "Added"; }
                 else if (status == 1) { statusType = "Updated"; }
                 else { statusType = "Removed"; }
@@ -256,7 +250,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
                 _logger.LogInformation("\"LIBRARYSYNC\" {StatusType} {NumberOfItems} items:  {Items}", statusType, Items.Count,
                     string.Join(",", Items.Select(i => i.Id.ToString("N")).ToArray()));
-            });
+            }, cancellationToken);
         }
 
         private bool FilterItem(BaseItem item, out int type)
