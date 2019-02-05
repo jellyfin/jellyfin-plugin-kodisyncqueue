@@ -11,6 +11,7 @@ using Jellyfin.Plugin.KodiSyncQueue.Data;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using MediaBrowser.Controller.Channels;
 using Microsoft.Extensions.Logging;
+using MediaType = Jellyfin.Plugin.KodiSyncQueue.Entities.MediaType;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 {
@@ -141,7 +142,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemRemoved(object sender, ItemChangeEventArgs e)
         {
-            if (!FilterRemovedItem(e.Item, out var type))
+            if (!FilterItem(e.Item, out var type))
             {
                 return;
             }
@@ -161,7 +162,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 var item = new LibItem
                 {
                     Id = e.Item.Id,
-                    SyncApiModified = (long)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds,
+                    SyncApiModified = DateTimeOffset.Now.ToUnixTimeSeconds(),
                     ItemType = type
                 };
 
@@ -197,7 +198,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                                         .Select(grp => grp.First())
                                         .ToList();
 
-                    Task pushToDbTask = PushChangesToDB(itemsAdded, itemsUpdated, itemsRemoved, cTokenSource.Token);
+                    Task pushToDbTask = PushChangesToDb(itemsAdded, itemsUpdated, itemsRemoved, cTokenSource.Token);
                     Task.WaitAll(pushToDbTask);                    
 
                     itemsAdded.Clear();
@@ -224,38 +225,33 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         }
 
 
-        private async Task PushChangesToDB(List<LibItem> itemsAdded, List<LibItem> itemsUpdated, List<LibItem> itemsRemoved, CancellationToken cancellationToken)
+        private async Task PushChangesToDb(List<LibItem> itemsAdded, List<LibItem> itemsUpdated, List<LibItem> itemsRemoved, CancellationToken cancellationToken)
         {
             List<Task> myTasksList = new List<Task>
             {
-                UpdateLibrary(itemsAdded, "ItemsAddedQueue", 0, cancellationToken),
-                UpdateLibrary(itemsUpdated, "ItemsUpdatedQueue", 1, cancellationToken),
-                UpdateLibrary(itemsRemoved, "ItemsRemovedQueue", 2, cancellationToken)
+                UpdateLibrary(itemsAdded, ItemStatus.Added, cancellationToken),
+                UpdateLibrary(itemsUpdated, ItemStatus.Updated, cancellationToken),
+                UpdateLibrary(itemsRemoved, ItemStatus.Removed, cancellationToken)
             };
 
             Task[] iTasks = myTasksList.ToArray();
             await Task.WhenAll(iTasks);
         }
 
-        private Task UpdateLibrary(List<LibItem> Items, string tableName, int status, CancellationToken cancellationToken)
+        private Task UpdateLibrary(List<LibItem> items, ItemStatus status, CancellationToken cancellationToken)
         {
             return Task.Run(() =>
             {
-                string statusType;
-                if (status == 0) { statusType = "Added"; }
-                else if (status == 1) { statusType = "Updated"; }
-                else { statusType = "Removed"; }
-            
-                DbRepo.Instance.WriteLibrarySync(Items, status, cancellationToken);
+                DbRepo.Instance.WriteLibrarySync(items, status, cancellationToken);
 
-                _logger.LogInformation("\"LIBRARYSYNC\" {StatusType} {NumberOfItems} items:  {Items}", statusType, Items.Count,
-                    string.Join(",", Items.Select(i => i.Id.ToString("N")).ToArray()));
+                _logger.LogInformation("\"LIBRARYSYNC\" {StatusType} {NumberOfItems} items:  {Items}", status, items.Count,
+                    string.Join(",", items.Select(i => i.Id.ToString("N")).ToArray()));
             }, cancellationToken);
         }
 
-        private bool FilterItem(BaseItem item, out int type)
+        private bool FilterItem(BaseItem item, out MediaType type)
         {
-            type = -1;
+            type = MediaType.None;
 
             if (!Plugin.Instance.Configuration.IsEnabled ||
                 item.LocationType == LocationType.Virtual ||
@@ -278,14 +274,14 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     {
                         return false;
                     }
-                    type = 0;
+                    type = MediaType.Movies;
                     break;
                 case "BoxSet":
                     if (!Plugin.Instance.Configuration.tkBoxSets)
                     {
                         return false;
                     }
-                    type = 4;
+                    type = MediaType.BoxSets;
                     break;
                 case "Series":
                 case "Season":
@@ -294,7 +290,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     {
                         return false;
                     }
-                    type = 1;
+                    type = MediaType.TvShows;
                     break;
                 case "Audio":
                 case "MusicArtist":
@@ -303,97 +299,19 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     {
                         return false;
                     }
-                    type = 2;
+                    type = MediaType.Music;
                     break;
                 case "MusicVideo":
                     if (!Plugin.Instance.Configuration.tkMusicVideos)
                     {
                         return false;
                     }
-                    type = 3;
+                    type = MediaType.MusicVideos;
                     break;
                 default:
-                    type = -1;
                     _logger.LogDebug("Ignoring Type {TypeName}", typeName);
                     return false;
             }                                   
-
-            return true;
-        }
-
-        private bool FilterRemovedItem(BaseItem item, out int type)
-        {
-            type = -1;
-
-            if (!Plugin.Instance.Configuration.IsEnabled)
-            {
-                return false;
-            }
-
-            if (item.LocationType == LocationType.Virtual)
-            {
-                return false;
-            }
-
-            if (item.GetTopParent() is Channel)
-            {
-                return false;
-            }
-
-
-            var typeName = item.GetClientTypeName();
-            if (string.IsNullOrEmpty(typeName))
-            {
-                return false;
-            }
-
-            switch (typeName)
-            {
-                case "Movie":
-                case "Folder":
-                    if (!Plugin.Instance.Configuration.tkMovies)
-                    {
-                        return false;
-                    }
-                    type = 0;
-                    break;
-                case "BoxSet":
-                    if (!Plugin.Instance.Configuration.tkBoxSets)
-                    {
-                        return false;
-                    }
-                    type = 4;
-                    break;
-                case "Series":
-                case "Season":
-                case "Episode":
-                    if (!Plugin.Instance.Configuration.tkTVShows)
-                    {
-                        return false;
-                    }
-                    type = 1;
-                    break;
-                case "Audio":
-                case "MusicArtist":
-                case "MusicAlbum":
-                    if (!Plugin.Instance.Configuration.tkMusic)
-                    {
-                        return false;
-                    }
-                    type = 2;
-                    break;
-                case "MusicVideo":
-                    if (!Plugin.Instance.Configuration.tkMusicVideos)
-                    {
-                        return false;
-                    }
-                    type = 3;
-                    break;
-                default:
-                    type = -1;
-                    _logger.LogDebug("Ingoring Type {TypeName}", typeName);
-                    return false;
-            }
 
             return true;
         }

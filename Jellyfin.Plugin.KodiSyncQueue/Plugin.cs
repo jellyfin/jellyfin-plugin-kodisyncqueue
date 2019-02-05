@@ -14,13 +14,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue
     class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         public static ILogger Logger { get; set; }
+        public static DbRepo DbRepo { get; set; }
 
         public Plugin(
             IApplicationPaths applicationPaths,
             IXmlSerializer xmlSerializer,
             ILogger logger,
-            IJsonSerializer json,
-            IFileSystem fileSystem
+            IJsonSerializer json
             ) : base(applicationPaths, xmlSerializer)
         {
             Instance = this;
@@ -29,13 +29,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue
             Logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue IS NOW STARTING!!!");
             
             // TODO this is just sad
-            DbRepo.dbPath = applicationPaths.DataPath;
-            DbRepo.json = json;
-            DbRepo.logger = logger;
-            DbRepo.fileSystem = fileSystem;
+            DbRepo = new DbRepo(applicationPaths.DataPath, Logger, json);
         }
 
-        private Guid _id = new Guid("067984FB-D975-4163-A08E-403C0C073FC2");
+        private readonly Guid _id = new Guid("067984FB-D975-4163-A08E-403C0C073FC2");
         public override Guid Id => _id;
 
         /// <summary>

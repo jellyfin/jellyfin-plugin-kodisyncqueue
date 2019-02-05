@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Jellyfin.Plugin.KodiSyncQueue.Data;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using Microsoft.Extensions.Logging;
+using MediaType = Jellyfin.Plugin.KodiSyncQueue.Entities.MediaType;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 {
@@ -43,9 +44,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             return Task.CompletedTask;
         }
 
-        private bool FilterItem(BaseItem item, out int type)
+        private bool FilterItem(BaseItem item, out MediaType type)
         {
-            type = -1;
+            type = MediaType.None;
 
             if (!Plugin.Instance.Configuration.IsEnabled)
             {
@@ -76,38 +77,37 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     {
                         return false;
                     }
-                    type = 0;
+                    type = MediaType.Movies;
                     break;
                 case "BoxSet":
                     if (!Plugin.Instance.Configuration.tkBoxSets)
                     {
                         return false;
                     }
-                    type = 4;
+                    type = MediaType.BoxSets;
                     break;
                 case "Episode":
                     if (!Plugin.Instance.Configuration.tkTVShows)
                     {
                         return false;
                     }
-                    type = 1;
+                    type = MediaType.TvShows;
                     break;
                 case "Audio":
                     if (!Plugin.Instance.Configuration.tkMusic)
                     {
                         return false;
                     }
-                    type = 2;
+                    type = MediaType.Music;
                     break;
                 case "MusicVideo":
                     if (!Plugin.Instance.Configuration.tkMusicVideos)
                     {
                         return false;
                     }
-                    type = 3;
+                    type = MediaType.MusicVideos;
                     break;
                 default:
-                    type = -1;
                     _logger.LogDebug("Ingoring Type {TypeName}", typeName);
                     return false;
             }

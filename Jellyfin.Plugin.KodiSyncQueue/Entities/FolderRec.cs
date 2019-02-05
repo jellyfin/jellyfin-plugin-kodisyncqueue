@@ -1,13 +1,10 @@
-﻿using NanoApi.JsonFile;
-
-namespace Jellyfin.Plugin.KodiSyncQueue.Entities
+﻿namespace Jellyfin.Plugin.KodiSyncQueue.Entities
 {
     public class FolderRec
     {
         //Status 0 = Added
         //Status 1 = Removed
 
-        [PrimaryKey]
         public int Id { get; set; }
         public string ItemId { get; set; }
         public string UserId { get; set; }

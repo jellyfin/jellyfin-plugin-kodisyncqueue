@@ -6,6 +6,10 @@
     <FileVersion>2.0.3.0</FileVersion>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Remove="Configuration\configPage.html" />
   </ItemGroup>
@@ -15,7 +19,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Jellyfin.Controller" Version="10.1.0" />
+    <Reference Include="MediaBrowser.Common, Version=10.1.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\MediaBrowser.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="MediaBrowser.Controller, Version=10.1.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\MediaBrowser.Controller.dll</HintPath>
+    </Reference>
+    <Reference Include="MediaBrowser.Model, Version=10.1.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\MediaBrowser.Model.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LiteDB" Version="4.1.4" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
   </ItemGroup>
 
 </Project>
