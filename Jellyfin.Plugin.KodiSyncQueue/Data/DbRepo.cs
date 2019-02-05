@@ -14,10 +14,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 {
     public class DbRepo: IDisposable
     {
-        private readonly object _userLock = new object();
-        private readonly object _itemLock = new object();
-
-        private LiteDatabase _liteDb;
+        private readonly LiteDatabase _liteDb;
         private const string ItemsCollection = "items";
         private const string UserInfoCollection = "user_info";
 
@@ -102,19 +99,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
         public void DeleteOldData(long dtl)
         {
-            lock (_itemLock)
-            {
-                _logger.LogInformation("Starting Item Retention Deletion...");
-                _liteDb.GetCollection<ItemRec>(ItemsCollection).Delete(x => x.LastModified < dtl);
-                _logger.LogInformation("Finished Item Retention Deletion...");
-            }
-
-            lock (_userLock)
-            {
-                _logger.LogInformation("Starting UserItem Retention Deletion...");
-                _liteDb.GetCollection<UserInfoRec>(UserInfoCollection).Delete(x => x.LastModified < dtl);
-                _logger.LogInformation("Finished UserItem Retention Deletion...");
-            }
+            _logger.LogInformation("Starting Item and UserItem Retention Deletion...");
+            _liteDb.GetCollection<ItemRec>(ItemsCollection).Delete(x => x.LastModified < dtl);
+            _liteDb.GetCollection<UserInfoRec>(UserInfoCollection).Delete(x => x.LastModified < dtl);
+            _logger.LogInformation("Finished Item and UserItem Retention Deletion...");
         }
 
         public void WriteLibrarySync(IEnumerable<LibItem> items, ItemStatus status, CancellationToken cancellationToken)
@@ -167,30 +155,19 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             }
             if (upRecs.Count > 0)
             {
-                _logger.LogDebug("THIS IS WHERE WE ENTER UPDATE FOR EXISTING ITEMS!!!!!");
                 var data = itemCollection.FindAll().ToList();
 
-
-                _logger.LogDebug("THIS IS WHERE WE ENTER THE LOOP");
                 foreach (var rec in upRecs)
                 {
-                    _logger.LogDebug("THIS IS BEFORE LINQ WORK!");
                     data.Where(d => d.Id == rec.Id).ToList().ForEach(i =>
                     {
-                        _logger.LogDebug("THIS IS INSIDE THE LINQ UPDATING START!");
                         i.ItemId = rec.ItemId;
                         i.Status = rec.Status;
                         i.LastModified = rec.LastModified;
                         i.MediaType = rec.MediaType;
-                        _logger.LogDebug("THIS IS INSIDE THE LINQ UPDATING END!");
                     });
                 }
-
-                _logger.LogDebug("THIS IS AFTER LINQ STARTING COMMIT!");
                 itemCollection.Update(data);
-                // TODO remove this garbage
-                _logger.LogDebug("{@Data}", data);
-                _logger.LogDebug("THIS IS AFTER LINQ FINISHED COMMIT!");
 
                 data = itemCollection.FindAll().ToList();
                 _logger.LogDebug("{@Data}", data);                    
@@ -256,13 +233,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             }
         }
 
-        #region Dispose
-
         public void Dispose()
         {
             _liteDb.Dispose();
         }
-
-        #endregion
     }
 }
