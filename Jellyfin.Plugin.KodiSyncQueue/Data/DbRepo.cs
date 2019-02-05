@@ -34,7 +34,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             _liteDb = new LiteDatabase($"filename={dPath}/kodisyncqueue.db;mode=exclusive");
         }
 
-        public List<Guid> GetItems(long dtl, ItemStatus status, IEnumerable<MediaType> filters)
+        public List<Guid> GetItems(long dtl, ItemStatus status, IReadOnlyCollection<MediaType> filters)
         {
             _logger.LogDebug("Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(dtl), dtl);
             _logger.LogDebug("IntStatus: {Status}", status);
@@ -49,7 +49,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             return items.Where(x => filters.All(f => f != x.MediaType)).Select(i => i.ItemId).Distinct().ToList();
         }
 
-        public List<UserJson> GetUserInfos(long dtl, string userId, IEnumerable<MediaType> filters)
+        public List<UserJson> GetUserInfos(long dtl, string userId, IReadOnlyCollection<MediaType> filters)
         {
             // Get collection instance
             var userInfoCollection = _liteDb.GetCollection<UserInfoRec>(UserInfoCollection);
