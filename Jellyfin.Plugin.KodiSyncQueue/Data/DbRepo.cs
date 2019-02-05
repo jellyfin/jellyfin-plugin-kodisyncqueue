@@ -34,7 +34,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             _liteDb = new LiteDatabase($"filename={dPath}/kodisyncqueue.db;mode=exclusive");
         }
 
-        public List<Guid> GetItems(long dtl, ItemStatus status, bool movies, bool tvshows, bool music, bool musicvideos, bool boxsets)
+        public List<Guid> GetItems(long dtl, ItemStatus status, IEnumerable<MediaType> filters)
         {
             _logger.LogDebug("Using dtl {0:yyyy-MM-dd HH:mm:ss} for time {1}", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(dtl), dtl);
             _logger.LogDebug("IntStatus: {Status}", status);
@@ -46,28 +46,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             itemCollection.EnsureIndex(x => x.Id);
 
             var items = itemCollection.Find(x => x.LastModified > dtl && x.Status == status);
-
-            return items.Where(x =>
-            {
-                switch (x.MediaType)
-                {
-                    case MediaType.Movies:
-                        return movies;
-                    case MediaType.TvShows:
-                        return tvshows;
-                    case MediaType.Music:
-                        return music;
-                    case MediaType.MusicVideos:
-                        return musicvideos;
-                    case MediaType.BoxSets:
-                        return boxsets;
-                }
-
-                return false;
-            }).Select(i => i.ItemId).Distinct().ToList();
+            return items.Where(x => filters.All(f => f != x.MediaType)).Select(i => i.ItemId).Distinct().ToList();
         }
 
-        public List<UserJson> GetUserInfos(long dtl, string userId, bool movies, bool tvshows, bool music, bool musicvideos, bool boxsets)
+        public List<UserJson> GetUserInfos(long dtl, string userId, IEnumerable<MediaType> filters)
         {
             // Get collection instance
             var userInfoCollection = _liteDb.GetCollection<UserInfoRec>(UserInfoCollection);
@@ -76,24 +58,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             userInfoCollection.EnsureIndex(x => x.Id);
 
             var userInfoRecs = userInfoCollection.Find(x => x.LastModified > dtl && x.UserId == userId);
-            userInfoRecs = userInfoRecs.Where(x =>
-            {
-                switch (x.MediaType)
-                {
-                    case MediaType.Movies:
-                        return movies;
-                    case MediaType.TvShows:
-                        return tvshows;
-                    case MediaType.Music:
-                        return music;
-                    case MediaType.MusicVideos:
-                        return musicvideos;
-                    case MediaType.BoxSets:
-                        return boxsets;
-                }
-
-                return false;
-            });
+            userInfoRecs = userInfoRecs.Where(x => filters.All(f => f != x.MediaType));
             return userInfoRecs.Select(i => new UserJson {Id = i.ItemId, JsonData = i.Json}).ToList();
         }
 
