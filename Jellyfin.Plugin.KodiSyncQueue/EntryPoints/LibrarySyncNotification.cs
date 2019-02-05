@@ -198,12 +198,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                                         .Select(grp => grp.First())
                                         .ToList();
 
-                    Task pushToDbTask = PushChangesToDb(itemsAdded, itemsUpdated, itemsRemoved, cTokenSource.Token);
-                    Task.WaitAll(pushToDbTask);                    
-
-                    itemsAdded.Clear();
-                    itemsRemoved.Clear();
-                    itemsUpdated.Clear();
+                    PushChangesToDb(itemsAdded, itemsUpdated, itemsRemoved, cTokenSource.Token);
 
                     if (LibraryUpdateTimer != null)
                     {
@@ -225,28 +220,19 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         }
 
 
-        private async Task PushChangesToDb(List<LibItem> itemsAdded, List<LibItem> itemsUpdated, List<LibItem> itemsRemoved, CancellationToken cancellationToken)
+        private void PushChangesToDb(IReadOnlyCollection<LibItem> itemsAdded, IReadOnlyCollection<LibItem> itemsUpdated, IReadOnlyCollection<LibItem> itemsRemoved, CancellationToken cancellationToken)
         {
-            List<Task> myTasksList = new List<Task>
-            {
-                UpdateLibrary(itemsAdded, ItemStatus.Added, cancellationToken),
-                UpdateLibrary(itemsUpdated, ItemStatus.Updated, cancellationToken),
-                UpdateLibrary(itemsRemoved, ItemStatus.Removed, cancellationToken)
-            };
-
-            Task[] iTasks = myTasksList.ToArray();
-            await Task.WhenAll(iTasks);
+            UpdateLibrary(itemsAdded, ItemStatus.Added, cancellationToken);
+            UpdateLibrary(itemsUpdated, ItemStatus.Updated, cancellationToken);
+            UpdateLibrary(itemsRemoved, ItemStatus.Removed, cancellationToken);
         }
 
-        private Task UpdateLibrary(List<LibItem> items, ItemStatus status, CancellationToken cancellationToken)
+        private void UpdateLibrary(IReadOnlyCollection<LibItem> items, ItemStatus status, CancellationToken cancellationToken)
         {
-            return Task.Run(() =>
-            {
-                DbRepo.Instance.WriteLibrarySync(items, status, cancellationToken);
+            DbRepo.Instance.WriteLibrarySync(items, status, cancellationToken);
 
-                _logger.LogInformation("\"LIBRARYSYNC\" {StatusType} {NumberOfItems} items:  {Items}", status, items.Count,
-                    string.Join(",", items.Select(i => i.Id.ToString("N")).ToArray()));
-            }, cancellationToken);
+            _logger.LogInformation("\"LIBRARYSYNC\" {StatusType} {NumberOfItems} items:  {Items}", status, items.Count,
+                string.Join(",", items.Select(i => i.Id.ToString("N")).ToArray()));
         }
 
         private bool FilterItem(BaseItem item, out MediaType type)

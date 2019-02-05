@@ -139,7 +139,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             }
         }
 
-        public void SetUserInfoSync(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId, CancellationToken cancellationToken)
+        public void SetUserInfoSync(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userId)
         {
             var newRecs = new List<UserInfoRec>();
             var upRecs = new List<UserInfoRec>();

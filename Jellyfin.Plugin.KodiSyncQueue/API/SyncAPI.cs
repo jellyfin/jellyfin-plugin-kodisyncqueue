@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Serialization;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;

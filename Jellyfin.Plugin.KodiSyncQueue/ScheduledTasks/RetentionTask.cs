@@ -32,24 +32,21 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
             };
         }
 
-        public async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
+        public Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
         {
             //Is retDays 0.. If So Exit...
             if (!int.TryParse(Plugin.Instance.Configuration.RetDays, out var retDays) || retDays == 0) {
                 _logger.LogInformation("Retention Deletion Not Possible When Retention Days = 0!");
-                return;
+                return Task.CompletedTask;
             }
 
             //Check Database
-            await Task.Run(() =>
-            {
-                var dt = DateTime.UtcNow.AddDays(-retDays);
-                var dtl = (long)dt.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+            var dt = DateTime.UtcNow.AddDays(-retDays);
+            var dtl = (long)dt.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
 
-                DbRepo.Instance.DeleteOldData(dtl);
-                
-                return true;
-            }, cancellationToken);
+            DbRepo.Instance.DeleteOldData(dtl);
+            
+            return Task.CompletedTask;
         }
 
         public string Name => "Remove Old Sync Data";

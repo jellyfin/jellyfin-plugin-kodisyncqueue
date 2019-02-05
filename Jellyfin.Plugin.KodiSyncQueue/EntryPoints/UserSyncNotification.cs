@@ -182,8 +182,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 _changedItems.Clear();
                 _itemRef.Clear();
 
-                Task sendNotificationsTask = SendNotifications(changes, itemRef, cTokenSource.Token);
-                Task.WaitAll(sendNotificationsTask);
+                SendNotifications(changes, itemRef, cTokenSource.Token);
 
                 if (UpdateTimer != null)
                 {
@@ -199,10 +198,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             }
         }
 
-        private async Task SendNotifications(IEnumerable<KeyValuePair<Guid, List<BaseItem>>> changes, List<LibItem> itemRefs, CancellationToken cancellationToken)
+        private void SendNotifications(IEnumerable<KeyValuePair<Guid, List<BaseItem>>> changes, List<LibItem> itemRefs, CancellationToken cancellationToken)
         {
-            List<Task> myTasks = new List<Task>();
-            
             foreach (var pair in changes)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -222,21 +219,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                         })
                         .ToList();
 
-                myTasks.Add(SaveUserChanges(dtoList, itemRefs, user.Name, userId.ToString("N"), cancellationToken));
+                SaveUserChanges(dtoList, itemRefs, user.Name, userId.ToString("N"));
             }
-            Task[] iTasks = myTasks.ToArray();
-            await Task.WhenAll(iTasks);
         }
 
-        private async Task SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId, CancellationToken cancellationToken)
+        private void SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId)
         {
-            await Task.Run(() =>
-            {
-                DbRepo.Instance.SetUserInfoSync(dtos, itemRefs, userName, userId, cancellationToken);
-
-                return true;
-            }, cancellationToken);
-            
+            DbRepo.Instance.SetUserInfoSync(dtos, itemRefs, userId);
             List<string> ids = dtos.Select(s => s.ItemId).ToList();
 
             _logger.LogInformation("\"USERSYNC\" User {UserId}({Username}) posted {NumberOfUpdates} Updates: {Updates}", userId, userName, ids.Count, string.Join(",", ids.ToArray()));
