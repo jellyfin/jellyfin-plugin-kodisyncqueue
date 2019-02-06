@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue
 {
-    class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
+    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         public static ILogger Logger { get; set; }
         public static DbRepo DbRepo { get; set; }
