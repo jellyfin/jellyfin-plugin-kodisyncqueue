@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.KodiSyncQueue.Data;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
+using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using Microsoft.Extensions.Logging;
 using MediaType = Jellyfin.Plugin.KodiSyncQueue.Entities.MediaType;
 
@@ -44,77 +45,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             return Task.CompletedTask;
         }
 
-        private bool FilterItem(BaseItem item, out MediaType type)
-        {
-            type = MediaType.None;
-
-            if (!Plugin.Instance.Configuration.IsEnabled)
-            {
-                return false;
-            }
-
-            if (item.LocationType == LocationType.Virtual)
-            {
-                return false;
-            }
-
-            if (item.SourceType != SourceType.Library)
-            {
-                return false;
-            }
-
-
-            var typeName = item.GetClientTypeName();
-            if (string.IsNullOrEmpty(typeName))
-            {
-                return false;
-            }
-
-            switch (typeName)
-            {
-                case "Movie":
-                    if (!Plugin.Instance.Configuration.tkMovies)
-                    {
-                        return false;
-                    }
-                    type = MediaType.Movies;
-                    break;
-                case "BoxSet":
-                    if (!Plugin.Instance.Configuration.tkBoxSets)
-                    {
-                        return false;
-                    }
-                    type = MediaType.BoxSets;
-                    break;
-                case "Episode":
-                    if (!Plugin.Instance.Configuration.tkTVShows)
-                    {
-                        return false;
-                    }
-                    type = MediaType.TvShows;
-                    break;
-                case "Audio":
-                    if (!Plugin.Instance.Configuration.tkMusic)
-                    {
-                        return false;
-                    }
-                    type = MediaType.Music;
-                    break;
-                case "MusicVideo":
-                    if (!Plugin.Instance.Configuration.tkMusicVideos)
-                    {
-                        return false;
-                    }
-                    type = MediaType.MusicVideos;
-                    break;
-                default:
-                    _logger.LogDebug("Ingoring Type {TypeName}", typeName);
-                    return false;
-            }
-
-            return true;
-        }
-
         void _userDataManager_UserDataSaved(object sender, UserDataSaveEventArgs e)
         {
             if (e.SaveReason == UserDataSaveReason.PlaybackProgress)
@@ -128,7 +58,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
                 if (testItem != null)
                 {
-                    if (!FilterItem(testItem, out var type))
+                    if (!Helpers.FilterItem(testItem, out var type))
                     {
                         return;
                     }
@@ -225,7 +155,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
         private void SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId)
         {
-            DbRepo.Instance.SetUserInfoSync(dtos, itemRefs, userId);
+            Plugin.Instance.DbRepo.SetUserInfoSync(dtos, itemRefs, userId);
             List<string> ids = dtos.Select(s => s.ItemId).ToList();
 
             _logger.LogInformation("\"USERSYNC\" User {UserId}({Username}) posted {NumberOfUpdates} Updates: {Updates}", userId, userName, ids.Count, string.Join(",", ids.ToArray()));

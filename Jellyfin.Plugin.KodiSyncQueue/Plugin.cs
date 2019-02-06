@@ -13,8 +13,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue
 {
     public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
-        public static ILogger Logger { get; set; }
-        public static DbRepo DbRepo { get; set; }
+        public DbRepo DbRepo { get; }
 
         public Plugin(
             IApplicationPaths applicationPaths,
@@ -25,11 +24,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue
         {
             Instance = this;
 
-            Logger = logger;
-            Logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue IS NOW STARTING!!!");
+            logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue IS NOW STARTING!!!");
             
-            // TODO this is just sad
-            DbRepo = new DbRepo(applicationPaths.DataPath, Logger, json);
+            DbRepo = new DbRepo(applicationPaths.DataPath, logger, json);
         }
 
         private readonly Guid _id = new Guid("067984FB-D975-4163-A08E-403C0C073FC2");

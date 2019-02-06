@@ -21,12 +21,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
         private readonly ILogger _logger;
         private readonly IJsonSerializer _json;
 
-        public static DbRepo Instance;
-
         public DbRepo(string dPath, ILogger logger, IJsonSerializer jsonSerializer)
         {
-            Instance = this;
-
             _logger = logger;
             _json = jsonSerializer;
             _logger.LogInformation("Creating DB Repository...");

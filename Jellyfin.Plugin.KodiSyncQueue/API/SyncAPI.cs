@@ -83,10 +83,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             var dtl = (long)userDt.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
             var user = _userManager.GetUserById(Guid.Parse(userId));
             
-            var itemsAdded = DbRepo.Instance.GetItems(dtl, ItemStatus.Added, filters);
-            var itemsRemoved = DbRepo.Instance.GetItems(dtl, ItemStatus.Removed, filters);
-            var itemsUpdated = DbRepo.Instance.GetItems(dtl, ItemStatus.Updated, filters);
-            var userDataChanged = DbRepo.Instance.GetUserInfos(dtl, userId, filters);
+            var itemsAdded = Plugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Added, filters);
+            var itemsRemoved = Plugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Removed, filters);
+            var itemsUpdated = Plugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Updated, filters);
+            var userDataChanged = Plugin.Instance.DbRepo.GetUserInfos(dtl, userId, filters);
 
             info.ItemsAdded = GetAddedOrUpdatedItems(user, itemsAdded);
             info.ItemsRemoved = itemsRemoved.Select(id => id.ToString("N")).ToList();

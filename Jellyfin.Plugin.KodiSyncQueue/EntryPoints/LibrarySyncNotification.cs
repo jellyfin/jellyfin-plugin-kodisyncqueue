@@ -1,7 +1,5 @@
-﻿using MediaBrowser.Controller.Entities;
-using MediaBrowser.Controller.Library;
+﻿using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
-using MediaBrowser.Model.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.KodiSyncQueue.Data;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
-using MediaBrowser.Controller.Channels;
+using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using Microsoft.Extensions.Logging;
-using MediaType = Jellyfin.Plugin.KodiSyncQueue.Entities.MediaType;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 {
@@ -69,7 +66,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemAdded(object sender, ItemChangeEventArgs e)
         {
-            if (!FilterItem(e.Item, out var type))
+            if (!Helpers.FilterItem(e.Item, out var type))
             {
                 return;
             }
@@ -105,7 +102,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemUpdated(object sender, ItemChangeEventArgs e)
         {
-            if (!FilterItem(e.Item, out var type))
+            if (!Helpers.FilterItem(e.Item, out var type))
             {
                 return;
             }
@@ -142,7 +139,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemRemoved(object sender, ItemChangeEventArgs e)
         {
-            if (!FilterItem(e.Item, out var type))
+            if (!Helpers.FilterItem(e.Item, out var type))
             {
                 return;
             }
@@ -229,77 +226,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
         private void UpdateLibrary(IReadOnlyCollection<LibItem> items, ItemStatus status, CancellationToken cancellationToken)
         {
-            DbRepo.Instance.WriteLibrarySync(items, status, cancellationToken);
+            Plugin.Instance.DbRepo.WriteLibrarySync(items, status, cancellationToken);
 
             _logger.LogInformation("\"LIBRARYSYNC\" {StatusType} {NumberOfItems} items:  {Items}", status, items.Count,
                 string.Join(",", items.Select(i => i.Id.ToString("N")).ToArray()));
-        }
-
-        private bool FilterItem(BaseItem item, out MediaType type)
-        {
-            type = MediaType.None;
-
-            if (!Plugin.Instance.Configuration.IsEnabled ||
-                item.LocationType == LocationType.Virtual ||
-                item.SourceType != SourceType.Library)
-            {
-                return false;
-            }
-
-
-            var typeName = item.GetClientTypeName();
-            if (string.IsNullOrEmpty(typeName))
-            {
-                return false;
-            }
-
-            switch (typeName)
-            {
-                case "Movie":
-                    if (!Plugin.Instance.Configuration.tkMovies)
-                    {
-                        return false;
-                    }
-                    type = MediaType.Movies;
-                    break;
-                case "BoxSet":
-                    if (!Plugin.Instance.Configuration.tkBoxSets)
-                    {
-                        return false;
-                    }
-                    type = MediaType.BoxSets;
-                    break;
-                case "Series":
-                case "Season":
-                case "Episode":
-                    if (!Plugin.Instance.Configuration.tkTVShows)
-                    {
-                        return false;
-                    }
-                    type = MediaType.TvShows;
-                    break;
-                case "Audio":
-                case "MusicArtist":
-                case "MusicAlbum":
-                    if (!Plugin.Instance.Configuration.tkMusic)
-                    {
-                        return false;
-                    }
-                    type = MediaType.Music;
-                    break;
-                case "MusicVideo":
-                    if (!Plugin.Instance.Configuration.tkMusicVideos)
-                    {
-                        return false;
-                    }
-                    type = MediaType.MusicVideos;
-                    break;
-                default:
-                    _logger.LogDebug("Ignoring Type {TypeName}", typeName);
-                    return false;
-            }                                   
-
-            return true;
         }
 
         private void TriggerCancellation()

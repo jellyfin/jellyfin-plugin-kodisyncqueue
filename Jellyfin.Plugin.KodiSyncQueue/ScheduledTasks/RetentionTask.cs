@@ -44,7 +44,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
             var dt = DateTime.UtcNow.AddDays(-retDays);
             var dtl = (long)dt.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
 
-            DbRepo.Instance.DeleteOldData(dtl);
+            Plugin.Instance.DbRepo.DeleteOldData(dtl);
             
             return Task.CompletedTask;
         }
