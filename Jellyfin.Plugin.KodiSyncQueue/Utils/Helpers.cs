@@ -6,7 +6,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Utils
 {
     public static class Helpers
     {
-        public static bool FilterItem(BaseItem item, out MediaType type)
+        public static bool FilterAndGetMediaType(BaseItem item, out MediaType type)
         {
             type = MediaType.None;
 

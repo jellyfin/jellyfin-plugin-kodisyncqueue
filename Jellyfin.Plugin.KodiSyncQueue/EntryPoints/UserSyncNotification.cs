@@ -58,7 +58,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
                 if (testItem != null)
                 {
-                    if (!Helpers.FilterItem(testItem, out var type))
+                    if (!Helpers.FilterAndGetMediaType(testItem, out var type))
                     {
                         return;
                     }

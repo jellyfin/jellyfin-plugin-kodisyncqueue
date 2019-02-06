@@ -66,7 +66,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemAdded(object sender, ItemChangeEventArgs e)
         {
-            if (!Helpers.FilterItem(e.Item, out var type))
+            if (!Helpers.FilterAndGetMediaType(e.Item, out var type))
             {
                 return;
             }
@@ -102,7 +102,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemUpdated(object sender, ItemChangeEventArgs e)
         {
-            if (!Helpers.FilterItem(e.Item, out var type))
+            if (!Helpers.FilterAndGetMediaType(e.Item, out var type))
             {
                 return;
             }
@@ -139,7 +139,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemRemoved(object sender, ItemChangeEventArgs e)
         {
-            if (!Helpers.FilterItem(e.Item, out var type))
+            if (!Helpers.FilterAndGetMediaType(e.Item, out var type))
             {
                 return;
             }
