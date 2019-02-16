@@ -6,10 +6,6 @@
     <FileVersion>2.0.3.0</FileVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <DebugType>full</DebugType>
-  </PropertyGroup>
-
   <ItemGroup>
     <None Remove="Configuration\configPage.html" />
   </ItemGroup>
@@ -17,19 +13,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Configuration\configPage.html" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="MediaBrowser.Common, Version=10.1.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\MediaBrowser.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="MediaBrowser.Controller, Version=10.1.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\MediaBrowser.Controller.dll</HintPath>
-    </Reference>
-    <Reference Include="MediaBrowser.Model, Version=10.1.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\MediaBrowser.Model.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="Jellyfin.Controller" Version="10.2.0" />
     <PackageReference Include="LiteDB" Version="4.1.4" />
