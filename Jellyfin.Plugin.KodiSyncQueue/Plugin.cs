@@ -11,31 +11,25 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue
 {
-    class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
+    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
-        public static ILogger Logger { get; set; }
+        public DbRepo DbRepo { get; }
 
         public Plugin(
             IApplicationPaths applicationPaths,
             IXmlSerializer xmlSerializer,
             ILogger logger,
-            IJsonSerializer json,
-            IFileSystem fileSystem
+            IJsonSerializer json
             ) : base(applicationPaths, xmlSerializer)
         {
             Instance = this;
 
-            Logger = logger;
-            Logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue IS NOW STARTING!!!");
+            logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue IS NOW STARTING!!!");
             
-            // TODO this is just sad
-            DbRepo.dbPath = applicationPaths.DataPath;
-            DbRepo.json = json;
-            DbRepo.logger = logger;
-            DbRepo.fileSystem = fileSystem;
+            DbRepo = new DbRepo(applicationPaths.DataPath, logger, json);
         }
 
-        private Guid _id = new Guid("067984FB-D975-4163-A08E-403C0C073FC2");
+        private readonly Guid _id = new Guid("067984FB-D975-4163-A08E-403C0C073FC2");
         public override Guid Id => _id;
 
         /// <summary>

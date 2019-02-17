@@ -9,7 +9,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.KodiSyncQueue.Data;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
+using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using Microsoft.Extensions.Logging;
+using MediaType = Jellyfin.Plugin.KodiSyncQueue.Entities.MediaType;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 {
@@ -43,78 +45,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             return Task.CompletedTask;
         }
 
-        private bool FilterItem(BaseItem item, out int type)
-        {
-            type = -1;
-
-            if (!Plugin.Instance.Configuration.IsEnabled)
-            {
-                return false;
-            }
-
-            if (item.LocationType == LocationType.Virtual)
-            {
-                return false;
-            }
-
-            if (item.SourceType != SourceType.Library)
-            {
-                return false;
-            }
-
-
-            var typeName = item.GetClientTypeName();
-            if (string.IsNullOrEmpty(typeName))
-            {
-                return false;
-            }
-
-            switch (typeName)
-            {
-                case "Movie":
-                    if (!Plugin.Instance.Configuration.tkMovies)
-                    {
-                        return false;
-                    }
-                    type = 0;
-                    break;
-                case "BoxSet":
-                    if (!Plugin.Instance.Configuration.tkBoxSets)
-                    {
-                        return false;
-                    }
-                    type = 4;
-                    break;
-                case "Episode":
-                    if (!Plugin.Instance.Configuration.tkTVShows)
-                    {
-                        return false;
-                    }
-                    type = 1;
-                    break;
-                case "Audio":
-                    if (!Plugin.Instance.Configuration.tkMusic)
-                    {
-                        return false;
-                    }
-                    type = 2;
-                    break;
-                case "MusicVideo":
-                    if (!Plugin.Instance.Configuration.tkMusicVideos)
-                    {
-                        return false;
-                    }
-                    type = 3;
-                    break;
-                default:
-                    type = -1;
-                    _logger.LogDebug("Ingoring Type {TypeName}", typeName);
-                    return false;
-            }
-
-            return true;
-        }
-
         void _userDataManager_UserDataSaved(object sender, UserDataSaveEventArgs e)
         {
             if (e.SaveReason == UserDataSaveReason.PlaybackProgress)
@@ -128,7 +58,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
                 if (testItem != null)
                 {
-                    if (!FilterItem(testItem, out var type))
+                    if (!Helpers.FilterAndGetMediaType(testItem, out var type))
                     {
                         return;
                     }
@@ -182,8 +112,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 _changedItems.Clear();
                 _itemRef.Clear();
 
-                Task sendNotificationsTask = SendNotifications(changes, itemRef, cTokenSource.Token);
-                Task.WaitAll(sendNotificationsTask);
+                SendNotifications(changes, itemRef, cTokenSource.Token);
 
                 if (UpdateTimer != null)
                 {
@@ -199,10 +128,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             }
         }
 
-        private async Task SendNotifications(IEnumerable<KeyValuePair<Guid, List<BaseItem>>> changes, List<LibItem> itemRefs, CancellationToken cancellationToken)
+        private void SendNotifications(IEnumerable<KeyValuePair<Guid, List<BaseItem>>> changes, List<LibItem> itemRefs, CancellationToken cancellationToken)
         {
-            List<Task> myTasks = new List<Task>();
-            
             foreach (var pair in changes)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -222,21 +149,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                         })
                         .ToList();
 
-                myTasks.Add(SaveUserChanges(dtoList, itemRefs, user.Name, userId.ToString("N"), cancellationToken));
+                SaveUserChanges(dtoList, itemRefs, user.Name, userId.ToString("N"));
             }
-            Task[] iTasks = myTasks.ToArray();
-            await Task.WhenAll(iTasks);
         }
 
-        private async Task SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId, CancellationToken cancellationToken)
+        private void SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId)
         {
-            await Task.Run(() =>
-            {
-                DbRepo.Instance.SetUserInfoSync(dtos, itemRefs, userName, userId, cancellationToken);
-
-                return true;
-            }, cancellationToken);
-            
+            Plugin.Instance.DbRepo.SetUserInfoSync(dtos, itemRefs, userId);
             List<string> ids = dtos.Select(s => s.ItemId).ToList();
 
             _logger.LogInformation("\"USERSYNC\" User {UserId}({Username}) posted {NumberOfUpdates} Updates: {Updates}", userId, userName, ids.Count, string.Join(",", ids.ToArray()));

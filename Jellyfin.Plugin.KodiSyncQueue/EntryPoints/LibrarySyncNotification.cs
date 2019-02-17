@@ -1,7 +1,5 @@
-﻿using MediaBrowser.Controller.Entities;
-using MediaBrowser.Controller.Library;
+﻿using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
-using MediaBrowser.Model.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.KodiSyncQueue.Data;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
-using MediaBrowser.Controller.Channels;
+using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
@@ -68,7 +66,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemAdded(object sender, ItemChangeEventArgs e)
         {
-            if (!FilterItem(e.Item, out var type))
+            if (!Helpers.FilterAndGetMediaType(e.Item, out var type))
             {
                 return;
             }
@@ -104,7 +102,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemUpdated(object sender, ItemChangeEventArgs e)
         {
-            if (!FilterItem(e.Item, out var type))
+            if (!Helpers.FilterAndGetMediaType(e.Item, out var type))
             {
                 return;
             }
@@ -141,7 +139,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="e">The <see cref="ItemChangeEventArgs"/> instance containing the event data.</param>
         void libraryManager_ItemRemoved(object sender, ItemChangeEventArgs e)
         {
-            if (!FilterRemovedItem(e.Item, out var type))
+            if (!Helpers.FilterAndGetMediaType(e.Item, out var type))
             {
                 return;
             }
@@ -161,7 +159,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 var item = new LibItem
                 {
                     Id = e.Item.Id,
-                    SyncApiModified = (long)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds,
+                    SyncApiModified = DateTimeOffset.Now.ToUnixTimeSeconds(),
                     ItemType = type
                 };
 
@@ -197,12 +195,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                                         .Select(grp => grp.First())
                                         .ToList();
 
-                    Task pushToDbTask = PushChangesToDB(itemsAdded, itemsUpdated, itemsRemoved, cTokenSource.Token);
-                    Task.WaitAll(pushToDbTask);                    
-
-                    itemsAdded.Clear();
-                    itemsRemoved.Clear();
-                    itemsUpdated.Clear();
+                    PushChangesToDb(itemsAdded, itemsUpdated, itemsRemoved, cTokenSource.Token);
 
                     if (LibraryUpdateTimer != null)
                     {
@@ -224,178 +217,19 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         }
 
 
-        private async Task PushChangesToDB(List<LibItem> itemsAdded, List<LibItem> itemsUpdated, List<LibItem> itemsRemoved, CancellationToken cancellationToken)
+        private void PushChangesToDb(IReadOnlyCollection<LibItem> itemsAdded, IReadOnlyCollection<LibItem> itemsUpdated, IReadOnlyCollection<LibItem> itemsRemoved, CancellationToken cancellationToken)
         {
-            List<Task> myTasksList = new List<Task>
-            {
-                UpdateLibrary(itemsAdded, "ItemsAddedQueue", 0, cancellationToken),
-                UpdateLibrary(itemsUpdated, "ItemsUpdatedQueue", 1, cancellationToken),
-                UpdateLibrary(itemsRemoved, "ItemsRemovedQueue", 2, cancellationToken)
-            };
-
-            Task[] iTasks = myTasksList.ToArray();
-            await Task.WhenAll(iTasks);
+            UpdateLibrary(itemsAdded, ItemStatus.Added, cancellationToken);
+            UpdateLibrary(itemsUpdated, ItemStatus.Updated, cancellationToken);
+            UpdateLibrary(itemsRemoved, ItemStatus.Removed, cancellationToken);
         }
 
-        private Task UpdateLibrary(List<LibItem> Items, string tableName, int status, CancellationToken cancellationToken)
+        private void UpdateLibrary(IReadOnlyCollection<LibItem> items, ItemStatus status, CancellationToken cancellationToken)
         {
-            return Task.Run(() =>
-            {
-                string statusType;
-                if (status == 0) { statusType = "Added"; }
-                else if (status == 1) { statusType = "Updated"; }
-                else { statusType = "Removed"; }
-            
-                DbRepo.Instance.WriteLibrarySync(Items, status, cancellationToken);
+            Plugin.Instance.DbRepo.WriteLibrarySync(items, status, cancellationToken);
 
-                _logger.LogInformation("\"LIBRARYSYNC\" {StatusType} {NumberOfItems} items:  {Items}", statusType, Items.Count,
-                    string.Join(",", Items.Select(i => i.Id.ToString("N")).ToArray()));
-            }, cancellationToken);
-        }
-
-        private bool FilterItem(BaseItem item, out int type)
-        {
-            type = -1;
-
-            if (!Plugin.Instance.Configuration.IsEnabled ||
-                item.LocationType == LocationType.Virtual ||
-                item.SourceType != SourceType.Library)
-            {
-                return false;
-            }
-
-
-            var typeName = item.GetClientTypeName();
-            if (string.IsNullOrEmpty(typeName))
-            {
-                return false;
-            }
-
-            switch (typeName)
-            {
-                case "Movie":
-                    if (!Plugin.Instance.Configuration.tkMovies)
-                    {
-                        return false;
-                    }
-                    type = 0;
-                    break;
-                case "BoxSet":
-                    if (!Plugin.Instance.Configuration.tkBoxSets)
-                    {
-                        return false;
-                    }
-                    type = 4;
-                    break;
-                case "Series":
-                case "Season":
-                case "Episode":
-                    if (!Plugin.Instance.Configuration.tkTVShows)
-                    {
-                        return false;
-                    }
-                    type = 1;
-                    break;
-                case "Audio":
-                case "MusicArtist":
-                case "MusicAlbum":
-                    if (!Plugin.Instance.Configuration.tkMusic)
-                    {
-                        return false;
-                    }
-                    type = 2;
-                    break;
-                case "MusicVideo":
-                    if (!Plugin.Instance.Configuration.tkMusicVideos)
-                    {
-                        return false;
-                    }
-                    type = 3;
-                    break;
-                default:
-                    type = -1;
-                    _logger.LogDebug("Ignoring Type {TypeName}", typeName);
-                    return false;
-            }                                   
-
-            return true;
-        }
-
-        private bool FilterRemovedItem(BaseItem item, out int type)
-        {
-            type = -1;
-
-            if (!Plugin.Instance.Configuration.IsEnabled)
-            {
-                return false;
-            }
-
-            if (item.LocationType == LocationType.Virtual)
-            {
-                return false;
-            }
-
-            if (item.GetTopParent() is Channel)
-            {
-                return false;
-            }
-
-
-            var typeName = item.GetClientTypeName();
-            if (string.IsNullOrEmpty(typeName))
-            {
-                return false;
-            }
-
-            switch (typeName)
-            {
-                case "Movie":
-                case "Folder":
-                    if (!Plugin.Instance.Configuration.tkMovies)
-                    {
-                        return false;
-                    }
-                    type = 0;
-                    break;
-                case "BoxSet":
-                    if (!Plugin.Instance.Configuration.tkBoxSets)
-                    {
-                        return false;
-                    }
-                    type = 4;
-                    break;
-                case "Series":
-                case "Season":
-                case "Episode":
-                    if (!Plugin.Instance.Configuration.tkTVShows)
-                    {
-                        return false;
-                    }
-                    type = 1;
-                    break;
-                case "Audio":
-                case "MusicArtist":
-                case "MusicAlbum":
-                    if (!Plugin.Instance.Configuration.tkMusic)
-                    {
-                        return false;
-                    }
-                    type = 2;
-                    break;
-                case "MusicVideo":
-                    if (!Plugin.Instance.Configuration.tkMusicVideos)
-                    {
-                        return false;
-                    }
-                    type = 3;
-                    break;
-                default:
-                    type = -1;
-                    _logger.LogDebug("Ingoring Type {TypeName}", typeName);
-                    return false;
-            }
-
-            return true;
+            _logger.LogInformation("\"LIBRARYSYNC\" {StatusType} {NumberOfItems} items:  {Items}", status, items.Count,
+                string.Join(",", items.Select(i => i.Id.ToString("N")).ToArray()));
         }
 
         private void TriggerCancellation()
