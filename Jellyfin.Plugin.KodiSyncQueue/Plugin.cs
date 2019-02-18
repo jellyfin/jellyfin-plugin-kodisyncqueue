@@ -29,7 +29,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue
             DbRepo = new DbRepo(applicationPaths.DataPath, logger, json);
         }
 
-        private readonly Guid _id = new Guid("067984FB-D975-4163-A08E-403C0C073FC2");
+        private readonly Guid _id = new Guid("771e19d6-5385-4caf-b35c-28a0e865cf63");
         public override Guid Id => _id;
 
         /// <summary>
