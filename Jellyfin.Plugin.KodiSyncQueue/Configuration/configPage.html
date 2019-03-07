@@ -8,55 +8,55 @@
         <div data-role="content">
             <div class="content-primary">
                 <form class="esqConfigurationForm">
-                        <div class="inputContainer">
-                            <label for="txtRetDays">Retention Days</label>
-                            <input type="number" id="txtRetDays" name="txtRetDays" />
-                            <div class="fieldDescription">The number of days to save in the database. (0 = Unlimited)</div>
+                    <div class="inputContainer">
+                        <label for="txtRetDays">Retention Days</label>
+                        <input type="number" id="txtRetDays" name="txtRetDays" />
+                        <div class="fieldDescription">The number of days to save in the database. (0 = Unlimited)</div>
+                    </div>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" id="chkEnabled" data-mini="true" is="emby-checkbox" />
+                            <span>Enable Plugin</UntilSpaceNeeded>
+                        </label>
+                    </div>
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2>Items to Track</h2>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="tkMovies" data-mini="true" is="emby-checkbox" />
+                                <span>Movies</span>
+                            </label>
                         </div>
                         <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
-                                <input type="checkbox" id="chkEnabled" data-mini="true" is="emby-checkbox" />
-                                <span>Enable Plugin</UntilSpaceNeeded>
+                                <input type="checkbox" id="tkBoxSets" data-mini="true" is="emby-checkbox" />
+                                <span>Box Sets</span>
                             </label>
                         </div>
-                        <div class="verticalSection verticalSection-extrabottompadding">
-                            <h2>Items to Track</h2>
-                            <div class="checkboxContainer">
-                                <label class="emby-checkbox-label">
-                                    <input type="checkbox" id="tkMovies" data-mini="true" is="emby-checkbox" />
-                                    <span>Movies</span>
-                                </label>
-                            </div>
-                            <div class="checkboxContainer">
-                                <label class="emby-checkbox-label">
-                                    <input type="checkbox" id="tkBoxSets" data-mini="true" is="emby-checkbox" />
-                                    <span>Box Sets</span>
-                                </label>
-                            </div>
-                            <div class="checkboxContainer">
-                                <label class="emby-checkbox-label">
-                                    <input type="checkbox" id="tkTVShows" data-mini="true" is="emby-checkbox" />
-                                    <span>TV Shows</span>
-                                </label>
-                            </div>
-                            <div class="checkboxContainer">
-                                <label class="emby-checkbox-label">
-                                    <input type="checkbox" id="tkMusic" data-mini="true" is="emby-checkbox" />
-                                    <span>Music</span>
-                                </label>
-                            </div>
-                            <div class="checkboxContainer">
-                                <label class="emby-checkbox-label">
-                                    <input type="checkbox" id="tkMusicVideos" data-mini="true" is="emby-checkbox" />
-                                    <span>Music Videos</span>
-                                </label>
-                            </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="tkTVShows" data-mini="true" is="emby-checkbox" />
+                                <span>TV Shows</span>
+                            </label>
                         </div>
-                        <div>
-                            <button is="emby-button" type="submit" class="raised button-submit block emby-button" data-theme="b">
-                                <span>Save</span>
-                            </button>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="tkMusic" data-mini="true" is="emby-checkbox" />
+                                <span>Music</span>
+                            </label>
                         </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="tkMusicVideos" data-mini="true" is="emby-checkbox" />
+                                <span>Music Videos</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button" data-theme="b">
+                            <span>Save</span>
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
