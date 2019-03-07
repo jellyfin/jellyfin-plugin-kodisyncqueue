@@ -8,37 +8,48 @@
         <div data-role="content">
             <div class="content-primary">
                 <form class="esqConfigurationForm">
-                    <ul class="ulForm" data-role="listview">
                         <div class="inputContainer">
                             <label for="txtRetDays">Retention Days</label>
                             <input type="number" id="txtRetDays" name="txtRetDays" />
                             <div class="fieldDescription">The number of days to save in the database. (0 = Unlimited)</div>
                         </div>
                         <div class="checkboxContainer">
-                            <label for="chkEnabled">Enable Plugin</label>
-                            <input type="checkbox" id="chkEnabled" data-mini="true" />
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="chkEnabled" data-mini="true" is="emby-checkbox" />
+                                <span>Enable Plugin</UntilSpaceNeeded>
+                            </label>
                         </div>
                         <div class="verticalSection verticalSection-extrabottompadding">
                             <h2>Items to Track</h2>
                             <div class="checkboxContainer">
-                                <label for="tkMovies">Movies</label>
-                                <input type="checkbox" id="tkMovies" data-mini="true" />
+                                <label class="emby-checkbox-label">
+                                    <input type="checkbox" id="tkMovies" data-mini="true" is="emby-checkbox" />
+                                    <span>Movies</span>
+                                </label>
                             </div>
                             <div class="checkboxContainer">
-                                <label for="tkBoxSets">Box Sets</label>
-                                <input type="checkbox" id="tkBoxSets" data-mini="true" />
+                                <label class="emby-checkbox-label">
+                                    <input type="checkbox" id="tkBoxSets" data-mini="true" is="emby-checkbox" />
+                                    <span>Box Sets</span>
+                                </label>
                             </div>
                             <div class="checkboxContainer">
-                                <label for="tkTVShows">TV Shows</label>
-                                <input type="checkbox" id="tkTVShows" data-mini="true" />
+                                <label class="emby-checkbox-label">
+                                    <input type="checkbox" id="tkTVShows" data-mini="true" is="emby-checkbox" />
+                                    <span>TV Shows</span>
+                                </label>
                             </div>
                             <div class="checkboxContainer">
-                                <label for="tkMusic">Music</label>
-                                <input type="checkbox" id="tkMusic" data-mini="true" />
+                                <label class="emby-checkbox-label">
+                                    <input type="checkbox" id="tkMusic" data-mini="true" is="emby-checkbox" />
+                                    <span>Music</span>
+                                </label>
                             </div>
                             <div class="checkboxContainer">
-                                <label for="tkMusicVideos">Music Videos</label>
-                                <input type="checkbox" id="tkMusicVideos" data-mini="true" />
+                                <label class="emby-checkbox-label">
+                                    <input type="checkbox" id="tkMusicVideos" data-mini="true" is="emby-checkbox" />
+                                    <span>Music Videos</span>
+                                </label>
                             </div>
                         </div>
                         <div>
@@ -46,7 +57,6 @@
                                 <span>Save</span>
                             </button>
                         </div>
-                    </ul>
                 </form>
             </div>
         </div>
