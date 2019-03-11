@@ -36,14 +36,14 @@ namespace Jellyfin.Plugin.KodiSyncQueue
         /// Gets the name of the plugin
         /// </summary>
         /// <value>The name.</value>
-        public override string Name => "Kodi companion";
+        public override string Name => "Kodi Sync Queue";
 
         /// <summary>
         /// Gets the description.
         /// </summary>
         /// <value>The description.</value>
         public override string Description
-            => "Companion for Kodi add-ons. Provides dynamic strms and shorter sync times for Jellyfin for Kodi.";
+            => "Companion plugin that provides dynamic stream files and shorter sync times while using Jellyfin for Kodi.";
 
         /// <summary>
         /// Gets the instance.
