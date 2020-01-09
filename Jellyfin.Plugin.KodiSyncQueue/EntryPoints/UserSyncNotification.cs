@@ -15,7 +15,7 @@ using MediaType = Jellyfin.Plugin.KodiSyncQueue.Entities.MediaType;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 {
-    class UserSyncNotification : IServerEntryPoint
+    public class UserSyncNotification : IServerEntryPoint
     {
         private readonly ILogger _logger;
         private readonly IUserDataManager _userDataManager;
