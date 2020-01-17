@@ -1,8 +1,8 @@
 ---
 name: "jellyfin-plugin-kodisyncqueue"
 guid: "771e19d6-5385-4caf-b35c-28a0e865cf63"
-version: "2" # Please increment with each pull request
-jellyfin_version: "10.3.0" # The earliest binary-compatible version
+version: "3" # Please increment with each pull request
+jellyfin_version: "10.4.3" # The earliest binary-compatible version
 owner: "jellyfin"
 nicename: "Kodi Sync Queue"
 description: "Sync queues to Kodi"
