@@ -15,13 +15,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
     public class LibrarySyncNotification : IServerEntryPoint
     {
         /// <summary>
-        /// The _library manager
+        /// The library manager
         /// </summary>
         private readonly ILibraryManager _libraryManager;
         private readonly ILogger _logger;
 
         /// <summary>
-        /// The _library changed sync lock
+        /// The library changed sync lock
         /// </summary>
         private readonly object _libraryChangedSyncLock = new object();
 
@@ -47,7 +47,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             _libraryManager = libraryManager;
             _logger = logger;
         }
-        
         
         public Task RunAsync()
         {
@@ -89,9 +88,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     SyncApiModified = (long)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds),
                     ItemType = type,
                 };
+
                 _logger.LogDebug("ItemAdded added for DB Saving {ItemId}", e.Item.Id);
                 _itemsAdded.Add(item);
-                
             }
         }
 
@@ -128,7 +127,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
                 _logger.LogDebug("ItemUpdated added for DB Saving {ItemId}", e.Item.Id);
                 _itemsUpdated.Add(item);
-                
             }
         }
 
@@ -165,7 +163,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
                 _logger.LogDebug("ItemRemoved added for DB Saving {ItemId}", e.Item.Id);
                 _itemsRemoved.Add(item);
-                
             }
         }
 
@@ -175,7 +172,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// <param name="state">The state.</param>
         private void LibraryUpdateTimerCallback(object state)
         {
-
             lock (_libraryChangedSyncLock)
             {
 
@@ -202,20 +198,20 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                         LibraryUpdateTimer.Dispose();
                         LibraryUpdateTimer = null;
                     }
+
                     TimeSpan dateDiff = DateTime.UtcNow - startTime;
                     _logger.LogInformation("Finished Library Sync Taking {TimeTaken}", dateDiff.ToString("c"));
-
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "An Error Has Occurred in LibraryUpdateTimerCallback");
                 }
+
                 _itemsAdded.Clear();
                 _itemsRemoved.Clear();
                 _itemsUpdated.Clear();          
             }
         }
-
 
         private void PushChangesToDb(IReadOnlyCollection<LibItem> itemsAdded, IReadOnlyCollection<LibItem> itemsUpdated, IReadOnlyCollection<LibItem> itemsRemoved, CancellationToken cancellationToken)
         {
@@ -250,9 +246,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         }
 
         /// <summary>
-        /// Releases unmanaged and - optionally - managed resources.
+        /// Releases unmanaged and optionally managed resources.
         /// </summary>
-        /// <param name="dispose"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+        /// <param name="dispose"><c>true</c> to release both managed and unmanaged resources or <c>false</c> to release only unmanaged resources.</param>
         protected virtual void Dispose(bool dispose)
         {
             if (dispose)
