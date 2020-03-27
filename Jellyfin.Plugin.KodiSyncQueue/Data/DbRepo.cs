@@ -109,11 +109,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
             if (newRecs.Count > 0)
             {
-
                 _logger.LogDebug("{@NewRecs}", newRecs);
                 itemCollection.Insert(newRecs);
-
             }
+
             if (upRecs.Count > 0)
             {
                 var data = itemCollection.FindAll().ToList();
@@ -128,6 +127,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                         i.MediaType = rec.MediaType;
                     });
                 }
+
                 itemCollection.Update(data);
 
                 data = itemCollection.FindAll().ToList();
@@ -168,13 +168,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                         upRecs.Add(newRec);                            
                     }
                 }
-
             });
 
             if (newRecs.Count > 0)
             {
                 userInfoCollection.Insert(newRecs);
             }
+
             if (upRecs.Count > 0)
             {
                 var data = userInfoCollection.FindAll().ToList();
@@ -190,6 +190,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                         u.MediaType = rec.MediaType;
                     });
                 }
+
                 userInfoCollection.Update(data);
             }
         }

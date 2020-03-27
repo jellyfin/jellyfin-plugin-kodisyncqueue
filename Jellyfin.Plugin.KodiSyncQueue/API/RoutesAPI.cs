@@ -12,21 +12,17 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         public string UserID { get; set; }
         public string LastUpdateDT { get; set; }
         public string filter { get; set; }
-
     }
 
     [Route("/Jellyfin.Plugin.KodiSyncQueue/GetServerDateTime", "GET", Summary = "Gets The Server Time in UTC format as yyyy-MM-ddTHH:mm:ssZ")]
     public class GetServerTime : IReturn<ServerTimeInfo>
     {
-
     }
 
     [Route("/Jellyfin.Plugin.KodiSyncQueue/GetPluginSettings", "GET", Summary = "Get SyncQueue Plugin Settings")]
     public class GetPluginSettings : IReturn<PluginSettings>
     {
-
     }
-
 
     [Route("/Kodi/{Type}/{Id}/file.strm", "GET", Summary = "Create a dynamic strm")]
     [Route("/Kodi/{Type}/{ParentId}/{Id}/file.strm", "GET", Summary = "Create a dynamic strm")]
@@ -54,5 +50,4 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         [ApiMember(Name = "Season", Description = "Season number", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "GET")]
         public string Season { get; set; }
     }
-
 }

@@ -119,6 +119,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     UpdateTimer.Dispose();
                     UpdateTimer = null;
                 }
+
                 TimeSpan dateDiff = DateTime.UtcNow - startDate;
                 _logger.LogInformation("User Changes Sync Finished Taking {TimeTaken}", dateDiff.ToString("c"));
             }
@@ -172,6 +173,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             {
                 TriggerCancellation();
             }
+
             Dispose(true);
         }
 

@@ -17,7 +17,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Utils
                 return false;
             }
 
-
             var typeName = item.GetClientTypeName();
             if (string.IsNullOrEmpty(typeName))
             {
