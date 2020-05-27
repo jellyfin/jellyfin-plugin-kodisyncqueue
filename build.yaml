@@ -1,16 +1,14 @@
 ---
-name: "jellyfin-plugin-kodisyncqueue"
+name: "Kodi Sync Queue"
 guid: "771e19d6-5385-4caf-b35c-28a0e865cf63"
-version: "4"
-jellyfin_version: "10.5.0"
+version: "4.0.0.0"
+targetAbi: "10.5.0.0"
 owner: "jellyfin"
-nicename: "Kodi Sync Queue"
-description: "Sync all media changes with Kodi clients"
-overview: "This plugin will track all media changes while Kodi clients are offline to decrease sync times."
+overview: "Sync all media changes with Kodi clients"
+description: "This plugin will track all media changes while Kodi clients are offline to decrease sync times."
 category: "General"
 artifacts:
-  - "Jellyfin.Plugin.KodiSyncQueue.dll"
-  - "LiteDB.dll"
-build_type: "dotnet"
-dotnet_configuration: "Release"
-dotnet_framework: "netstandard2.1"
+- "Jellyfin.Plugin.KodiSyncQueue.dll"
+- "LiteDB.dll"
+changelog: >
+  changelog
