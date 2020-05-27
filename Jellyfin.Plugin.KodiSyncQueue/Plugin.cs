@@ -4,7 +4,6 @@ using Jellyfin.Plugin.KodiSyncQueue.Configuration;
 using Jellyfin.Plugin.KodiSyncQueue.Data;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
-using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
@@ -18,9 +17,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue
         public Plugin(
             IApplicationPaths applicationPaths,
             IXmlSerializer xmlSerializer,
-            ILogger logger,
-            IJsonSerializer json
-            ) : base(applicationPaths, xmlSerializer)
+            ILogger<DbRepo> logger,
+            IJsonSerializer json)
+            : base(applicationPaths, xmlSerializer)
         {
             Instance = this;
 

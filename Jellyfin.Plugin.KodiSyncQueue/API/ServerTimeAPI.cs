@@ -8,9 +8,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 {
     public class ServerTimeAPI : IService
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<ServerTimeAPI> _logger;
 
-        public ServerTimeAPI(ILogger logger)
+        public ServerTimeAPI(ILogger<ServerTimeAPI> logger)
         {
             _logger = logger;
         }

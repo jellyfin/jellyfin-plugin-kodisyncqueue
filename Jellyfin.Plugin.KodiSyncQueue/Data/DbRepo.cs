@@ -5,9 +5,7 @@ using System.IO;
 using System.Linq;
 using MediaBrowser.Model.Serialization;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
-using System.Text;
 using LiteDB;
-using MediaBrowser.Model.IO;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.Data
@@ -18,10 +16,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
         private const string ItemsCollection = "items";
         private const string UserInfoCollection = "user_info";
 
-        private readonly ILogger _logger;
+        private readonly ILogger<DbRepo> _logger;
         private readonly IJsonSerializer _json;
 
-        public DbRepo(string dPath, ILogger logger, IJsonSerializer jsonSerializer)
+        public DbRepo(string dPath, ILogger<DbRepo> logger, IJsonSerializer jsonSerializer)
         {
             _logger = logger;
             _json = jsonSerializer;
