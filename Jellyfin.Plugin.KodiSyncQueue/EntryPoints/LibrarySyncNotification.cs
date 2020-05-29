@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.Plugin.KodiSyncQueue.Data;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using Microsoft.Extensions.Logging;
@@ -18,7 +17,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// The library manager
         /// </summary>
         private readonly ILibraryManager _libraryManager;
-        private readonly ILogger _logger;
+        private readonly ILogger<LibrarySyncNotification> _logger;
 
         /// <summary>
         /// The library changed sync lock
@@ -42,7 +41,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// </summary>
         private const int LibraryUpdateDuration = 5000;
 
-        public LibrarySyncNotification(ILibraryManager libraryManager, ILogger logger)
+        public LibrarySyncNotification(ILibraryManager libraryManager, ILogger<LibrarySyncNotification> logger)
         {
             _libraryManager = libraryManager;
             _logger = logger;

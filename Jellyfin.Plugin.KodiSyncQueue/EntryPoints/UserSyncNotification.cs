@@ -7,17 +7,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.Plugin.KodiSyncQueue.Data;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using Microsoft.Extensions.Logging;
-using MediaType = Jellyfin.Plugin.KodiSyncQueue.Entities.MediaType;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 {
     public class UserSyncNotification : IServerEntryPoint
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<UserSyncNotification> _logger;
         private readonly IUserDataManager _userDataManager;
         private readonly IUserManager _userManager;
 
@@ -30,7 +28,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
         private CancellationTokenSource cTokenSource = new CancellationTokenSource();
 
-        public UserSyncNotification(IUserDataManager userDataManager, ILogger logger, IUserManager userManager)
+        public UserSyncNotification(IUserDataManager userDataManager, ILogger<UserSyncNotification> logger, IUserManager userManager)
         {
             _userDataManager = userDataManager;
             _logger = logger;

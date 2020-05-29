@@ -5,9 +5,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 {
     class StrmAPI : IService
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<StrmAPI> _logger;
 
-        public StrmAPI(ILogger logger)
+        public StrmAPI(ILogger<StrmAPI> logger)
         {
             _logger = logger;
         }

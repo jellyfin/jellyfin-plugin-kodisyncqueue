@@ -6,9 +6,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 {
     public class PluginSettingsAPI : IService
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<PluginSettingsAPI> _logger;
 
-        public PluginSettingsAPI(ILogger logger)
+        public PluginSettingsAPI(ILogger<PluginSettingsAPI> logger)
         {
             _logger = logger;
         }

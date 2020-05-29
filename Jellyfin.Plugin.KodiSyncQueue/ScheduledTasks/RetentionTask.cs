@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.Plugin.KodiSyncQueue.Data;
 using MediaBrowser.Model.Tasks;
 using Microsoft.Extensions.Logging;
 

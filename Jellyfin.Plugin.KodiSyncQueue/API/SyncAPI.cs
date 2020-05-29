@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Serialization;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
-using Jellyfin.Plugin.KodiSyncQueue.Data;
 using System.Globalization;
 using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using MediaBrowser.Controller.Library;
@@ -16,12 +15,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 {
     public class SyncAPI : IService
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<SyncAPI> _logger;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IUserManager _userManager;
         private readonly ILibraryManager _libraryManager;
 
-        public SyncAPI(ILogger logger, IJsonSerializer jsonSerializer, IUserManager userManager, ILibraryManager libraryManager)
+        public SyncAPI(ILogger<SyncAPI> logger, IJsonSerializer jsonSerializer, IUserManager userManager, ILibraryManager libraryManager)
         {
             _logger = logger;
             _jsonSerializer = jsonSerializer;
@@ -56,15 +55,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
         private List<string> GetAddedOrUpdatedItems(User user, IEnumerable<Guid> ids)
         {
-            List<BaseItem> items = new List<BaseItem>();
-            foreach (Guid id in ids)
-            {
-                var item = _libraryManager.GetItemById(id);
-                if (item != null)
-                {
-                    items.Add(item);
-                }
-            }
+            var items = ids
+                .Select(id => _libraryManager.GetItemById(id))
+                .Where(item => item != null)
+                .ToList();
 
             var result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager)).Select(i => i.Id.ToString("N")).Distinct().ToList();
             return result;
