@@ -5,9 +5,9 @@ using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Serialization;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using System.Globalization;
+using Jellyfin.Data.Entities;
 using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.Entities;
 using MediaBrowser.Model.Services;
 using Microsoft.Extensions.Logging;
 

@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Controller.Entities;
+﻿using Jellyfin.Data.Entities;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Entities;
@@ -148,7 +149,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                         })
                         .ToList();
 
-                SaveUserChanges(dtoList, itemRefs, user.Name, userId.ToString("N"));
+                SaveUserChanges(dtoList, itemRefs, user.Username, userId.ToString("N"));
             }
         }
 
