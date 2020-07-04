@@ -70,12 +70,12 @@
                 var page = this;
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
                     $('#txtRetDays', page).val(config.RetDays || "0");
-                    $('#chkEnabled', page).checked = config.IsEnabled || false;
-                    $('#tkMovies', page).checked = config.tkMovies || false;
-                    $('#tkBoxSets', page).checked = config.tkBoxSets || false;
-                    $('#tkTVShows', page).checked = config.tkTVShows || false;
-                    $('#tkMusic', page).checked = config.tkMusic || false;
-                    $('#tkMusicVideos', page).checked = config.tkMusicVideos || false;
+                    document.getElementById('chkEnabled').checked = config.IsEnabled || false;
+                    document.getElementById('tkMovies').checked = config.tkMovies || false;
+                    document.getElementById('tkBoxSets').checked = config.tkBoxSets || false;
+                    document.getElementById('tkTVShows').checked = config.tkTVShows || false;
+                    document.getElementById('tkMusic').checked = config.tkMusic || false;
+                    document.getElementById('tkMusicVideos').checked = config.tkMusicVideos || false;
                     Dashboard.hideLoadingMsg();
                 });
             });
@@ -93,12 +93,12 @@
                             config.RetDays = $('#txtRetDays', form).val();
                         }
                     }
-                    config.IsEnabled = $('#chkEnabled', form).checked;
-                    config.tkMovies = $('#tkMovies', form).checked;
-                    config.tkTVShows = $('#tkTVShows', form).checked;
-                    config.tkMusic = $('#tkMusic', form).checked;
-                    config.tkMusicVideos = $('#tkMusicVideos', form).checked;
-                    config.tkBoxSets = $('#tkBoxSets', form).checked;
+                    config.IsEnabled = document.getElementById('chkEnabled').checked;
+                    config.tkMovies = document.getElementById('tkMovies').checked;
+                    config.tkTVShows = document.getElementById('tkTVShows').checked;
+                    config.tkMusic = document.getElementById('tkMusic').checked;
+                    config.tkMusicVideos = document.getElementById('tkMusicVideos').checked;
+                    config.tkBoxSets = document.getElementById('tkBoxSets').checked;
 
                     ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });
