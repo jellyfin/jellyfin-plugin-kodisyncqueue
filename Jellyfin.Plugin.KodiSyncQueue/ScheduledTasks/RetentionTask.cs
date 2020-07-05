@@ -9,9 +9,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
 {
     public class FireRetentionTask : IScheduledTask
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<FireRetentionTask> _logger;
 
-        public FireRetentionTask(ILogger logger)
+        public FireRetentionTask(ILogger<FireRetentionTask> logger)
         {
             _logger = logger;
             _logger.LogInformation("Retention Task Scheduled!");
