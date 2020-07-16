@@ -1,22 +1,23 @@
-﻿using MediaBrowser.Controller.Entities;
-using MediaBrowser.Controller.Library;
+﻿using MediaBrowser.Controller.Library;
 using System.Collections.Generic;
+using Jellyfin.Data.Entities;
+using MediaBrowser.Controller.Entities;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.Utils
 {
     public static class ApiUserCheck
     {
-        public static IEnumerable<T> TranslatePhysicalItemToUserLibrary<T>(T item, User user, ILibraryManager _libraryManager, bool includeIfNotFound = false)
+        public static IEnumerable<T> TranslatePhysicalItemToUserLibrary<T>(T item, User user, ILibraryManager libraryManager, bool includeIfNotFound = false)
             where T : BaseItem
         {
             // If the physical root changed, return the user root
             if (item is AggregateFolder)
             {
-                return new[] { user.RootFolder as T };
+                return new[] { libraryManager.GetUserRootFolder() as T };
             }
 
             // Return it only if it's in the user's library
-            if (includeIfNotFound || _libraryManager.GetItemById(item.Id).IsVisibleStandalone(user))
+            if (includeIfNotFound || libraryManager.GetItemById(item.Id).IsVisibleStandalone(user))
             {
                 return new[] { item };
             }
