@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Jellyfin.Plugin.KodiSyncQueue.Configuration;
 using Jellyfin.Plugin.KodiSyncQueue.Data;
@@ -23,7 +23,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue
         {
             Instance = this;
 
-            logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue IS NOW STARTING!!!");
+            logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue is now starting");
             
             DbRepo = new DbRepo(applicationPaths.DataPath, logger, json);
         }
