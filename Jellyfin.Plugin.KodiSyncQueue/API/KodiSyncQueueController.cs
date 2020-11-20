@@ -50,7 +50,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             if (string.IsNullOrEmpty(lastUpdateDt))
                 lastUpdateDt = "1900-01-01T00:00:00Z";
 
-            var filters = filter?.ToLower().Split(',').Select(f =>
+            var filters = filter?.Split(',').Select(f =>
             {
                 Enum.TryParse(f, true, out MediaType mediaType);
                 return mediaType;
@@ -59,7 +59,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             return PopulateLibraryInfo(
                 userId,
                 lastUpdateDt,
-                filters
+                filters ?? Array.Empty<MediaType>()
             );
         }
 
