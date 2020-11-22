@@ -4,13 +4,13 @@
     <title>Kodi Sync Queue</title>
 </head>
 <body>
-    <div data-role="page" class="page type-interior pluginConfigurationPage esqConfigurationPage">
+    <div data-role="page" class="page type-interior pluginConfigurationPage" id="ksqConfigurationPage">
         <div data-role="content">
             <div class="content-primary">
-                <form class="esqConfigurationForm">
+                <form id="ksqConfigurationForm">
                     <div class="inputContainer">
                         <label for="txtRetDays" class="inputLabel">Retention Days</label>
-                        <input type="number" id="txtRetDays" name="txtRetDays" class="emby-input" is="emby-input" />
+                        <input type="number" id="txtRetDays" name="txtRetDays" is="emby-input" />
                         <div class="fieldDescription">The number of days to save in the database. (0 = Unlimited)</div>
                     </div>
                     <div class="checkboxContainer">
@@ -53,7 +53,7 @@
                         </div>
                     </div>
                     <div>
-                        <button is="emby-button" type="submit" class="raised button-submit block emby-button" data-theme="b">
+                        <button id="ksqSave" is="emby-button" type="button" class="raised button-submit block emby-button" data-theme="b">
                             <span>Save</span>
                         </button>
                     </div>
@@ -65,11 +65,12 @@
                 pluginUniqueId: "771e19d6-5385-4caf-b35c-28a0e865cf63"
             };
 
-            $('.esqConfigurationPage').on('pageshow', function (event) {
+
+            document.getElementById('ksqConfigurationPage').addEventListener("pageshow", function (event) {
                 Dashboard.showLoadingMsg();
                 var page = this;
-                ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
-                    $('#txtRetDays', page).val(config.RetDays || "0");
+                window.ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
+                    document.getElementById('txtRetDays').value = config.RetDays || "0";
                     document.getElementById('chkEnabled').checked = config.IsEnabled || false;
                     document.getElementById('tkMovies').checked = config.tkMovies || false;
                     document.getElementById('tkBoxSets').checked = config.tkBoxSets || false;
@@ -80,18 +81,13 @@
                 });
             });
 
-            $('.esqConfigurationForm').on('submit', function (e) {
+            document.getElementById('ksqSave').addEventListener("click", function (e) {
                 Dashboard.showLoadingMsg();
                 var form = this;
-                ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
-                    if (isNaN($('#txtRetDays', form).val())) {
+                window.ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
+                    config.RetDays = document.getElementById('txtRetDays').value;
+                    if (isNaN(config.RetDays) || parseInt(config.RetDays) < 0) {
                         config.RetDays = "0";
-                    } else {
-                        if (parseInt($('#txtRetDays', form).val()) < 0) {
-                            config.RetDays = "0";
-                        } else {
-                            config.RetDays = $('#txtRetDays', form).val();
-                        }
                     }
                     config.IsEnabled = document.getElementById('chkEnabled').checked;
                     config.tkMovies = document.getElementById('tkMovies').checked;
@@ -100,7 +96,7 @@
                     config.tkMusicVideos = document.getElementById('tkMusicVideos').checked;
                     config.tkBoxSets = document.getElementById('tkBoxSets').checked;
 
-                    ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
+                    window.ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });
 
                 return false;
