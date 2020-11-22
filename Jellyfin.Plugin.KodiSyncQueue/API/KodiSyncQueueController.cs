@@ -41,7 +41,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         /// <param name="filter">Comma separated list of Collection Types to filter (movies,tvshows,music,musicvideos,boxsets. The filter query must be lowercase in both the name and the items</param>
         /// <returns>The <see cref="SyncUpdateInfo"/>.</returns>
         [HttpGet("Jellyfin.Plugin.KodiSyncQueue/{userID}/GetItems")]
-        [HttpGet("/Jellyfin.Plugin.KodiSyncQueue/{userID}/GetItems")] // TODO: Fix the http mess in Kodi addon, then remove these again
         public ActionResult<SyncUpdateInfo> GetLibraryItemsQuery(
             [FromRoute] string userId,
             [FromQuery] string? lastUpdateDt,
@@ -69,7 +68,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         /// </summary>
         /// <returns>The server UTC time as yyyy-MM-ddTHH:mm:ssZ.</returns>
         [HttpGet("Jellyfin.Plugin.KodiSyncQueue/GetServerDateTime")]
-        [HttpGet("/Jellyfin.Plugin.KodiSyncQueue/GetServerDateTime")]
         public ActionResult<ServerTimeInfo> GetServerTime()
         {
             _logger.LogInformation("Server Time Requested...");
@@ -107,7 +105,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         /// </summary>
         /// <returns>The <see cref="PluginSettings"/>.</returns>
         [HttpGet("Jellyfin.Plugin.KodiSyncQueue/GetPluginSettings")]
-        [HttpGet("/Jellyfin.Plugin.KodiSyncQueue/GetPluginSettings")]
         public ActionResult<PluginSettings> GetKodiPluginSettings()
         {
             _logger.LogInformation("Plugin Settings Requested...");
@@ -148,9 +145,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         [HttpGet("Kodi/{type}/{id}/file.strm")]
         [HttpGet("Kodi/{type}/{parentId}/{id}/file.strm")]
         [HttpGet("Kodi/{type}/{parentId}/{season}/{id}/file.strm")]
-        [HttpGet("/Kodi/{type}/{id}/file.strm")]
-        [HttpGet("/Kodi/{type}/{parentId}/{id}/file.strm")]
-        [HttpGet("/Kodi/{type}/{parentId}/{season}/{id}/file.strm")]
         public ActionResult<string> GetStrmFile(
             [FromRoute] string type,
             [FromRoute] string id,
