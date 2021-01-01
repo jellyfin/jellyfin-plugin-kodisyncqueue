@@ -3,10 +3,11 @@ using System.Threading;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using MediaBrowser.Model.Serialization;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
-using LiteDB;
 using Microsoft.Extensions.Logging;
+using MediaBrowser.Common.Json;
+using System.Text.Json;
+using LiteDB;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.Data
 {
@@ -17,12 +18,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
         private const string UserInfoCollection = "user_info";
 
         private readonly ILogger<DbRepo> _logger;
-        private readonly IJsonSerializer _json;
 
-        public DbRepo(string dPath, ILogger<DbRepo> logger, IJsonSerializer jsonSerializer)
+        public DbRepo(string dPath, ILogger<DbRepo> logger)
         {
             _logger = logger;
-            _json = jsonSerializer;
             _logger.LogInformation("Creating DB Repository...");
             Directory.CreateDirectory(dPath);
             _liteDb = new LiteDatabase($"filename={dPath}/kodisyncqueue.db;mode=exclusive");
@@ -141,7 +140,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
             dtos.ForEach(dto =>
             {
-                var sJson = _json.SerializeToString(dto).ToString();
+                var sJson = System.Text.Json.JsonSerializer.Serialize(dto, JsonDefaults.GetOptions());
                 _logger.LogDebug("Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
 
                 LibItem itemref = itemRefs.FirstOrDefault(x => x.Id.ToString("N") == dto.ItemId);

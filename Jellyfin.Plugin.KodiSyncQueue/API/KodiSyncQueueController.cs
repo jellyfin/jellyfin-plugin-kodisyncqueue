@@ -5,9 +5,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Mime;
+using System.Text.Json;
 using Jellyfin.Data.Entities;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using Jellyfin.Plugin.KodiSyncQueue.Utils;
+using MediaBrowser.Common.Json;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Serialization;
@@ -21,14 +23,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
     public class KodiSyncQueueController : ControllerBase
     {
         private readonly ILogger<KodiSyncQueueController> _logger;
-        private readonly IJsonSerializer _jsonSerializer;
         private readonly IUserManager _userManager;
         private readonly ILibraryManager _libraryManager;
 
-        public KodiSyncQueueController(ILogger<KodiSyncQueueController> logger, IJsonSerializer jsonSerializer, IUserManager userManager, ILibraryManager libraryManager)
+        public KodiSyncQueueController(ILogger<KodiSyncQueueController> logger, IUserManager userManager, ILibraryManager libraryManager)
         {
             _logger = logger;
-            _jsonSerializer = jsonSerializer;
             _userManager = userManager;
             _libraryManager = libraryManager;
         }
@@ -209,7 +209,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             info.ItemsAdded = GetAddedOrUpdatedItems(user, itemsAdded);
             info.ItemsRemoved = itemsRemoved.Select(id => id.ToString("N")).ToList();
             info.ItemsUpdated = GetAddedOrUpdatedItems(user, itemsUpdated);
-            info.UserDataChanged = userDataChanged.Select(i => _jsonSerializer.DeserializeFromString<UserItemDataDto>(i.JsonData)).ToList();
+            info.UserDataChanged = userDataChanged.Select(i => JsonSerializer.Deserialize<UserItemDataDto>(i.JsonData, JsonDefaults.GetOptions())).ToList();
 
             _logger.LogInformation("Added: {AddedCount}, Removed: {RemovedCount}, Updated: {UpdatedCount}, Changed User Data: {ChangedUserDataCount}",
                 info.ItemsAdded.Count, info.ItemsRemoved.Count, info.ItemsUpdated.Count, info.UserDataChanged.Count);
