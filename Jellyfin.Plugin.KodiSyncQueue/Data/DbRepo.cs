@@ -137,10 +137,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             var newRecs = new List<UserInfoRec>();
             var upRecs = new List<UserInfoRec>();
             var userInfoCollection = _liteDb.GetCollection<UserInfoRec>(UserInfoCollection);
+            var jsonOptions = JsonDefaults.GetOptions();
 
             dtos.ForEach(dto =>
             {
-                var sJson = System.Text.Json.JsonSerializer.Serialize(dto, JsonDefaults.GetOptions());
+                var sJson = System.Text.Json.JsonSerializer.Serialize(dto, jsonOptions);
                 _logger.LogDebug("Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
 
                 LibItem itemref = itemRefs.FirstOrDefault(x => x.Id.ToString("N") == dto.ItemId);
