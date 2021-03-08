@@ -10,11 +10,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue
 {
-    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
+    public class KodiSyncQueuePlugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
-        public DbRepo DbRepo { get; }
-
-        public Plugin(
+        public KodiSyncQueuePlugin(
             IApplicationPaths applicationPaths,
             IXmlSerializer xmlSerializer,
             ILogger<DbRepo> logger)
@@ -23,12 +21,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue
             Instance = this;
 
             logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue is now starting");
-            
+
             DbRepo = new DbRepo(applicationPaths.DataPath, logger);
         }
 
-        private readonly Guid _id = new Guid("771e19d6-5385-4caf-b35c-28a0e865cf63");
-        public override Guid Id => _id;
+        public DbRepo DbRepo { get; }
+
+        public override Guid Id => new Guid("771e19d6-5385-4caf-b35c-28a0e865cf63");
 
         /// <summary>
         /// Gets the name of the plugin
@@ -47,7 +46,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue
         /// Gets the instance.
         /// </summary>
         /// <value>The instance.</value>
-        public static Plugin Instance { get; private set; }
+        public static KodiSyncQueuePlugin Instance { get; private set; }
 
         public IEnumerable<PluginPageInfo> GetPages()
         {

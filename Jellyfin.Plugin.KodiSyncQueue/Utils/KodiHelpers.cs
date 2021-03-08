@@ -4,13 +4,13 @@ using MediaType = Jellyfin.Plugin.KodiSyncQueue.Entities.MediaType;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.Utils
 {
-    public static class Helpers
+    public static class KodiHelpers
     {
         public static bool FilterAndGetMediaType(BaseItem item, out MediaType type)
         {
             type = MediaType.None;
 
-            if (!Plugin.Instance.Configuration.IsEnabled ||
+            if (!KodiSyncQueuePlugin.Instance.Configuration.IsEnabled ||
                 item.LocationType == LocationType.Virtual ||
                 item.SourceType != SourceType.Library)
             {
@@ -26,47 +26,52 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Utils
             switch (typeName)
             {
                 case "Movie":
-                    if (!Plugin.Instance.Configuration.tkMovies)
+                    if (!KodiSyncQueuePlugin.Instance.Configuration.tkMovies)
                     {
                         return false;
                     }
+
                     type = MediaType.Movies;
                     break;
                 case "BoxSet":
-                    if (!Plugin.Instance.Configuration.tkBoxSets)
+                    if (!KodiSyncQueuePlugin.Instance.Configuration.tkBoxSets)
                     {
                         return false;
                     }
+
                     type = MediaType.BoxSets;
                     break;
                 case "Series":
                 case "Season":
                 case "Episode":
-                    if (!Plugin.Instance.Configuration.tkTVShows)
+                    if (!KodiSyncQueuePlugin.Instance.Configuration.tkTVShows)
                     {
                         return false;
                     }
+
                     type = MediaType.TvShows;
                     break;
                 case "Audio":
                 case "MusicArtist":
                 case "MusicAlbum":
-                    if (!Plugin.Instance.Configuration.tkMusic)
+                    if (!KodiSyncQueuePlugin.Instance.Configuration.tkMusic)
                     {
                         return false;
                     }
+
                     type = MediaType.Music;
                     break;
                 case "MusicVideo":
-                    if (!Plugin.Instance.Configuration.tkMusicVideos)
+                    if (!KodiSyncQueuePlugin.Instance.Configuration.tkMusicVideos)
                     {
                         return false;
                     }
+
                     type = MediaType.MusicVideos;
                     break;
                 default:
                     return false;
-            }                                   
+            }
 
             return true;
         }

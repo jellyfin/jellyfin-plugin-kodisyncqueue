@@ -7,21 +7,28 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
 {
-    public class FireRetentionTask : IScheduledTask
+    public class RetentionTask : IScheduledTask
     {
-        private readonly ILogger<FireRetentionTask> _logger;
+        private readonly ILogger<RetentionTask> _logger;
 
-        public FireRetentionTask(ILogger<FireRetentionTask> logger)
+        public RetentionTask(ILogger<RetentionTask> logger)
         {
             _logger = logger;
             _logger.LogInformation("Retention Task Scheduled!");
         }
 
+        public string Name => "Remove Old Sync Data";
+
+        public string Category => "Jellyfin.Plugin.KodiSyncQueue";
+
+        public string Description => "If Retention Days > 0 then this will remove the old data to keep information flowing quickly";
+
         public string Key => "KodiSyncFireRetentionTask";
 
         public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
         {
-            return new[] {
+            return new[]
+            {
                 new TaskTriggerInfo
                 {
                     Type = TaskTriggerInfo.TriggerDaily,
@@ -33,7 +40,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
         public Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
         {
             // Is retDays 0.. If So Exit...
-            if (!int.TryParse(Plugin.Instance.Configuration.RetDays, out var retDays) || retDays == 0) {
+            if (!int.TryParse(KodiSyncQueuePlugin.Instance.Configuration.RetDays, out var retDays) || retDays == 0)
+            {
                 _logger.LogInformation("Retention Deletion Not Possible When Retention Days = 0!");
                 return Task.CompletedTask;
             }
@@ -42,13 +50,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
             var dt = DateTime.UtcNow.AddDays(-retDays);
             var dtl = (long)dt.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
 
-            Plugin.Instance.DbRepo.DeleteOldData(dtl);
-            
+            KodiSyncQueuePlugin.Instance.DbRepo.DeleteOldData(dtl);
+
             return Task.CompletedTask;
         }
-
-        public string Name => "Remove Old Sync Data";
-        public string Category => "Jellyfin.Plugin.KodiSyncQueue";
-        public string Description => "If Retention Days > 0 then this will remove the old data to keep information flowing quickly";
     }
 }

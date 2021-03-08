@@ -4,6 +4,17 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Configuration
 {
     public class PluginConfiguration : BasePluginConfiguration
     {
+        public PluginConfiguration()
+        {
+            RetDays = "0";
+            IsEnabled = true;
+            tkMovies = true;
+            tkTVShows = true;
+            tkMusic = true;
+            tkMusicVideos = true;
+            tkBoxSets = true;
+        }
+
         public string RetDays { get; set; }
 
         public bool IsEnabled { get; set; }
@@ -17,16 +28,5 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Configuration
         public bool tkMusicVideos { get; set; }
 
         public bool tkBoxSets { get; set; }
-
-        public PluginConfiguration()
-        {
-            RetDays = "0";
-            IsEnabled = true;
-            tkMovies = true;
-            tkTVShows = true;
-            tkMusic = true;
-            tkMusicVideos = true;
-            tkBoxSets = true;
-        }
     }
 }

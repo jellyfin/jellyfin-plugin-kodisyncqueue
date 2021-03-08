@@ -1,15 +1,10 @@
-﻿using MediaBrowser.Model.Dto;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using MediaBrowser.Model.Dto;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.Entities
 {
     public class SyncUpdateInfo
     {
-        public List<string> ItemsAdded { get; set; }
-        public List<string> ItemsRemoved { get; set; }
-        public List<string> ItemsUpdated { get; set; }
-        public List<UserItemDataDto> UserDataChanged { get; set; }
-
         public SyncUpdateInfo()
         {
             ItemsAdded = new List<string>();
@@ -17,5 +12,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Entities
             ItemsUpdated = new List<string>();
             UserDataChanged = new List<UserItemDataDto>();
         }
+
+        public List<string> ItemsAdded { get; set; }
+
+        public List<string> ItemsRemoved { get; set; }
+
+        public List<string> ItemsUpdated { get; set; }
+
+        public List<UserItemDataDto> UserDataChanged { get; set; }
     }
 }

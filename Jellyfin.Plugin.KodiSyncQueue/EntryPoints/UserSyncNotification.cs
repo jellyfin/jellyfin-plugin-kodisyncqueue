@@ -1,32 +1,29 @@
-﻿using Jellyfin.Data.Entities;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Jellyfin.Data.Entities;
+using Jellyfin.Plugin.KodiSyncQueue.Entities;
+using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Jellyfin.Plugin.KodiSyncQueue.Entities;
-using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 {
     public class UserSyncNotification : IServerEntryPoint
     {
+        private const int UpdateDuration = 500;
         private readonly ILogger<UserSyncNotification> _logger;
         private readonly IUserDataManager _userDataManager;
         private readonly IUserManager _userManager;
-
         private readonly object _syncLock = new object();
-        private Timer UpdateTimer { get; set; }
-        private const int UpdateDuration = 500;
-
         private readonly Dictionary<Guid, List<BaseItem>> _changedItems = new Dictionary<Guid, List<BaseItem>>();
         private List<LibItem> _itemRef = new List<LibItem>();
-
         private CancellationTokenSource cTokenSource = new CancellationTokenSource();
 
         public UserSyncNotification(IUserDataManager userDataManager, ILogger<UserSyncNotification> logger, IUserManager userManager)
@@ -36,15 +33,17 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             _userManager = userManager;
         }
 
+        private Timer UpdateTimer { get; set; }
+
         public Task RunAsync()
         {
-            _userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
+            _userDataManager.UserDataSaved += UserDataManager_UserDataSaved;
 
             _logger.LogInformation("UserSyncNotification Startup...");
             return Task.CompletedTask;
         }
 
-        void _userDataManager_UserDataSaved(object sender, UserDataSaveEventArgs e)
+        private void UserDataManager_UserDataSaved(object sender, UserDataSaveEventArgs e)
         {
             if (e.SaveReason == UserDataSaveReason.PlaybackProgress)
             {
@@ -57,15 +56,14 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
                 if (testItem != null)
                 {
-                    if (!Helpers.FilterAndGetMediaType(testItem, out var type))
+                    if (!KodiHelpers.FilterAndGetMediaType(testItem, out var type))
                     {
                         return;
                     }
 
                     if (UpdateTimer == null)
                     {
-                        UpdateTimer = new Timer(UpdateTimerCallback, null, UpdateDuration,
-                                                       Timeout.Infinite);
+                        UpdateTimer = new Timer(UpdateTimerCallback, null, UpdateDuration, Timeout.Infinite);
                     }
                     else
                     {
@@ -84,7 +82,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     _itemRef.Add(new LibItem
                     {
                         Id = testItem.Id,
-                        ItemType = type,                        
+                        ItemType = type,
                     });
 
                     var parent = testItem.Parent;
@@ -120,7 +118,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 }
 
                 TimeSpan dateDiff = DateTime.UtcNow - startDate;
-                _logger.LogInformation("User Changes Sync Finished Taking {TimeTaken}", dateDiff.ToString("c"));
+                _logger.LogInformation("User Changes Sync Finished Taking {TimeTaken}", dateDiff.ToString("c", CultureInfo.InvariantCulture));
             }
             catch (Exception e)
             {
@@ -144,25 +142,25 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                         .Select(i =>
                         {
                             var dto = _userDataManager.GetUserDataDto(i, user);
-                            dto.ItemId = i.Id.ToString("N");
+                            dto.ItemId = i.Id.ToString("N", CultureInfo.InvariantCulture);
                             return dto;
                         })
                         .ToList();
 
-                SaveUserChanges(dtoList, itemRefs, user.Username, userId.ToString("N"));
+                SaveUserChanges(dtoList, itemRefs, user.Username, userId.ToString("N", CultureInfo.InvariantCulture));
             }
         }
 
         private void SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId)
         {
-            Plugin.Instance.DbRepo.SetUserInfoSync(dtos, itemRefs, userId);
+            KodiSyncQueuePlugin.Instance.DbRepo.SetUserInfoSync(dtos, itemRefs, userId);
             List<string> ids = dtos.Select(s => s.ItemId).ToList();
 
             _logger.LogInformation("\"USERSYNC\" User {UserId}({Username}) posted {NumberOfUpdates} Updates: {Updates}", userId, userName, ids.Count, string.Join(",", ids.ToArray()));
         }
 
         private void TriggerCancellation()
-        {            
+        {
             cTokenSource.Cancel();
         }
 
@@ -186,7 +184,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     UpdateTimer = null;
                 }
 
-                _userDataManager.UserDataSaved -= _userDataManager_UserDataSaved;
+                _userDataManager.UserDataSaved -= UserDataManager_UserDataSaved;
             }
         }
     }

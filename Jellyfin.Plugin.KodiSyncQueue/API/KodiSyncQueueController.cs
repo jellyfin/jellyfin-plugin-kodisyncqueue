@@ -48,7 +48,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         {
             _logger.LogInformation("Sync Requested for UserID: '{UserId}' with LastUpdateDT: '{LastUpdateDT}'", userId, lastUpdateDt);
             if (string.IsNullOrEmpty(lastUpdateDt))
+            {
                 lastUpdateDt = "1900-01-01T00:00:00Z";
+            }
 
             var filters = filter?.Split(',').Select(f =>
             {
@@ -59,8 +61,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             return PopulateLibraryInfo(
                 userId,
                 lastUpdateDt,
-                filters ?? Array.Empty<MediaType>()
-            );
+                filters ?? Array.Empty<MediaType>());
         }
 
         /// <summary>
@@ -76,7 +77,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             DateTime dtNow = DateTime.UtcNow;
             DateTime retDate;
 
-            if (!int.TryParse(Plugin.Instance.Configuration.RetDays, out var retDays))
+            if (!int.TryParse(KodiSyncQueuePlugin.Instance.Configuration.RetDays, out var retDays))
             {
                 retDays = 0;
             }
@@ -113,18 +114,18 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
             _logger.LogDebug("Creating Settings Object Variables!");
 
-            if (!int.TryParse(Plugin.Instance.Configuration.RetDays, out var retDays))
+            if (!int.TryParse(KodiSyncQueuePlugin.Instance.Configuration.RetDays, out var retDays))
             {
                 retDays = 0;
             }
 
             settings.RetentionDays = retDays;
-            settings.IsEnabled = Plugin.Instance.Configuration.IsEnabled;
-            settings.TrackMovies = Plugin.Instance.Configuration.tkMovies;
-            settings.TrackTVShows = Plugin.Instance.Configuration.tkTVShows;
-            settings.TrackBoxSets = Plugin.Instance.Configuration.tkBoxSets;
-            settings.TrackMusic = Plugin.Instance.Configuration.tkMusic;
-            settings.TrackMusicVideos = Plugin.Instance.Configuration.tkMusicVideos;
+            settings.IsEnabled = KodiSyncQueuePlugin.Instance.Configuration.IsEnabled;
+            settings.TrackMovies = KodiSyncQueuePlugin.Instance.Configuration.tkMovies;
+            settings.TrackTVShows = KodiSyncQueuePlugin.Instance.Configuration.tkTVShows;
+            settings.TrackBoxSets = KodiSyncQueuePlugin.Instance.Configuration.tkBoxSets;
+            settings.TrackMusic = KodiSyncQueuePlugin.Instance.Configuration.tkMusic;
+            settings.TrackMusicVideos = KodiSyncQueuePlugin.Instance.Configuration.tkMusicVideos;
 
             _logger.LogDebug("Sending Settings Object Back.");
 
@@ -182,7 +183,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                 .Where(item => item != null)
                 .ToList();
 
-            var result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager)).Select(i => i.Id.ToString("N")).Distinct().ToList();
+            var result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager)).Select(i => i.Id.ToString("N", CultureInfo.InvariantCulture)).Distinct().ToList();
             return result;
         }
 
@@ -201,20 +202,24 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             var dtl = (long)userDt.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
             var user = _userManager.GetUserById(Guid.Parse(userId));
 
-            var itemsAdded = Plugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Added, filters);
-            var itemsRemoved = Plugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Removed, filters);
-            var itemsUpdated = Plugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Updated, filters);
-            var userDataChanged = Plugin.Instance.DbRepo.GetUserInfos(dtl, userId, filters);
+            var itemsAdded = KodiSyncQueuePlugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Added, filters);
+            var itemsRemoved = KodiSyncQueuePlugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Removed, filters);
+            var itemsUpdated = KodiSyncQueuePlugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Updated, filters);
+            var userDataChanged = KodiSyncQueuePlugin.Instance.DbRepo.GetUserInfos(dtl, userId, filters);
 
             info.ItemsAdded = GetAddedOrUpdatedItems(user, itemsAdded);
-            info.ItemsRemoved = itemsRemoved.Select(id => id.ToString("N")).ToList();
+            info.ItemsRemoved = itemsRemoved.Select(id => id.ToString("N", CultureInfo.InvariantCulture)).ToList();
             info.ItemsUpdated = GetAddedOrUpdatedItems(user, itemsUpdated);
             info.UserDataChanged = userDataChanged.Select(i => JsonSerializer.Deserialize<UserItemDataDto>(i.JsonData, JsonDefaults.GetOptions())).ToList();
 
-            _logger.LogInformation("Added: {AddedCount}, Removed: {RemovedCount}, Updated: {UpdatedCount}, Changed User Data: {ChangedUserDataCount}",
-                info.ItemsAdded.Count, info.ItemsRemoved.Count, info.ItemsUpdated.Count, info.UserDataChanged.Count);
+            _logger.LogInformation(
+                "Added: {AddedCount}, Removed: {RemovedCount}, Updated: {UpdatedCount}, Changed User Data: {ChangedUserDataCount}",
+                info.ItemsAdded.Count,
+                info.ItemsRemoved.Count,
+                info.ItemsUpdated.Count,
+                info.UserDataChanged.Count);
             TimeSpan diffDate = DateTime.UtcNow - startTime;
-            _logger.LogInformation("Request Finished Taking {TimeTaken}", diffDate.ToString("c"));
+            _logger.LogInformation("Request Finished Taking {TimeTaken}", diffDate.ToString("c", CultureInfo.InvariantCulture));
 
             return info;
         }
