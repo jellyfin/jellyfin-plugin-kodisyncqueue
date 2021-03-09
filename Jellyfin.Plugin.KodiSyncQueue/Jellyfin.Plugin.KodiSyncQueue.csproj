@@ -16,7 +16,7 @@
   <ItemGroup>
     <PackageReference Include="Jellyfin.Data" Version="10.*-*" />
     <PackageReference Include="Jellyfin.Controller" Version="10.*-*" />
-    <PackageReference Include="LiteDB" Version="4.1.4" />
+    <PackageReference Include="LiteDB" Version="5.0.10" />
   </ItemGroup>
 
   <!-- Code Analyzers-->
