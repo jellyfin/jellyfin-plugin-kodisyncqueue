@@ -2,15 +2,21 @@
 {
     public class FolderRec
     {
-        //Status 0 = Added
-        //Status 1 = Removed
+        // Status 0 = Added
+        // Status 1 = Removed
 
         public int Id { get; set; }
+
         public string ItemId { get; set; }
+
         public string UserId { get; set; }
+
         public long LastModified { get; set; }
-        public int Status { get; set; }          
+
+        public int Status { get; set; }
+
         public string MediaType { get; set; }
+
         public string LibraryName { get; set; }
     }
 }

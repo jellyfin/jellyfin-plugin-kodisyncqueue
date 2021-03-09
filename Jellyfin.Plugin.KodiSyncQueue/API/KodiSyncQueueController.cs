@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Net.Mime;
@@ -25,12 +26,14 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         private readonly ILogger<KodiSyncQueueController> _logger;
         private readonly IUserManager _userManager;
         private readonly ILibraryManager _libraryManager;
+        private readonly JsonSerializerOptions _jsonSerializerOptions;
 
         public KodiSyncQueueController(ILogger<KodiSyncQueueController> logger, IUserManager userManager, ILibraryManager libraryManager)
         {
             _logger = logger;
             _userManager = userManager;
             _libraryManager = libraryManager;
+            _jsonSerializerOptions = JsonDefaults.GetOptions();
         }
 
         /// <summary>
@@ -48,7 +51,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         {
             _logger.LogInformation("Sync Requested for UserID: '{UserId}' with LastUpdateDT: '{LastUpdateDT}'", userId, lastUpdateDt);
             if (string.IsNullOrEmpty(lastUpdateDt))
+            {
                 lastUpdateDt = "1900-01-01T00:00:00Z";
+            }
 
             var filters = filter?.Split(',').Select(f =>
             {
@@ -59,8 +64,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             return PopulateLibraryInfo(
                 userId,
                 lastUpdateDt,
-                filters ?? Array.Empty<MediaType>()
-            );
+                filters ?? Array.Empty<MediaType>());
         }
 
         /// <summary>
@@ -76,7 +80,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             DateTime dtNow = DateTime.UtcNow;
             DateTime retDate;
 
-            if (!int.TryParse(Plugin.Instance.Configuration.RetDays, out var retDays))
+            if (!int.TryParse(KodiSyncQueuePlugin.Instance.Configuration.RetDays, out var retDays))
             {
                 retDays = 0;
             }
@@ -113,18 +117,18 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
             _logger.LogDebug("Creating Settings Object Variables!");
 
-            if (!int.TryParse(Plugin.Instance.Configuration.RetDays, out var retDays))
+            if (!int.TryParse(KodiSyncQueuePlugin.Instance.Configuration.RetDays, out var retDays))
             {
                 retDays = 0;
             }
 
             settings.RetentionDays = retDays;
-            settings.IsEnabled = Plugin.Instance.Configuration.IsEnabled;
-            settings.TrackMovies = Plugin.Instance.Configuration.tkMovies;
-            settings.TrackTVShows = Plugin.Instance.Configuration.tkTVShows;
-            settings.TrackBoxSets = Plugin.Instance.Configuration.tkBoxSets;
-            settings.TrackMusic = Plugin.Instance.Configuration.tkMusic;
-            settings.TrackMusicVideos = Plugin.Instance.Configuration.tkMusicVideos;
+            settings.IsEnabled = KodiSyncQueuePlugin.Instance.Configuration.IsEnabled;
+            settings.TrackMovies = KodiSyncQueuePlugin.Instance.Configuration.TkMovies;
+            settings.TrackTVShows = KodiSyncQueuePlugin.Instance.Configuration.TkTvShows;
+            settings.TrackBoxSets = KodiSyncQueuePlugin.Instance.Configuration.TkBoxSets;
+            settings.TrackMusic = KodiSyncQueuePlugin.Instance.Configuration.TkMusic;
+            settings.TrackMusicVideos = KodiSyncQueuePlugin.Instance.Configuration.TkMusicVideos;
 
             _logger.LogDebug("Sending Settings Object Back.");
 
@@ -145,6 +149,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         [HttpGet("Kodi/{type}/{id}/file.strm")]
         [HttpGet("Kodi/{type}/{parentId}/{id}/file.strm")]
         [HttpGet("Kodi/{type}/{parentId}/{season}/{id}/file.strm")]
+        [SuppressMessage("Usage", "CA1801: Review unused parameters", MessageId = "type", Justification = "Legacy")]
+        [SuppressMessage("Usage", "CA1801: Review unused parameters", MessageId = "parentId", Justification = "Legacy")]
+        [SuppressMessage("Usage", "CA1801: Review unused parameters", MessageId = "season", Justification = "Legacy")]
         public ActionResult<string> GetStrmFile(
             [FromRoute] string type,
             [FromRoute] string id,
@@ -182,7 +189,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                 .Where(item => item != null)
                 .ToList();
 
-            var result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager)).Select(i => i.Id.ToString("N")).Distinct().ToList();
+            var result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager)).Select(i => i.Id.ToString("N", CultureInfo.InvariantCulture)).Distinct().ToList();
             return result;
         }
 
@@ -195,26 +202,29 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
             _logger.LogDebug("Starting PopulateLibraryInfo...");
 
-            var info = new SyncUpdateInfo();
-
             var userDt = DateTime.Parse(lastRequestedDt, CultureInfo.CurrentCulture, DateTimeStyles.AssumeUniversal);
             var dtl = (long)userDt.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
             var user = _userManager.GetUserById(Guid.Parse(userId));
 
-            var itemsAdded = Plugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Added, filters);
-            var itemsRemoved = Plugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Removed, filters);
-            var itemsUpdated = Plugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Updated, filters);
-            var userDataChanged = Plugin.Instance.DbRepo.GetUserInfos(dtl, userId, filters);
+            var itemsAdded = KodiSyncQueuePlugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Added, filters);
+            var itemsRemoved = KodiSyncQueuePlugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Removed, filters);
+            var itemsUpdated = KodiSyncQueuePlugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Updated, filters);
+            var userDataChanged = KodiSyncQueuePlugin.Instance.DbRepo.GetUserInfos(dtl, userId, filters);
 
-            info.ItemsAdded = GetAddedOrUpdatedItems(user, itemsAdded);
-            info.ItemsRemoved = itemsRemoved.Select(id => id.ToString("N")).ToList();
-            info.ItemsUpdated = GetAddedOrUpdatedItems(user, itemsUpdated);
-            info.UserDataChanged = userDataChanged.Select(i => JsonSerializer.Deserialize<UserItemDataDto>(i.JsonData, JsonDefaults.GetOptions())).ToList();
+            var info = new SyncUpdateInfo(
+                GetAddedOrUpdatedItems(user, itemsAdded),
+                itemsRemoved.Select(id => id.ToString("N", CultureInfo.InvariantCulture)).ToList(),
+                GetAddedOrUpdatedItems(user, itemsUpdated),
+                userDataChanged.Select(i => JsonSerializer.Deserialize<UserItemDataDto>(i.JsonData, _jsonSerializerOptions)).ToList());
 
-            _logger.LogInformation("Added: {AddedCount}, Removed: {RemovedCount}, Updated: {UpdatedCount}, Changed User Data: {ChangedUserDataCount}",
-                info.ItemsAdded.Count, info.ItemsRemoved.Count, info.ItemsUpdated.Count, info.UserDataChanged.Count);
+            _logger.LogInformation(
+                "Added: {AddedCount}, Removed: {RemovedCount}, Updated: {UpdatedCount}, Changed User Data: {ChangedUserDataCount}",
+                info.ItemsAdded.Count,
+                info.ItemsRemoved.Count,
+                info.ItemsUpdated.Count,
+                info.UserDataChanged.Count);
             TimeSpan diffDate = DateTime.UtcNow - startTime;
-            _logger.LogInformation("Request Finished Taking {TimeTaken}", diffDate.ToString("c"));
+            _logger.LogInformation("Request Finished Taking {TimeTaken}", diffDate.ToString("c", CultureInfo.InvariantCulture));
 
             return info;
         }

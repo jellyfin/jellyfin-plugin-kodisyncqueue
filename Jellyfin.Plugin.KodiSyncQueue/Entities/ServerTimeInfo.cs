@@ -2,13 +2,14 @@
 {
     public class ServerTimeInfo
     {
-        public string ServerDateTime { get; set; }
-        public string RetentionDateTime { get; set; }
-
         public ServerTimeInfo()
         {
-            ServerDateTime = "";
-            RetentionDateTime = "";
+            ServerDateTime = string.Empty;
+            RetentionDateTime = string.Empty;
         }
+
+        public string ServerDateTime { get; set; }
+
+        public string RetentionDateTime { get; set; }
     }
 }

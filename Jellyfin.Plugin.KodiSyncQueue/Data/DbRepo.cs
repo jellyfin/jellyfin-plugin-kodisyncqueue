@@ -1,23 +1,24 @@
 ﻿using System;
-using System.Threading;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using Jellyfin.Plugin.KodiSyncQueue.Entities;
-using Microsoft.Extensions.Logging;
-using MediaBrowser.Common.Json;
 using System.Text.Json;
+using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using LiteDB;
+using MediaBrowser.Common.Json;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.Data
 {
-    public class DbRepo: IDisposable
+    public class DbRepo : IDisposable
     {
-        private readonly LiteDatabase _liteDb;
         private const string ItemsCollection = "items";
         private const string UserInfoCollection = "user_info";
 
+        private readonly LiteDatabase _liteDb;
         private readonly ILogger<DbRepo> _logger;
+        private readonly JsonSerializerOptions _jsonSerializerOptions;
 
         public DbRepo(string dPath, ILogger<DbRepo> logger)
         {
@@ -25,6 +26,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             _logger.LogInformation("Creating DB Repository...");
             Directory.CreateDirectory(dPath);
             _liteDb = new LiteDatabase($"filename={dPath}/kodisyncqueue.db;mode=exclusive");
+            _jsonSerializerOptions = JsonDefaults.GetOptions();
         }
 
         public List<Guid> GetItems(long dtl, ItemStatus status, IReadOnlyCollection<MediaType> filters)
@@ -52,7 +54,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
             var userInfoRecs = userInfoCollection.Find(x => x.LastModified > dtl && x.UserId == userId);
             userInfoRecs = userInfoRecs.Where(x => filters.All(f => f != x.MediaType));
-            return userInfoRecs.Select(i => new UserJson {Id = i.ItemId, JsonData = i.Json}).ToList();
+            return userInfoRecs.Select(i => new UserJson { Id = i.ItemId, JsonData = i.Json }).ToList();
         }
 
         public void DeleteOldData(long dtl)
@@ -63,7 +65,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             _logger.LogInformation("Finished Item and UserItem Retention Deletion...");
         }
 
-        public void WriteLibrarySync(IEnumerable<LibItem> items, ItemStatus status, CancellationToken cancellationToken)
+        public void WriteLibrarySync(IEnumerable<LibItem> items, ItemStatus status)
         {
             var newRecs = new List<ItemRec>();
             var upRecs = new List<ItemRec>();
@@ -82,7 +84,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                     MediaType = i.ItemType
                 };
 
-                if (rec == null) { newRecs.Add(newRec); } 
+                if (rec == null)
+                {
+                    newRecs.Add(newRec);
+                }
                 else if (rec.LastModified < newTime)
                 {
                     newRec.Id = rec.Id;
@@ -96,11 +101,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
                 if (newRec != null)
                 {
-                    _logger.LogDebug("{StatusType} ItemId: '{ItemId}'", status.ToString(), newRec.ItemId.ToString("N"));
+                    _logger.LogDebug("{StatusType} ItemId: '{ItemId}'", status.ToString(), newRec.ItemId.ToString("N", CultureInfo.InvariantCulture));
                 }
                 else
                 {
-                    _logger.LogDebug("ItemId: '{ItemId}' Skipped", i.Id.ToString("N"));
+                    _logger.LogDebug("ItemId: '{ItemId}' Skipped", i.Id.ToString("N", CultureInfo.InvariantCulture));
                 }
             }
 
@@ -128,7 +133,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                 itemCollection.Update(data);
 
                 data = itemCollection.FindAll().ToList();
-                _logger.LogDebug("{@Data}", data);                    
+                _logger.LogDebug("{@Data}", data);
             }
         }
 
@@ -137,16 +142,16 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             var newRecs = new List<UserInfoRec>();
             var upRecs = new List<UserInfoRec>();
             var userInfoCollection = _liteDb.GetCollection<UserInfoRec>(UserInfoCollection);
-            var jsonOptions = JsonDefaults.GetOptions();
 
             dtos.ForEach(dto =>
             {
-                var sJson = System.Text.Json.JsonSerializer.Serialize(dto, jsonOptions);
                 _logger.LogDebug("Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
 
-                LibItem itemref = itemRefs.FirstOrDefault(x => x.Id.ToString("N") == dto.ItemId);
+                Guid dtoItemId = Guid.Parse(dto.ItemId);
+                LibItem itemref = itemRefs.FirstOrDefault(x => x.Id == dtoItemId);
                 if (itemref != null)
                 {
+                    var sJson = System.Text.Json.JsonSerializer.Serialize(dto, _jsonSerializerOptions);
                     var oldRec = userInfoCollection.Find(u => u.ItemId == dto.ItemId && u.UserId == userId).FirstOrDefault();
                     var newRec = new UserInfoRec
                     {
@@ -163,7 +168,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                     else
                     {
                         newRec.Id = oldRec.Id;
-                        upRecs.Add(newRec);                            
+                        upRecs.Add(newRec);
                     }
                 }
             });
@@ -195,7 +200,16 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
         public void Dispose()
         {
-            _liteDb.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _liteDb?.Dispose();
+            }
         }
     }
 }

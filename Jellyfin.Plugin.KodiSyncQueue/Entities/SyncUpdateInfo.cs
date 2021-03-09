@@ -1,21 +1,28 @@
-﻿using MediaBrowser.Model.Dto;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using MediaBrowser.Model.Dto;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.Entities
 {
     public class SyncUpdateInfo
     {
-        public List<string> ItemsAdded { get; set; }
-        public List<string> ItemsRemoved { get; set; }
-        public List<string> ItemsUpdated { get; set; }
-        public List<UserItemDataDto> UserDataChanged { get; set; }
-
-        public SyncUpdateInfo()
+        public SyncUpdateInfo(
+            IReadOnlyList<string> itemsAdded,
+            IReadOnlyList<string> itemsRemoved,
+            IReadOnlyList<string> itemsUpdated,
+            IReadOnlyList<UserItemDataDto> userDataChanged)
         {
-            ItemsAdded = new List<string>();
-            ItemsRemoved = new List<string>();
-            ItemsUpdated = new List<string>();
-            UserDataChanged = new List<UserItemDataDto>();
+            ItemsAdded = itemsAdded;
+            ItemsRemoved = itemsRemoved;
+            ItemsUpdated = itemsUpdated;
+            UserDataChanged = userDataChanged;
         }
+
+        public IReadOnlyList<string> ItemsAdded { get; }
+
+        public IReadOnlyList<string> ItemsRemoved { get; set; }
+
+        public IReadOnlyList<string> ItemsUpdated { get; set; }
+
+        public IReadOnlyList<UserItemDataDto> UserDataChanged { get; set; }
     }
 }

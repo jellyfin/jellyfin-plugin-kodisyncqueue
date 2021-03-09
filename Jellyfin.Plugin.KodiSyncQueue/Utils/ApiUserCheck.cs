@@ -1,7 +1,8 @@
-﻿using MediaBrowser.Controller.Library;
+﻿using System;
 using System.Collections.Generic;
 using Jellyfin.Data.Entities;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Library;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.Utils
 {
@@ -22,7 +23,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Utils
                 return new[] { item };
             }
 
-            return new T[] { };
+            return Array.Empty<T>();
         }
     }
 }
