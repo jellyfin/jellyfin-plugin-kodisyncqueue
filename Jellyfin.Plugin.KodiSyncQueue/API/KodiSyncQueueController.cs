@@ -26,12 +26,14 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         private readonly ILogger<KodiSyncQueueController> _logger;
         private readonly IUserManager _userManager;
         private readonly ILibraryManager _libraryManager;
+        private readonly JsonSerializerOptions _jsonSerializerOptions;
 
         public KodiSyncQueueController(ILogger<KodiSyncQueueController> logger, IUserManager userManager, ILibraryManager libraryManager)
         {
             _logger = logger;
             _userManager = userManager;
             _libraryManager = libraryManager;
+            _jsonSerializerOptions = JsonDefaults.GetOptions();
         }
 
         /// <summary>
@@ -213,7 +215,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                 GetAddedOrUpdatedItems(user, itemsAdded),
                 itemsRemoved.Select(id => id.ToString("N", CultureInfo.InvariantCulture)).ToList(),
                 GetAddedOrUpdatedItems(user, itemsUpdated),
-                userDataChanged.Select(i => JsonSerializer.Deserialize<UserItemDataDto>(i.JsonData, JsonDefaults.GetOptions())).ToList());
+                userDataChanged.Select(i => JsonSerializer.Deserialize<UserItemDataDto>(i.JsonData, _jsonSerializerOptions)).ToList());
 
             _logger.LogInformation(
                 "Added: {AddedCount}, Removed: {RemovedCount}, Updated: {UpdatedCount}, Changed User Data: {ChangedUserDataCount}",

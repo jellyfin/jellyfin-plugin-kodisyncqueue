@@ -17,8 +17,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
         private const string UserInfoCollection = "user_info";
 
         private readonly LiteDatabase _liteDb;
-
         private readonly ILogger<DbRepo> _logger;
+        private readonly JsonSerializerOptions _jsonSerializerOptions;
 
         public DbRepo(string dPath, ILogger<DbRepo> logger)
         {
@@ -26,6 +26,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             _logger.LogInformation("Creating DB Repository...");
             Directory.CreateDirectory(dPath);
             _liteDb = new LiteDatabase($"filename={dPath}/kodisyncqueue.db;mode=exclusive");
+            _jsonSerializerOptions = JsonDefaults.GetOptions();
         }
 
         public List<Guid> GetItems(long dtl, ItemStatus status, IReadOnlyCollection<MediaType> filters)
@@ -141,11 +142,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             var newRecs = new List<UserInfoRec>();
             var upRecs = new List<UserInfoRec>();
             var userInfoCollection = _liteDb.GetCollection<UserInfoRec>(UserInfoCollection);
-            var jsonOptions = JsonDefaults.GetOptions();
 
             dtos.ForEach(dto =>
             {
-                var sJson = System.Text.Json.JsonSerializer.Serialize(dto, jsonOptions);
+                var sJson = System.Text.Json.JsonSerializer.Serialize(dto, _jsonSerializerOptions);
                 _logger.LogDebug("Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
 
                 LibItem itemref = itemRefs.FirstOrDefault(x => x.Id.ToString("N", CultureInfo.InvariantCulture) == dto.ItemId);
