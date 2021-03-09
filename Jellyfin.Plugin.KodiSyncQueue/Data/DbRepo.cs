@@ -4,7 +4,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Threading;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using LiteDB;
 using MediaBrowser.Common.Json;
@@ -65,7 +64,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             _logger.LogInformation("Finished Item and UserItem Retention Deletion...");
         }
 
-        public void WriteLibrarySync(IEnumerable<LibItem> items, ItemStatus status, CancellationToken cancellationToken)
+        public void WriteLibrarySync(IEnumerable<LibItem> items, ItemStatus status)
         {
             var newRecs = new List<ItemRec>();
             var upRecs = new List<ItemRec>();
@@ -200,7 +199,16 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
 
         public void Dispose()
         {
-            _liteDb.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _liteDb?.Dispose();
+            }
         }
     }
 }

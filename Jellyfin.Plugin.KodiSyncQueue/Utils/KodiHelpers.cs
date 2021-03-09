@@ -26,7 +26,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Utils
             switch (typeName)
             {
                 case "Movie":
-                    if (!KodiSyncQueuePlugin.Instance.Configuration.tkMovies)
+                    if (!KodiSyncQueuePlugin.Instance.Configuration.TkMovies)
                     {
                         return false;
                     }
@@ -34,7 +34,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Utils
                     type = MediaType.Movies;
                     break;
                 case "BoxSet":
-                    if (!KodiSyncQueuePlugin.Instance.Configuration.tkBoxSets)
+                    if (!KodiSyncQueuePlugin.Instance.Configuration.TkBoxSets)
                     {
                         return false;
                     }
@@ -44,7 +44,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Utils
                 case "Series":
                 case "Season":
                 case "Episode":
-                    if (!KodiSyncQueuePlugin.Instance.Configuration.tkTVShows)
+                    if (!KodiSyncQueuePlugin.Instance.Configuration.TkTvShows)
                     {
                         return false;
                     }
@@ -54,7 +54,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Utils
                 case "Audio":
                 case "MusicArtist":
                 case "MusicAlbum":
-                    if (!KodiSyncQueuePlugin.Instance.Configuration.tkMusic)
+                    if (!KodiSyncQueuePlugin.Instance.Configuration.TkMusic)
                     {
                         return false;
                     }
@@ -62,7 +62,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Utils
                     type = MediaType.Music;
                     break;
                 case "MusicVideo":
-                    if (!KodiSyncQueuePlugin.Instance.Configuration.tkMusicVideos)
+                    if (!KodiSyncQueuePlugin.Instance.Configuration.TkMusicVideos)
                     {
                         return false;
                     }

@@ -23,8 +23,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         private readonly IUserManager _userManager;
         private readonly object _syncLock = new object();
         private readonly Dictionary<Guid, List<BaseItem>> _changedItems = new Dictionary<Guid, List<BaseItem>>();
-        private List<LibItem> _itemRef = new List<LibItem>();
-        private CancellationTokenSource cTokenSource = new CancellationTokenSource();
+        private readonly List<LibItem> _itemRef = new List<LibItem>();
+        private readonly CancellationTokenSource _cTokenSource = new CancellationTokenSource();
 
         public UserSyncNotification(IUserDataManager userDataManager, ILogger<UserSyncNotification> logger, IUserManager userManager)
         {
@@ -109,7 +109,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 _changedItems.Clear();
                 _itemRef.Clear();
 
-                SendNotifications(changes, itemRef, cTokenSource.Token);
+                SendNotifications(changes, itemRef, _cTokenSource.Token);
 
                 if (UpdateTimer != null)
                 {
@@ -161,29 +161,31 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
         private void TriggerCancellation()
         {
-            cTokenSource.Cancel();
+            _cTokenSource.Cancel();
         }
 
         public void Dispose()
         {
-            if (!cTokenSource.Token.IsCancellationRequested)
-            {
-                TriggerCancellation();
-            }
-
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         protected virtual void Dispose(bool dispose)
         {
             if (dispose)
             {
+                if (!_cTokenSource.Token.IsCancellationRequested)
+                {
+                    TriggerCancellation();
+                }
+
                 if (UpdateTimer != null)
                 {
                     UpdateTimer.Dispose();
                     UpdateTimer = null;
                 }
 
+                _cTokenSource.Dispose();
                 _userDataManager.UserDataSaved -= UserDataManager_UserDataSaved;
             }
         }

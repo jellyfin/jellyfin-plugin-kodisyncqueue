@@ -21,7 +21,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         private readonly List<LibItem> _itemsAdded = new List<LibItem>();
         private readonly List<LibItem> _itemsRemoved = new List<LibItem>();
         private readonly List<LibItem> _itemsUpdated = new List<LibItem>();
-        private CancellationTokenSource cTokenSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource _cTokenSource = new CancellationTokenSource();
 
         public LibrarySyncNotification(ILibraryManager libraryManager, ILogger<LibrarySyncNotification> logger)
         {
@@ -170,7 +170,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                                         .Select(grp => grp.First())
                                         .ToList();
 
-                    PushChangesToDb(itemsAdded, itemsUpdated, itemsRemoved, cTokenSource.Token);
+                    PushChangesToDb(itemsAdded, itemsUpdated, itemsRemoved);
 
                     if (LibraryUpdateTimer != null)
                     {
@@ -192,16 +192,16 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             }
         }
 
-        private void PushChangesToDb(IReadOnlyCollection<LibItem> itemsAdded, IReadOnlyCollection<LibItem> itemsUpdated, IReadOnlyCollection<LibItem> itemsRemoved, CancellationToken cancellationToken)
+        private void PushChangesToDb(IReadOnlyCollection<LibItem> itemsAdded, IReadOnlyCollection<LibItem> itemsUpdated, IReadOnlyCollection<LibItem> itemsRemoved)
         {
-            UpdateLibrary(itemsAdded, ItemStatus.Added, cancellationToken);
-            UpdateLibrary(itemsUpdated, ItemStatus.Updated, cancellationToken);
-            UpdateLibrary(itemsRemoved, ItemStatus.Removed, cancellationToken);
+            UpdateLibrary(itemsAdded, ItemStatus.Added);
+            UpdateLibrary(itemsUpdated, ItemStatus.Updated);
+            UpdateLibrary(itemsRemoved, ItemStatus.Removed);
         }
 
-        private void UpdateLibrary(IReadOnlyCollection<LibItem> items, ItemStatus status, CancellationToken cancellationToken)
+        private void UpdateLibrary(IReadOnlyCollection<LibItem> items, ItemStatus status)
         {
-            KodiSyncQueuePlugin.Instance.DbRepo.WriteLibrarySync(items, status, cancellationToken);
+            KodiSyncQueuePlugin.Instance.DbRepo.WriteLibrarySync(items, status);
 
             _logger.LogInformation(
                 "\"LIBRARYSYNC\" {StatusType} {NumberOfItems} items:  {Items}",
@@ -212,7 +212,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
         private void TriggerCancellation()
         {
-            cTokenSource.Cancel();
+            _cTokenSource.Cancel();
         }
 
         /// <summary>
@@ -220,12 +220,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         /// </summary>
         public void Dispose()
         {
-            if (!cTokenSource.Token.IsCancellationRequested)
-            {
-                TriggerCancellation();
-            }
-
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -236,12 +232,18 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         {
             if (dispose)
             {
+                if (!_cTokenSource.Token.IsCancellationRequested)
+                {
+                    TriggerCancellation();
+                }
+
                 if (LibraryUpdateTimer != null)
                 {
                     LibraryUpdateTimer.Dispose();
                     LibraryUpdateTimer = null;
                 }
 
+                _cTokenSource.Dispose();
                 _libraryManager.ItemAdded -= LibraryManager_ItemAdded;
                 _libraryManager.ItemUpdated -= LibraryManager_ItemUpdated;
                 _libraryManager.ItemRemoved -= LibraryManager_ItemRemoved;
