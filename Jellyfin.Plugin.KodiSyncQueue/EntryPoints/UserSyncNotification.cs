@@ -98,6 +98,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         private void UpdateTimerCallback(object state)
         {
             lock (_syncLock)
+            {
                 try
                 {
                     _logger.LogInformation("Starting User Changes Sync...");
@@ -124,6 +125,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 {
                     _logger.LogError(e, "An Error Has Occurred in UserUpdateTimerCallback");
                 }
+            }
         }
 
         private void SendNotifications(IEnumerable<KeyValuePair<Guid, List<BaseItem>>> changes, List<LibItem> itemRefs, CancellationToken cancellationToken)
