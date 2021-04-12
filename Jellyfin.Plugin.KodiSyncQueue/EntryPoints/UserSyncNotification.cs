@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -98,31 +98,33 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         private void UpdateTimerCallback(object state)
         {
             lock (_syncLock)
-            try
             {
-                _logger.LogInformation("Starting User Changes Sync...");
-                var startDate = DateTime.UtcNow;
-
-                // Remove dupes in case some were saved multiple times
-                var changes = _changedItems.ToList();
-                var itemRef = _itemRef.ToList();
-                _changedItems.Clear();
-                _itemRef.Clear();
-
-                SendNotifications(changes, itemRef, _cTokenSource.Token);
-
-                if (UpdateTimer != null)
+                try
                 {
-                    UpdateTimer.Dispose();
-                    UpdateTimer = null;
-                }
+                    _logger.LogInformation("Starting User Changes Sync...");
+                    var startDate = DateTime.UtcNow;
 
-                TimeSpan dateDiff = DateTime.UtcNow - startDate;
-                _logger.LogInformation("User Changes Sync Finished Taking {TimeTaken}", dateDiff.ToString("c", CultureInfo.InvariantCulture));
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "An Error Has Occurred in UserUpdateTimerCallback");
+                    // Remove dupes in case some were saved multiple times
+                    var changes = _changedItems.ToList();
+                    var itemRef = _itemRef.ToList();
+                    _changedItems.Clear();
+                    _itemRef.Clear();
+
+                    SendNotifications(changes, itemRef, _cTokenSource.Token);
+
+                    if (UpdateTimer != null)
+                    {
+                        UpdateTimer.Dispose();
+                        UpdateTimer = null;
+                    }
+
+                    TimeSpan dateDiff = DateTime.UtcNow - startDate;
+                    _logger.LogInformation("User Changes Sync Finished Taking {TimeTaken}", dateDiff.ToString("c", CultureInfo.InvariantCulture));
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "An Error Has Occurred in UserUpdateTimerCallback");
+                }
             }
         }
 

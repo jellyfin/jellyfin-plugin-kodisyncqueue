@@ -1,4 +1,4 @@
-﻿namespace Jellyfin.Plugin.KodiSyncQueue.Entities
+namespace Jellyfin.Plugin.KodiSyncQueue.Entities
 {
     public class UserInfoRec
     {
