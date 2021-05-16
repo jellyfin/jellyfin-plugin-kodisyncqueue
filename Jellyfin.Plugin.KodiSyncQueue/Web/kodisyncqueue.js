@@ -9,11 +9,11 @@ export default function (view) {
         ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
             page.querySelector('#txtRetDays').value = config.RetDays || '0';
             page.querySelector('#chkEnabled').checked = config.IsEnabled || false;
-            page.querySelector('#tkMovies').checked = config.tkMovies || false;
-            page.querySelector('#tkBoxSets').checked = config.tkBoxSets || false;
-            page.querySelector('#tkTVShows').checked = config.tkTVShows || false;
-            page.querySelector('#tkMusic').checked = config.tkMusic || false;
-            page.querySelector('#tkMusicVideos').checked = config.tkMusicVideos || false;
+            page.querySelector('#tkMovies').checked = config.TkMovies || false;
+            page.querySelector('#tkBoxSets').checked = config.TkBoxSets || false;
+            page.querySelector('#tkTVShows').checked = config.TkTvShows || false;
+            page.querySelector('#tkMusic').checked = config.TkMusic || false;
+            page.querySelector('#tkMusicVideos').checked = config.TkMusicVideos || false;
             Dashboard.hideLoadingMsg();
         });
     });
@@ -26,11 +26,11 @@ export default function (view) {
                 config.RetDays = '0';
             }
             config.IsEnabled = form.querySelector('#chkEnabled').checked;
-            config.tkMovies = form.querySelector('#tkMovies').checked;
-            config.tkTVShows = form.querySelector('#tkTVShows').checked;
-            config.tkMusic = form.querySelector('#tkMusic').checked;
-            config.tkMusicVideos = form.querySelector('#tkMusicVideos').checked;
-            config.tkBoxSets = form.querySelector('#tkBoxSets').checked;
+            config.TkMovies = form.querySelector('#tkMovies').checked;
+            config.TkTvShows = form.querySelector('#tkTVShows').checked;
+            config.TkMusic = form.querySelector('#tkMusic').checked;
+            config.TkMusicVideos = form.querySelector('#tkMusicVideos').checked;
+            config.TkBoxSets = form.querySelector('#tkBoxSets').checked;
 
             ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
         });
