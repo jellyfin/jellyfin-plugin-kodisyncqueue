@@ -1,0 +1,58 @@
+<div id="ksqConfigurationPage" data-role="page" class="page type-interior pluginConfigurationPage" data-controller="__plugin/kodisyncqueuejs">
+    <div data-role="content">
+        <div class="content-primary">
+            <form id="ksqConfigurationForm">
+                <div class="inputContainer">
+                    <input is="emby-input" type="number" id="txtRetDays" name="txtRetDays" label="Retention Days" />
+                    <div class="fieldDescription">
+                        The number of days to save in the database. (0 = Unlimited)
+                    </div>
+                </div>
+                <div class="checkboxContainer">
+                    <label class="emby-checkbox-label">
+                        <input is="emby-checkbox" type="checkbox" id="chkEnabled" />
+                        <span>Enable Plugin</span>
+                    </label>
+                </div>
+                <div class="verticalSection verticalSection-extrabottompadding">
+                    <h2>Items to Track</h2>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input is="emby-checkbox" type="checkbox" id="tkMovies" />
+                            <span>Movies</span>
+                        </label>
+                    </div>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input is="emby-checkbox" type="checkbox" id="tkBoxSets" />
+                            <span>Box Sets</span>
+                        </label>
+                    </div>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input is="emby-checkbox" type="checkbox" id="tkTVShows" />
+                            <span>TV Shows</span>
+                        </label>
+                    </div>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input is="emby-checkbox" type="checkbox" id="tkMusic" />
+                            <span>Music</span>
+                        </label>
+                    </div>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input is="emby-checkbox" type="checkbox" id="tkMusicVideos" />
+                            <span>Music Videos</span>
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <button is="emby-button" type="submit" id="ksqSave" class="raised button-submit block">
+                        <span>${Save}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
