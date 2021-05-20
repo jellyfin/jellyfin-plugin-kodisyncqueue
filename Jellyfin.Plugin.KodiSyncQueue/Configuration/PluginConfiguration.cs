@@ -1,4 +1,3 @@
-using System.Xml.Serialization;
 using MediaBrowser.Model.Plugins;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.Configuration
