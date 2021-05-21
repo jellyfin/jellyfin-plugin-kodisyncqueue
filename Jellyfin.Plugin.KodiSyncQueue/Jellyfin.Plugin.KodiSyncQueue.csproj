@@ -9,8 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Configuration\configPage.html" />
-    <EmbeddedResource Include="Configuration\configPage.html" />
+    <None Remove="Web\kodisyncqueue.html" />
+    <None Remove="Web\kodisyncqueue.js" />
+    <EmbeddedResource Include="Web\kodisyncqueue.html" />
+    <EmbeddedResource Include="Web\kodisyncqueue.js" />
   </ItemGroup>
 
   <ItemGroup>

@@ -54,8 +54,13 @@ namespace Jellyfin.Plugin.KodiSyncQueue
             {
                 new PluginPageInfo
                 {
-                    Name = "Jellyfin.Plugin.KodiSyncQueue",
-                    EmbeddedResourcePath = "Jellyfin.Plugin.KodiSyncQueue.Configuration.configPage.html"
+                    Name = "kodisyncqueue",
+                    EmbeddedResourcePath = GetType().Namespace + ".Web.kodisyncqueue.html",
+                },
+                new PluginPageInfo
+                {
+                    Name = "kodisyncqueuejs",
+                    EmbeddedResourcePath = GetType().Namespace + ".Web.kodisyncqueue.js"
                 }
             };
         }
