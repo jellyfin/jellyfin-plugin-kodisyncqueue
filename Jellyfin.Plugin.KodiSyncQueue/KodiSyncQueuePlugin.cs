@@ -15,14 +15,15 @@ namespace Jellyfin.Plugin.KodiSyncQueue
         public KodiSyncQueuePlugin(
             IApplicationPaths applicationPaths,
             IXmlSerializer xmlSerializer,
-            ILogger<DbRepo> logger)
+            ILoggerFactory loggerFactory)
             : base(applicationPaths, xmlSerializer)
         {
             Instance = this;
 
+            var logger = loggerFactory.CreateLogger<KodiSyncQueuePlugin>();
             logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue is now starting");
 
-            DbRepo = new DbRepo(applicationPaths.DataPath, logger);
+            DbRepo = new DbRepo(applicationPaths.DataPath, loggerFactory.CreateLogger<DbRepo>());
         }
 
         public DbRepo DbRepo { get; }
@@ -30,7 +31,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue
         public override Guid Id => new Guid("771e19d6-5385-4caf-b35c-28a0e865cf63");
 
         /// <summary>
-        /// Gets the name of the plugin
+        /// Gets the name of the plugin.
         /// </summary>
         /// <value>The name.</value>
         public override string Name => "Kodi Sync Queue";

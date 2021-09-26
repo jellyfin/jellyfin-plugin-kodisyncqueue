@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.Data.Entities;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using MediaBrowser.Controller.Entities;
@@ -85,7 +84,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                         ItemType = type,
                     });
 
-                    var parent = testItem.Parent;
+                    var parent = testItem.GetParent();
 
                     if (parent != null)
                     {
