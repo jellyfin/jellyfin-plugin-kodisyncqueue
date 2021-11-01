@@ -2,8 +2,8 @@
 name: "Kodi Sync Queue"
 guid: "771e19d6-5385-4caf-b35c-28a0e865cf63"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-kodisyncqueue.png"
-version: "6.0.0.0"
-targetAbi: "10.7.0.0"
+version: "7"
+targetAbi: "10.8.0.0"
 framework: "net6.0"
 owner: "jellyfin"
 overview: "Sync all media changes with Kodi clients"
@@ -12,5 +12,21 @@ category: "General"
 artifacts:
   - "Jellyfin.Plugin.KodiSyncQueue.dll"
   - "LiteDB.dll"
-changelog: |
-  changelog
+changelog: |2-
+  ### New features and improvements ###
+  - chore: plugin images (#42) @h1dden-da3m0n
+
+  ### Dependency updates ###
+  - chore(deps): bump release-drafter/release-drafter from v5.14.0 to v5.15.0 (#43) @dependabot
+
+  ### CI & build changes ###
+  - Update ci (#47) @h1dden-da3m0n
+  - Add pre-commit config (#41) @oddstr13
+  - Add release drafter (#40) @oddstr13
+  - Add workflows for code testing (#38) @oddstr13
+  - Add analyzers and fix warnings (#37) @oddstr13
+
+  ### Code or Repo Maintenance ###
+  - 10.8 support (#51) @crobibero
+  - Split scripts and update to es6 (#46) @grafixeyehero
+  - Use System.Text.Json (#34) @daullmer
