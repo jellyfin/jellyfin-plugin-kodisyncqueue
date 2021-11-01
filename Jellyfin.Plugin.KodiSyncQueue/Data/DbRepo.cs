@@ -4,9 +4,9 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using Jellyfin.Extensions.Json;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using LiteDB;
-using MediaBrowser.Common.Json;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.Data
@@ -26,7 +26,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             _logger.LogInformation("Creating DB Repository...");
             Directory.CreateDirectory(dPath);
             _liteDb = new LiteDatabase($"filename={dPath}/kodisyncqueue.db;mode=exclusive");
-            _jsonSerializerOptions = JsonDefaults.GetOptions();
+            _jsonSerializerOptions = JsonDefaults.Options;
         }
 
         public List<Guid> GetItems(long dtl, ItemStatus status, IReadOnlyCollection<MediaType> filters)

@@ -8,12 +8,11 @@ using System.Linq;
 using System.Net.Mime;
 using System.Text.Json;
 using Jellyfin.Data.Entities;
+using Jellyfin.Extensions.Json;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using Jellyfin.Plugin.KodiSyncQueue.Utils;
-using MediaBrowser.Common.Json;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Dto;
-using MediaBrowser.Model.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -33,7 +32,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             _logger = logger;
             _userManager = userManager;
             _libraryManager = libraryManager;
-            _jsonSerializerOptions = JsonDefaults.GetOptions();
+            _jsonSerializerOptions = JsonDefaults.Options;
         }
 
         /// <summary>
@@ -41,7 +40,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         /// </summary>
         /// <param name="userId">The user id.</param>
         /// <param name="lastUpdateDt">UTC DateTime of Last Update, Format yyyy-MM-ddTHH:mm:ssZ.</param>
-        /// <param name="filter">Comma separated list of Collection Types to filter (movies,tvshows,music,musicvideos,boxsets. The filter query must be lowercase in both the name and the items</param>
+        /// <param name="filter">Comma separated list of Collection Types to filter (movies,tvshows,music,musicvideos,boxsets. The filter query must be lowercase in both the name and the items.</param>
         /// <returns>The <see cref="SyncUpdateInfo"/>.</returns>
         [HttpGet("Jellyfin.Plugin.KodiSyncQueue/{userID}/GetItems")]
         public ActionResult<SyncUpdateInfo> GetLibraryItemsQuery(
