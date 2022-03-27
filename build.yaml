@@ -13,20 +13,9 @@ artifacts:
   - "Jellyfin.Plugin.KodiSyncQueue.dll"
   - "LiteDB.dll"
 changelog: |2-
-  ### New features and improvements ###
-  - chore: plugin images (#42) @h1dden-da3m0n
-
-  ### Dependency updates ###
-  - chore(deps): bump release-drafter/release-drafter from v5.14.0 to v5.15.0 (#43) @dependabot
+  ### Code or Repo Maintenance ###
+  - 10.8 support (#66) @crobibero
+  - Use meta ci (#62) @crobibero
 
   ### CI & build changes ###
-  - Update ci (#47) @h1dden-da3m0n
-  - Add pre-commit config (#41) @oddstr13
-  - Add release drafter (#40) @oddstr13
-  - Add workflows for code testing (#38) @oddstr13
-  - Add analyzers and fix warnings (#37) @oddstr13
-
-  ### Code or Repo Maintenance ###
-  - 10.8 support (#51) @crobibero
-  - Split scripts and update to es6 (#46) @grafixeyehero
-  - Use System.Text.Json (#34) @daullmer
+  - Use meta ci (#62) @crobibero
