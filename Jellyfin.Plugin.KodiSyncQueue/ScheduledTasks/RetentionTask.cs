@@ -25,19 +25,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
 
         public string Key => "KodiSyncFireRetentionTask";
 
-        public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
-        {
-            return new[]
-            {
-                new TaskTriggerInfo
-                {
-                    Type = TaskTriggerInfo.TriggerDaily,
-                    TimeOfDayTicks = TimeSpan.FromMinutes(1).Ticks
-                }
-            };
-        }
-
-        public Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
+        public Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
         {
             // Is retDays 0.. If So Exit...
             if (!int.TryParse(KodiSyncQueuePlugin.Instance.Configuration.RetDays, out var retDays) || retDays == 0)
@@ -53,6 +41,18 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
             KodiSyncQueuePlugin.Instance.DbRepo.DeleteOldData(dtl);
 
             return Task.CompletedTask;
+        }
+
+        public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
+        {
+            return new[]
+            {
+                new TaskTriggerInfo
+                {
+                    Type = TaskTriggerInfo.TriggerDaily,
+                    TimeOfDayTicks = TimeSpan.FromMinutes(1).Ticks
+                }
+            };
         }
     }
 }
