@@ -36,8 +36,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             _libraryManager.ItemAdded += LibraryManager_ItemAdded;
             _libraryManager.ItemUpdated += LibraryManager_ItemUpdated;
             _libraryManager.ItemRemoved += LibraryManager_ItemRemoved;
-
-            _logger.LogInformation("LibrarySyncNotification Startup...");
             return Task.CompletedTask;
         }
 
@@ -71,7 +69,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     ItemType = type,
                 };
 
-                _logger.LogDebug("ItemAdded added for DB Saving {ItemId}", e.Item.Id);
+                _logger.LogDebug("Item creation queued because {ItemId} was added to database", e.Item.Id);
                 _itemsAdded.Add(item);
             }
         }
@@ -106,7 +104,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     ItemType = type
                 };
 
-                _logger.LogDebug("ItemUpdated added for DB Saving {ItemId}", e.Item.Id);
+                _logger.LogDebug("Item update queued because {ItemId} was modified", e.Item.Id);
                 _itemsUpdated.Add(item);
             }
         }
@@ -141,7 +139,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     ItemType = type
                 };
 
-                _logger.LogDebug("ItemRemoved added for DB Saving {ItemId}", e.Item.Id);
+                _logger.LogDebug("Item removal queued because {ItemId} was removed from library", e.Item.Id);
                 _itemsRemoved.Add(item);
             }
         }
@@ -157,13 +155,14 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 // Remove dupes in case some were saved multiple times
                 try
                 {
-                    _logger.LogInformation("Starting Library Sync...");
+                    _logger.LogInformation("Started library sync");
                     var startTime = DateTime.UtcNow;
-
-                    var itemsAdded = _itemsAdded.GroupBy(i => i.Id).Select(grp => grp.First()).ToList();
-
-                    var itemsRemoved = _itemsRemoved.GroupBy(i => i.Id).Select(grp => grp.First()).ToList();
-
+                    var itemsAdded = _itemsAdded.GroupBy(i => i.Id)
+                                        .Select(grp => grp.First())
+                                        .ToList();
+                    var itemsRemoved = _itemsRemoved.GroupBy(i => i.Id)
+                                        .Select(grp => grp.First())
+                                        .ToList();
                     var itemsUpdated = _itemsUpdated
                                         .Where(i => itemsAdded.FirstOrDefault(a => a.Id == i.Id) == null)
                                         .GroupBy(g => g.Id)
@@ -179,11 +178,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     }
 
                     TimeSpan dateDiff = DateTime.UtcNow - startTime;
-                    _logger.LogInformation("Finished Library Sync Taking {TimeTaken}", dateDiff.ToString("c", CultureInfo.InvariantCulture));
+                    _logger.LogInformation("Finished library sync, taking {TimeTaken}", dateDiff.ToString("c", CultureInfo.InvariantCulture));
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "An Error Has Occurred in LibraryUpdateTimerCallback");
+                    _logger.LogError(e, "An error has occurred in LibraryUpdateTimerCallback");
                 }
 
                 _itemsAdded.Clear();
@@ -202,12 +201,19 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         private void UpdateLibrary(IReadOnlyCollection<LibItem> items, ItemStatus status)
         {
             KodiSyncQueuePlugin.Instance.DbRepo.WriteLibrarySync(items, status);
+            var itemCount = items.Count;
 
-            _logger.LogInformation(
-                "\"LIBRARYSYNC\" {StatusType} {NumberOfItems} items:  {Items}",
-                status,
-                items.Count,
-                string.Join(",", items.Select(i => i.Id.ToString("N", CultureInfo.InvariantCulture)).ToArray()));
+            if (itemCount > 0)
+            {
+                _logger.LogInformation(
+                    "Library Sync: {StatusType} {NumberOfItems} items",
+                    status,
+                    items.Count);
+
+                _logger.LogDebug(
+                    "Affected items: {Items}",
+                    items.Select(i => i.Id.ToString("N", CultureInfo.InvariantCulture)));
+            }
         }
 
         private void TriggerCancellation()

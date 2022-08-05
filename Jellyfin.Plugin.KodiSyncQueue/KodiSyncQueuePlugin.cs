@@ -21,7 +21,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue
             Instance = this;
 
             var logger = loggerFactory.CreateLogger<KodiSyncQueuePlugin>();
-            logger.LogInformation("Jellyfin.Plugin.KodiSyncQueue is now starting");
+            logger.LogInformation("KodiSyncQueue is starting...");
 
             DbRepo = new DbRepo(applicationPaths.DataPath, loggerFactory.CreateLogger<DbRepo>());
         }
