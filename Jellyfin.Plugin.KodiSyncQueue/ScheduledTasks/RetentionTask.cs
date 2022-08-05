@@ -19,9 +19,9 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
 
         public string Name => "Remove Old Sync Data";
 
-        public string Category => "Jellyfin.Plugin.KodiSyncQueue";
+        public string Category => "KodiSyncQueue";
 
-        public string Description => "If Retention Days > 0 then this will remove the old data to keep information flowing quickly";
+        public string Description => "If retention days > 0 then this will remove the old data to keep information flowing quickly";
 
         public string Key => "KodiSyncFireRetentionTask";
 
@@ -30,7 +30,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
             // Is retDays 0.. If So Exit...
             if (!int.TryParse(KodiSyncQueuePlugin.Instance.Configuration.RetDays, out var retDays) || retDays == 0)
             {
-                _logger.LogInformation("Retention Deletion Not Possible When Retention Days = 0!");
+                _logger.LogInformation("Retention deletion not possible if retention days is set to zero!");
                 return Task.CompletedTask;
             }
 

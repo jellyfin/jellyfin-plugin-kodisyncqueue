@@ -38,7 +38,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         {
             _userDataManager.UserDataSaved += UserDataManager_UserDataSaved;
 
-            _logger.LogInformation("UserSyncNotification Startup...");
             return Task.CompletedTask;
         }
 
@@ -100,7 +99,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             {
                 try
                 {
-                    _logger.LogInformation("Starting User Changes Sync...");
+                    _logger.LogInformation("Starting user data sync...");
                     var startDate = DateTime.UtcNow;
 
                     // Remove dupes in case some were saved multiple times
@@ -118,11 +117,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                     }
 
                     TimeSpan dateDiff = DateTime.UtcNow - startDate;
-                    _logger.LogInformation("User Changes Sync Finished Taking {TimeTaken}", dateDiff.ToString("c", CultureInfo.InvariantCulture));
+                    _logger.LogInformation("Finished user data sync, taking {TimeTaken}", dateDiff.ToString("c", CultureInfo.InvariantCulture));
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "An Error Has Occurred in UserUpdateTimerCallback");
+                    _logger.LogError(e, "An error has occurred in UserUpdateTimerCallback");
                 }
             }
         }
@@ -156,8 +155,20 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         {
             KodiSyncQueuePlugin.Instance.DbRepo.SetUserInfoSync(dtos, itemRefs, userId);
             List<string> ids = dtos.Select(s => s.ItemId).ToList();
+            var itemCount = ids.Count;
 
-            _logger.LogInformation("\"USERSYNC\" User {UserId}({Username}) posted {NumberOfUpdates} Updates: {Updates}", userId, userName, ids.Count, string.Join(",", ids.ToArray()));
+            if (itemCount > 0)
+            {
+                _logger.LogInformation(
+                    "User Data Sync: User {UserId}({Username}) posted {NumberOfUpdates} updates",
+                    userId,
+                    userName,
+                    itemCount);
+
+                _logger.LogDebug(
+                    "Updated items: {Updates}",
+                    string.Join(",", ids.ToArray()));
+            }
         }
 
         private void TriggerCancellation()
