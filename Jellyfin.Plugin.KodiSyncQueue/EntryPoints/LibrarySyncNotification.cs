@@ -155,7 +155,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                 // Remove dupes in case some were saved multiple times
                 try
                 {
-                    _logger.LogInformation("Starting library sync...");
+                    _logger.LogInformation("Started library sync");
                     var startTime = DateTime.UtcNow;
                     var itemsAdded = _itemsAdded.GroupBy(i => i.Id)
                                         .Select(grp => grp.First())

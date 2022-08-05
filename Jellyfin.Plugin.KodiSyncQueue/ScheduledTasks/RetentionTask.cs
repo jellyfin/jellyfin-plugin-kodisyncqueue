@@ -14,12 +14,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
         public RetentionTask(ILogger<RetentionTask> logger)
         {
             _logger = logger;
-            _logger.LogInformation("Retention Task Scheduled!");
+            _logger.LogInformation("Retention task scheduled");
         }
 
         public string Name => "Remove Old Sync Data";
 
-        public string Category => "KodiSyncQueue";
+        public string Category => "Kodi Sync Queue";
 
         public string Description => "If retention days > 0 then this will remove the old data to keep information flowing quickly";
 

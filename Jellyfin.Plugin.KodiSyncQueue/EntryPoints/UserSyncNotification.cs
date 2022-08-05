@@ -99,7 +99,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             {
                 try
                 {
-                    _logger.LogInformation("Starting user data sync...");
+                    _logger.LogInformation("Started user data sync");
                     var startDate = DateTime.UtcNow;
 
                     // Remove dupes in case some were saved multiple times
@@ -132,7 +132,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var userId = pair.Key;
-                _logger.LogDebug("Starting to save items for {userId}", userId.ToString());
+                _logger.LogDebug("Started saving items for {userId}", userId.ToString());
 
                 var user = _userManager.GetUserById(userId);
 
@@ -160,14 +160,14 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             if (itemCount > 0)
             {
                 _logger.LogInformation(
-                    "User Data Sync: User {UserId}({Username}) posted {NumberOfUpdates} updates",
-                    userId,
+                    "User Data Sync: User {UserName} ({UserId}) posted {NumberOfUpdates} updates",
                     userName,
+                    userId,
                     itemCount);
 
                 _logger.LogDebug(
                     "Updated items: {Updates}",
-                    string.Join(",", ids.ToArray()));
+                    ids.ToArray());
             }
         }
 
