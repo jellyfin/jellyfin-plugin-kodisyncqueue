@@ -132,7 +132,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var userId = pair.Key;
-                _logger.LogDebug("Started saving items for {userId}", userId.ToString());
+                _logger.LogDebug("Started saving items for {userId}", userId);
 
                 var user = _userManager.GetUserById(userId);
 
@@ -167,7 +167,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
                 _logger.LogDebug(
                     "Updated items: {Updates}",
-                    ids.ToArray());
+                    ids);
             }
         }
 

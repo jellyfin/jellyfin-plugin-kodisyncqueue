@@ -212,7 +212,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 
                 _logger.LogDebug(
                     "Affected items: {Items}",
-                    string.Join(",", items.Select(i => i.Id.ToString("N", CultureInfo.InvariantCulture)).ToArray()));
+                    items.Select(i => i.Id.ToString("N", CultureInfo.InvariantCulture)));
             }
         }
 
