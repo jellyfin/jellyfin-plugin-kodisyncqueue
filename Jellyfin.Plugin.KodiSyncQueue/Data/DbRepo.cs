@@ -25,7 +25,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             _logger = logger;
             _logger.LogInformation("Creating DB Repository...");
             Directory.CreateDirectory(dPath);
-            _liteDb = new LiteDatabase($"filename={dPath}/kodisyncqueue.db;mode=exclusive");
+            _liteDb = new LiteDatabase($"filename={dPath}/kodisyncqueue.db;mode=exclusive;upgrade=true");
             _jsonSerializerOptions = JsonDefaults.Options;
         }
 
@@ -60,8 +60,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
         public void DeleteOldData(long dtl)
         {
             _logger.LogInformation("Starting Item and UserItem Retention Deletion...");
-            _liteDb.GetCollection<ItemRec>(ItemsCollection).Delete(x => x.LastModified < dtl);
-            _liteDb.GetCollection<UserInfoRec>(UserInfoCollection).Delete(x => x.LastModified < dtl);
+            _liteDb.GetCollection<ItemRec>(ItemsCollection).DeleteMany(x => x.LastModified < dtl);
+            _liteDb.GetCollection<UserInfoRec>(UserInfoCollection).DeleteMany(x => x.LastModified < dtl);
             _logger.LogInformation("Finished Item and UserItem Retention Deletion...");
         }
 
