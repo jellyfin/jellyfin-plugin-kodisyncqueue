@@ -2,8 +2,8 @@
 name: "Kodi Sync Queue"
 guid: "771e19d6-5385-4caf-b35c-28a0e865cf63"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-kodisyncqueue.png"
-version: "8"
-targetAbi: "10.8.0.0"
+version: 9
+targetAbi: "10.8.3.0"
 framework: "net6.0"
 owner: "jellyfin"
 overview: "Sync all media changes with Kodi clients"
@@ -13,9 +13,14 @@ artifacts:
   - "Jellyfin.Plugin.KodiSyncQueue.dll"
   - "LiteDB.dll"
 changelog: |2-
+  ### Bug Fixes ###
+  - Fix the scheduled task section name (part of #71) @Shadowghost
+
   ### Code or Repo Maintenance ###
-  - 10.8 support (#66) @crobibero
-  - Use meta ci (#62) @crobibero
+  - Cleanup logging and naming (#71) @Shadowghost
+
+  ### Dependency updates ###
+  - Upgrades LiteDB to v5 (part of #71) @Shadowghost
 
   ### CI & build changes ###
-  - Use meta ci (#62) @crobibero
+  - fix: meta ci workflows (#68) @h1dden-da3m0n
