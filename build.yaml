@@ -14,13 +14,13 @@ artifacts:
   - "LiteDB.dll"
 changelog: |2-
   ### Bug Fixes ###
-  - Fix the scheduled task section name (part of #71) @Shadowghost
+  - Cleanup logging and naming (#71) @Shadowghost
 
   ### Code or Repo Maintenance ###
   - Cleanup logging and naming (#71) @Shadowghost
 
   ### Dependency updates ###
-  - Upgrades LiteDB to v5 (part of #71) @Shadowghost
+  - Cleanup logging and naming (#71) @Shadowghost
 
   ### CI & build changes ###
   - fix: meta ci workflows (#68) @h1dden-da3m0n
