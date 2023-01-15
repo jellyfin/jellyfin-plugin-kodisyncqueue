@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue
 {
-    public class KodiSyncQueuePlugin : BasePlugin<PluginConfiguration>, IHasWebPages
+    public class KodiSyncQueuePlugin : BasePlugin<PluginConfiguration>, IHasWebPages, IDisposable
     {
         public KodiSyncQueuePlugin(
             IApplicationPaths applicationPaths,
@@ -64,6 +64,20 @@ namespace Jellyfin.Plugin.KodiSyncQueue
                     EmbeddedResourcePath = GetType().Namespace + ".Web.kodisyncqueue.js"
                 }
             };
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                DbRepo?.Dispose();
+            }
         }
     }
 }
