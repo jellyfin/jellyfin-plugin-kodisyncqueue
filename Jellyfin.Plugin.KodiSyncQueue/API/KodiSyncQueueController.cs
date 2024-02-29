@@ -42,7 +42,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         /// <param name="lastUpdateDt">UTC DateTime of Last Update, Format yyyy-MM-ddTHH:mm:ssZ.</param>
         /// <param name="filter">Comma separated list of Collection Types to filter (movies,tvshows,music,musicvideos,boxsets. The filter query must be lowercase in both the name and the items.</param>
         /// <returns>The <see cref="SyncUpdateInfo"/>.</returns>
-        [HttpGet("Jellyfin.Plugin.KodiSyncQueue/{userID}/GetItems")]
+        [HttpGet("Jellyfin.Plugin.KodiSyncQueue/{userId}/GetItems")]
         public ActionResult<SyncUpdateInfo> GetLibraryItemsQuery(
             [FromRoute] string userId,
             [FromQuery] string? lastUpdateDt,
@@ -139,23 +139,15 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         /// </summary>
         /// <param name="type">The type.</param>
         /// <param name="id">The id.</param>
-        /// <param name="parentId">The parent id.</param>
-        /// <param name="season">The Season.</param>
         /// <param name="kodiId">The kodi id.</param>
         /// <param name="handler">The handler.</param>
         /// <param name="name">The name.</param>
         /// <returns>The strm string.</returns>
         [HttpGet("Kodi/{type}/{id}/file.strm")]
-        [HttpGet("Kodi/{type}/{parentId}/{id}/file.strm")]
-        [HttpGet("Kodi/{type}/{parentId}/{season}/{id}/file.strm")]
         [SuppressMessage("Usage", "CA1801: Review unused parameters", MessageId = "type", Justification = "Legacy")]
-        [SuppressMessage("Usage", "CA1801: Review unused parameters", MessageId = "parentId", Justification = "Legacy")]
-        [SuppressMessage("Usage", "CA1801: Review unused parameters", MessageId = "season", Justification = "Legacy")]
         public ActionResult<string> GetStrmFile(
             [FromRoute] string type,
             [FromRoute] string id,
-            [FromRoute] string? parentId,
-            [FromRoute] string? season,
             [FromQuery] string? kodiId,
             [FromQuery] string? handler,
             [FromQuery] string? name)
@@ -180,6 +172,51 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             _logger.LogInformation("returning strm: {0}", strm);
             return strm;
         }
+
+        /// <summary>
+        /// Create a dynamic strm.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="id">The id.</param>
+        /// <param name="parentId">The parent id.</param>
+        /// <param name="kodiId">The kodi id.</param>
+        /// <param name="handler">The handler.</param>
+        /// <param name="name">The name.</param>
+        /// <returns>The strm string.</returns>
+        [HttpGet("Kodi/{type}/{parentId}/{id}/file.strm")]
+        [SuppressMessage("Usage", "CA1801: Review unused parameters", MessageId = "parentId", Justification = "Legacy")]
+        public ActionResult<string> GetStrmFileParentId(
+            [FromRoute] string type,
+            [FromRoute] string id,
+            [FromRoute] string? parentId,
+            [FromQuery] string? kodiId,
+            [FromQuery] string? handler,
+            [FromQuery] string? name)
+            => GetStrmFile(type, id, kodiId, handler, name);
+
+        /// <summary>
+        /// Create a dynamic strm.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="id">The id.</param>
+        /// <param name="parentId">The parent id.</param>
+        /// <param name="season">The season.</param>
+        /// <param name="kodiId">The kodi id.</param>
+        /// <param name="handler">The handler.</param>
+        /// <param name="name">The name.</param>
+        /// <returns>The strm string.</returns>
+        [HttpGet("Kodi/{type}/{parentId}/{season}/{id}/file.strm")]
+        [SuppressMessage("Usage", "CA1801: Review unused parameters", MessageId = "parentId", Justification = "Legacy")]
+        [SuppressMessage("Usage", "CA1801: Review unused parameters", MessageId = "season", Justification = "Legacy")]
+        public ActionResult<string> GetStrmFileSeason(
+            [FromRoute] string type,
+            [FromRoute] string id,
+            [FromRoute] string? parentId,
+            [FromRoute] string? season,
+            [FromQuery] string? kodiId,
+            [FromQuery] string? handler,
+            [FromQuery] string? name)
+            => GetStrmFile(type, id, kodiId, handler, name);
 
         private List<string> GetAddedOrUpdatedItems(User user, IEnumerable<Guid> ids)
         {
