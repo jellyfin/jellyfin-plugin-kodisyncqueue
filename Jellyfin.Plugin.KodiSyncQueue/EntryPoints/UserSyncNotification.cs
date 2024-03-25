@@ -10,11 +10,12 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Entities;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 {
-    public class UserSyncNotification : IServerEntryPoint
+    public class UserSyncNotification : IHostedService
     {
         private const int UpdateDuration = 500;
         private readonly ILogger<UserSyncNotification> _logger;
@@ -33,13 +34,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         }
 
         private Timer UpdateTimer { get; set; }
-
-        public Task RunAsync()
-        {
-            _userDataManager.UserDataSaved += UserDataManager_UserDataSaved;
-
-            return Task.CompletedTask;
-        }
 
         private void UserDataManager_UserDataSaved(object sender, UserDataSaveEventArgs e)
         {
@@ -176,30 +170,29 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             _cTokenSource.Cancel();
         }
 
-        public void Dispose()
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            _userDataManager.UserDataSaved += UserDataManager_UserDataSaved;
+
+            return Task.CompletedTask;
         }
 
-        protected virtual void Dispose(bool dispose)
+        public Task StopAsync(CancellationToken cancellationToken)
         {
-            if (dispose)
+            if (!_cTokenSource.Token.IsCancellationRequested)
             {
-                if (!_cTokenSource.Token.IsCancellationRequested)
-                {
-                    TriggerCancellation();
-                }
-
-                if (UpdateTimer != null)
-                {
-                    UpdateTimer.Dispose();
-                    UpdateTimer = null;
-                }
-
-                _cTokenSource.Dispose();
-                _userDataManager.UserDataSaved -= UserDataManager_UserDataSaved;
+                TriggerCancellation();
             }
+
+            if (UpdateTimer != null)
+            {
+                UpdateTimer.Dispose();
+                UpdateTimer = null;
+            }
+
+            _cTokenSource.Dispose();
+            _userDataManager.UserDataSaved -= UserDataManager_UserDataSaved;
+            return Task.CompletedTask;
         }
     }
 }
