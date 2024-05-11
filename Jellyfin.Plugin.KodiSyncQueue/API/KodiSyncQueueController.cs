@@ -225,7 +225,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                 .Where(item => item != null)
                 .ToList();
 
-            var result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager)).Select(i => i.Id.ToString("N", CultureInfo.InvariantCulture)).Distinct().ToList();
+            var result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager))
+                .Where(i => i is not null)
+                .Select(i => i!.Id.ToString("N", CultureInfo.InvariantCulture))
+                .Distinct()
+                .ToList();
+
             return result;
         }
 
