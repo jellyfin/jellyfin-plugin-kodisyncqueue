@@ -225,7 +225,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
                 .Where(item => item != null)
                 .ToList();
 
-            var result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager)).Select(i => i.Id.ToString("N", CultureInfo.InvariantCulture)).Distinct().ToList();
+            var result = items.SelectMany(i => ApiUserCheck.TranslatePhysicalItemToUserLibrary(i, user, _libraryManager))
+                .Where(i => i is not null)
+                .Select(i => i!.Id.ToString("N", CultureInfo.InvariantCulture))
+                .Distinct()
+                .ToList();
+
             return result;
         }
 
@@ -241,6 +246,10 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             var userDt = DateTime.Parse(lastRequestedDt, CultureInfo.CurrentCulture, DateTimeStyles.AssumeUniversal);
             var dtl = (long)userDt.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
             var user = _userManager.GetUserById(Guid.Parse(userId));
+            if (user is null)
+            {
+                throw new InvalidOperationException("Unknown user");
+            }
 
             var itemsAdded = KodiSyncQueuePlugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Added, filters);
             var itemsRemoved = KodiSyncQueuePlugin.Instance.DbRepo.GetItems(dtl, ItemStatus.Removed, filters);

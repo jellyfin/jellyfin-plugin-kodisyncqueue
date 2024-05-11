@@ -8,11 +8,12 @@ using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
 {
-    public class LibrarySyncNotification : IServerEntryPoint
+    public class LibrarySyncNotification : IHostedService
     {
         private const int LibraryUpdateDuration = 5000;
         private readonly ILibraryManager _libraryManager;
@@ -30,14 +31,6 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         }
 
         private Timer LibraryUpdateTimer { get; set; }
-
-        public Task RunAsync()
-        {
-            _libraryManager.ItemAdded += LibraryManager_ItemAdded;
-            _libraryManager.ItemUpdated += LibraryManager_ItemUpdated;
-            _libraryManager.ItemRemoved += LibraryManager_ItemRemoved;
-            return Task.CompletedTask;
-        }
 
         /// <summary>
         /// Handles the ItemAdded event of the libraryManager control.
@@ -221,39 +214,32 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
             _cTokenSource.Cancel();
         }
 
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public void Dispose()
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            _libraryManager.ItemAdded += LibraryManager_ItemAdded;
+            _libraryManager.ItemUpdated += LibraryManager_ItemUpdated;
+            _libraryManager.ItemRemoved += LibraryManager_ItemRemoved;
+            return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// Releases unmanaged and optionally managed resources.
-        /// </summary>
-        /// <param name="dispose"><c>true</c> to release both managed and unmanaged resources or <c>false</c> to release only unmanaged resources.</param>
-        protected virtual void Dispose(bool dispose)
+        public Task StopAsync(CancellationToken cancellationToken)
         {
-            if (dispose)
+            if (!_cTokenSource.Token.IsCancellationRequested)
             {
-                if (!_cTokenSource.Token.IsCancellationRequested)
-                {
-                    TriggerCancellation();
-                }
-
-                if (LibraryUpdateTimer != null)
-                {
-                    LibraryUpdateTimer.Dispose();
-                    LibraryUpdateTimer = null;
-                }
-
-                _cTokenSource.Dispose();
-                _libraryManager.ItemAdded -= LibraryManager_ItemAdded;
-                _libraryManager.ItemUpdated -= LibraryManager_ItemUpdated;
-                _libraryManager.ItemRemoved -= LibraryManager_ItemRemoved;
+                TriggerCancellation();
             }
+
+            if (LibraryUpdateTimer != null)
+            {
+                LibraryUpdateTimer.Dispose();
+                LibraryUpdateTimer = null;
+            }
+
+            _cTokenSource.Dispose();
+            _libraryManager.ItemAdded -= LibraryManager_ItemAdded;
+            _libraryManager.ItemUpdated -= LibraryManager_ItemUpdated;
+            _libraryManager.ItemRemoved -= LibraryManager_ItemRemoved;
+            return Task.CompletedTask;
         }
     }
 }
