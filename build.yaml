@@ -13,4 +13,4 @@ artifacts:
   - "Jellyfin.Plugin.KodiSyncQueue.dll"
   - "LiteDB.dll"
 changelog: |-
-  - Downgrade LiteDB to 5.0.15 (#85) @oddstr13
+  - Downgrade LiteDB to 5.0.15 (#85) (#90) @crobibero
