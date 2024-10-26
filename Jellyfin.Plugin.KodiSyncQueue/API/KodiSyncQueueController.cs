@@ -9,6 +9,7 @@ using System.Net.Mime;
 using System.Text.Json;
 using Jellyfin.Data.Entities;
 using Jellyfin.Extensions.Json;
+using Jellyfin.Plugin.KodiSyncQueue.API.ActionFilters;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using MediaBrowser.Controller.Library;
@@ -43,6 +44,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         /// <param name="filter">Comma separated list of Collection Types to filter (movies,tvshows,music,musicvideos,boxsets. The filter query must be lowercase in both the name and the items.</param>
         /// <returns>The <see cref="SyncUpdateInfo"/>.</returns>
         [HttpGet("Jellyfin.Plugin.KodiSyncQueue/{userId}/GetItems")]
+        [IsoServerTimeFilter]
         public ActionResult<SyncUpdateInfo> GetLibraryItemsQuery(
             [FromRoute] string userId,
             [FromQuery] string? lastUpdateDt,
@@ -71,6 +73,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         /// </summary>
         /// <returns>The server UTC time as yyyy-MM-ddTHH:mm:ssZ.</returns>
         [HttpGet("Jellyfin.Plugin.KodiSyncQueue/GetServerDateTime")]
+        [IsoServerTimeFilter]
         public ActionResult<ServerTimeInfo> GetServerTime()
         {
             _logger.LogInformation("Server Time Requested...");
@@ -108,6 +111,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         /// </summary>
         /// <returns>The <see cref="PluginSettings"/>.</returns>
         [HttpGet("Jellyfin.Plugin.KodiSyncQueue/GetPluginSettings")]
+        [IsoServerTimeFilter]
         public ActionResult<PluginSettings> GetKodiPluginSettings()
         {
             _logger.LogInformation("Plugin Settings Requested...");
@@ -144,6 +148,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         /// <param name="name">The name.</param>
         /// <returns>The strm string.</returns>
         [HttpGet("Kodi/{type}/{id}/file.strm")]
+        [IsoServerTimeFilter]
         [SuppressMessage("Usage", "CA1801: Review unused parameters", MessageId = "type", Justification = "Legacy")]
         public ActionResult<string> GetStrmFile(
             [FromRoute] string type,
@@ -184,6 +189,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         /// <param name="name">The name.</param>
         /// <returns>The strm string.</returns>
         [HttpGet("Kodi/{type}/{parentId}/{id}/file.strm")]
+        [IsoServerTimeFilter]
         [SuppressMessage("Usage", "CA1801: Review unused parameters", MessageId = "parentId", Justification = "Legacy")]
         public ActionResult<string> GetStrmFileParentId(
             [FromRoute] string type,
@@ -206,6 +212,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         /// <param name="name">The name.</param>
         /// <returns>The strm string.</returns>
         [HttpGet("Kodi/{type}/{parentId}/{season}/{id}/file.strm")]
+        [IsoServerTimeFilter]
         [SuppressMessage("Usage", "CA1801: Review unused parameters", MessageId = "parentId", Justification = "Legacy")]
         [SuppressMessage("Usage", "CA1801: Review unused parameters", MessageId = "season", Justification = "Legacy")]
         public ActionResult<string> GetStrmFileSeason(
