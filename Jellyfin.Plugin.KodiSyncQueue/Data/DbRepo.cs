@@ -147,8 +147,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             {
                 _logger.LogDebug("Updating ItemId '{0}' for UserId: '{1}'", dto.ItemId, userId);
 
-                Guid dtoItemId = Guid.Parse(dto.ItemId);
-                LibItem itemref = itemRefs.FirstOrDefault(x => x.Id == dtoItemId);
+                LibItem itemref = itemRefs.FirstOrDefault(x => x.Id == dto.ItemId);
                 if (itemref != null)
                 {
                     var sJson = System.Text.Json.JsonSerializer.Serialize(dto, _jsonSerializerOptions);
