@@ -150,11 +150,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                 LibItem itemref = itemRefs.FirstOrDefault(x => x.Id == dto.ItemId);
                 if (itemref != null)
                 {
+                    var dtoItemId = dto.ItemId.ToString("N", CultureInfo.InvariantCulture);
                     var sJson = System.Text.Json.JsonSerializer.Serialize(dto, _jsonSerializerOptions);
-                    var oldRec = userInfoCollection.Find(u => u.ItemId == dto.ItemId && u.UserId == userId).FirstOrDefault();
+                    var oldRec = userInfoCollection.Find(u => u.ItemId == dtoItemId && u.UserId == userId).FirstOrDefault();
                     var newRec = new UserInfoRec
                     {
-                        ItemId = dto.ItemId,
+                        ItemId = dtoItemId,
                         Json = sJson,
                         UserId = userId,
                         LastModified = DateTimeOffset.Now.ToUnixTimeSeconds(),
