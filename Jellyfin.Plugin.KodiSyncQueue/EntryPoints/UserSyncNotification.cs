@@ -136,7 +136,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
                         .Select(i =>
                         {
                             var dto = _userDataManager.GetUserDataDto(i, user);
-                            dto.ItemId = i.Id;
+                            dto.ItemId = i.Id.ToString("N", CultureInfo.InvariantCulture);
                             return dto;
                         })
                         .ToList();
@@ -148,7 +148,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.EntryPoints
         private void SaveUserChanges(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userName, string userId)
         {
             KodiSyncQueuePlugin.Instance.DbRepo.SetUserInfoSync(dtos, itemRefs, userId);
-            List<Guid> ids = dtos.Select(s => s.ItemId).ToList();
+            List<string> ids = dtos.Select(s => s.ItemId).ToList();
             var itemCount = ids.Count;
 
             if (itemCount > 0)
