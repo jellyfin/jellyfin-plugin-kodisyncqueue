@@ -27,6 +27,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             Directory.CreateDirectory(dPath);
             _liteDb = new LiteDatabase($"filename={dPath}/kodisyncqueue.db;mode=exclusive;upgrade=true");
             _jsonSerializerOptions = JsonDefaults.Options;
+            UpgradeDatabase();
         }
 
         public List<Guid> GetItems(long dtl, ItemStatus status, IReadOnlyCollection<MediaType> filters)
@@ -209,6 +210,48 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             if (disposing)
             {
                 _liteDb?.Dispose();
+            }
+        }
+
+        private void UpgradeDatabase()
+        {
+            switch (_liteDb.UserVersion)
+            {
+                // v12 changed the UserInfoRec.ItemId from a string to a Guid.
+                // v13 changed it back to a string. Any media added with v12
+                // now has the wrong type in the database.
+                case 0:
+                    UpgradeDatabaseCollection(UserInfoCollection, (document) =>
+                        {
+                            // Since this is the first upgrader, the database could be from v11 or older
+                            // where ItemId is the correct type. If it is, return as-is.
+                            return (document["ItemId"].RawValue is Guid)
+                                ? ("ItemId", new BsonValue(document["ItemId"].AsGuid.ToString("N", CultureInfo.InvariantCulture)))
+                                : ("ItemId", document["ItemId"]);
+                        });
+                    break;
+
+                default: return;
+            }
+
+            _liteDb.UserVersion++;
+            _logger.LogInformation("Upgraded DB to v{0}", _liteDb.UserVersion);
+            UpgradeDatabase();
+        }
+
+        private void UpgradeDatabaseCollection(string name, params Func<BsonDocument, (string, BsonValue)>[] migrateFunctions)
+        {
+            var collection = _liteDb.GetCollection(name);
+            var documents = collection.FindAll().ToList();
+            foreach (var document in documents)
+            {
+                foreach (var func in migrateFunctions)
+                {
+                    var (key, value) = func(document);
+                    document[key] = value;
+                }
+
+                collection.Update(document);
             }
         }
     }
