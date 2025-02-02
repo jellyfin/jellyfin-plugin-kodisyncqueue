@@ -151,12 +151,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                 LibItem itemref = itemRefs.FirstOrDefault(x => x.Id == dto.ItemId);
                 if (itemref != null)
                 {
-                    var dtoItemId = dto.ItemId.ToString("N", CultureInfo.InvariantCulture);
                     var sJson = System.Text.Json.JsonSerializer.Serialize(dto, _jsonSerializerOptions);
-                    var oldRec = userInfoCollection.Find(u => u.ItemId == dtoItemId && u.UserId == userId).FirstOrDefault();
+                    var oldRec = userInfoCollection.Find(u => u.ItemId == dto.ItemId && u.UserId == userId).FirstOrDefault();
                     var newRec = new UserInfoRec
                     {
-                        ItemId = dtoItemId,
+                        ItemId = dto.ItemId,
                         Json = sJson,
                         UserId = userId,
                         LastModified = DateTimeOffset.Now.ToUnixTimeSeconds(),
@@ -218,16 +217,16 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             switch (_liteDb.UserVersion)
             {
                 // v12 changed the UserInfoRec.ItemId from a string to a Guid.
-                // v13 changed it back to a string. Any media added with v12
-                // now has the wrong type in the database.
+                // v13 changed it back to a string.
+                // v14 will change it to a Guid again, with this upgrader to migrate old data.
                 case 0:
                     UpgradeDatabaseCollection(UserInfoCollection, (document) =>
                         {
-                            // Since this is the first upgrader, the database could be from v11 or older
+                            // Since this is the first upgrader, the document could be from v12
                             // where ItemId is the correct type. If it is, return as-is.
                             return (document["ItemId"].RawValue is Guid)
-                                ? ("ItemId", new BsonValue(document["ItemId"].AsGuid.ToString("N", CultureInfo.InvariantCulture)))
-                                : ("ItemId", document["ItemId"]);
+                                ? ("ItemId", document["ItemId"])
+                                : ("ItemId", Guid.Parse(document["ItemId"].AsString));
                         });
                     break;
 
