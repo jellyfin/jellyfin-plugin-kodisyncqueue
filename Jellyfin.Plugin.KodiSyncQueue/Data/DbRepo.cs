@@ -27,6 +27,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             Directory.CreateDirectory(dPath);
             _liteDb = new LiteDatabase($"filename={dPath}/kodisyncqueue.db;mode=exclusive;upgrade=true");
             _jsonSerializerOptions = JsonDefaults.Options;
+            UpgradeDatabase();
         }
 
         public List<Guid> GetItems(long dtl, ItemStatus status, IReadOnlyCollection<MediaType> filters)
@@ -150,12 +151,11 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                 LibItem itemref = itemRefs.FirstOrDefault(x => x.Id == dto.ItemId);
                 if (itemref != null)
                 {
-                    var dtoItemId = dto.ItemId.ToString("N", CultureInfo.InvariantCulture);
                     var sJson = System.Text.Json.JsonSerializer.Serialize(dto, _jsonSerializerOptions);
-                    var oldRec = userInfoCollection.Find(u => u.ItemId == dtoItemId && u.UserId == userId).FirstOrDefault();
+                    var oldRec = userInfoCollection.Find(u => u.ItemId == dto.ItemId && u.UserId == userId).FirstOrDefault();
                     var newRec = new UserInfoRec
                     {
-                        ItemId = dtoItemId,
+                        ItemId = dto.ItemId,
                         Json = sJson,
                         UserId = userId,
                         LastModified = DateTimeOffset.Now.ToUnixTimeSeconds(),
@@ -209,6 +209,48 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             if (disposing)
             {
                 _liteDb?.Dispose();
+            }
+        }
+
+        private void UpgradeDatabase()
+        {
+            switch (_liteDb.UserVersion)
+            {
+                // v12 changed the UserInfoRec.ItemId from a string to a Guid.
+                // v13 changed it back to a string.
+                // v14 will change it to a Guid again, with this upgrader to migrate old data.
+                case 0:
+                    UpgradeDatabaseCollection(UserInfoCollection, (document) =>
+                        {
+                            // Since this is the first upgrader, the document could be from v12
+                            // where ItemId is the correct type. If it is, return as-is.
+                            return (document["ItemId"].RawValue is Guid)
+                                ? ("ItemId", document["ItemId"])
+                                : ("ItemId", Guid.Parse(document["ItemId"].AsString));
+                        });
+                    break;
+
+                default: return;
+            }
+
+            _liteDb.UserVersion++;
+            _logger.LogInformation("Upgraded DB to v{0}", _liteDb.UserVersion);
+            UpgradeDatabase();
+        }
+
+        private void UpgradeDatabaseCollection(string name, params Func<BsonDocument, (string, BsonValue)>[] migrateFunctions)
+        {
+            var collection = _liteDb.GetCollection(name);
+            var documents = collection.FindAll().ToList();
+            foreach (var document in documents)
+            {
+                foreach (var func in migrateFunctions)
+                {
+                    var (key, value) = func(document);
+                    document[key] = value;
+                }
+
+                collection.Update(document);
             }
         }
     }
