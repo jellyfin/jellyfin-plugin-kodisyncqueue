@@ -13,12 +13,14 @@ using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Dto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.API
 {
     [ApiController]
+    [Authorize]
     [Produces(MediaTypeNames.Application.Json)]
     public class KodiSyncQueueController : ControllerBase
     {
