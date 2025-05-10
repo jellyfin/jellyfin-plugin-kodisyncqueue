@@ -7,7 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Mime;
 using System.Text.Json;
-using Jellyfin.Data.Entities;
+using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Extensions.Json;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using Jellyfin.Plugin.KodiSyncQueue.Utils;

@@ -49,7 +49,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.ScheduledTasks
             {
                 new TaskTriggerInfo
                 {
-                    Type = TaskTriggerInfo.TriggerDaily,
+                    Type = TaskTriggerInfoType.DailyTrigger,
                     TimeOfDayTicks = TimeSpan.FromMinutes(1).Ticks
                 }
             };
