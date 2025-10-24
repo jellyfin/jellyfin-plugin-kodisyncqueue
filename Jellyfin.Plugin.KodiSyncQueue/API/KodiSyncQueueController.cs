@@ -8,17 +8,21 @@ using System.Linq;
 using System.Net.Mime;
 using System.Text.Json;
 using Jellyfin.Database.Implementations.Entities;
+using Jellyfin.Extensions;
 using Jellyfin.Extensions.Json;
 using Jellyfin.Plugin.KodiSyncQueue.Entities;
 using Jellyfin.Plugin.KodiSyncQueue.Utils;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Net;
 using MediaBrowser.Model.Dto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KodiSyncQueue.API
 {
     [ApiController]
+    [Authorize]
     [Produces(MediaTypeNames.Application.Json)]
     public class KodiSyncQueueController : ControllerBase
     {
@@ -44,10 +48,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         /// <returns>The <see cref="SyncUpdateInfo"/>.</returns>
         [HttpGet("Jellyfin.Plugin.KodiSyncQueue/{userId}/GetItems")]
         public ActionResult<SyncUpdateInfo> GetLibraryItemsQuery(
-            [FromRoute] string userId,
+            [FromRoute] Guid userId,
             [FromQuery] string? lastUpdateDt,
             [FromQuery] string? filter)
         {
+            userId = GetUserId(User, userId);
+
             _logger.LogInformation("Sync Requested for UserID: '{UserId}' with LastUpdateDT: '{LastUpdateDT}'", userId, lastUpdateDt);
             if (string.IsNullOrEmpty(lastUpdateDt))
             {
@@ -235,7 +241,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
         }
 
         private SyncUpdateInfo PopulateLibraryInfo(
-            string userId,
+            Guid userId,
             string lastRequestedDt,
             IReadOnlyCollection<MediaType> filters)
         {
@@ -245,7 +251,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
 
             var userDt = DateTime.Parse(lastRequestedDt, CultureInfo.CurrentCulture, DateTimeStyles.AssumeUniversal);
             var dtl = (long)userDt.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
-            var user = _userManager.GetUserById(Guid.Parse(userId));
+            var user = _userManager.GetUserById(userId);
             if (user is null)
             {
                 throw new InvalidOperationException("Unknown user");
@@ -272,6 +278,39 @@ namespace Jellyfin.Plugin.KodiSyncQueue.API
             _logger.LogInformation("Request Finished Taking {TimeTaken}", diffDate.ToString("c", CultureInfo.InvariantCulture));
 
             return info;
+        }
+
+        /// <summary>
+        /// Checks if the user can access a user. <br />
+        /// Original source: https://github.com/jellyfin/jellyfin/blob/086fbd49cfba3dcdb27ba8b37ff25722e9b37fb4/Jellyfin.Api/Helpers/RequestHelpers.cs#L67. <br />
+        /// </summary>
+        /// <param name="claimsPrincipal">The <see cref="ClaimsPrincipal"/> for the current request.</param>
+        /// <param name="userId">The user id.</param>
+        /// <returns>A <see cref="bool"/> whether the user can access the user.</returns>
+        private static Guid GetUserId(System.Security.Claims.ClaimsPrincipal claimsPrincipal, Guid? userId)
+        {
+            var claimValue = claimsPrincipal.Claims.FirstOrDefault(claim => claim.Type.Equals("Jellyfin-UserId", StringComparison.OrdinalIgnoreCase))?.Value;
+            if (string.IsNullOrEmpty(claimValue))
+            {
+                throw new SecurityException("Invalid token.");
+            }
+
+            var authenticatedUserId = Guid.Parse(claimValue);
+
+            // UserId not provided, fall back to authenticated user id.
+            if (userId.IsNullOrEmpty())
+            {
+                return authenticatedUserId;
+            }
+
+            // User must be administrator to access another user.
+            var isAdministrator = claimsPrincipal.IsInRole("Administrator");
+            if (!userId.Value.Equals(authenticatedUserId) && !isAdministrator)
+            {
+                throw new SecurityException("Forbidden");
+            }
+
+            return userId.Value;
         }
     }
 }
