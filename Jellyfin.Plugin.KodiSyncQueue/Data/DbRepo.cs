@@ -45,7 +45,7 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             return items.Where(x => filters.All(f => f != x.MediaType)).Select(i => i.ItemId).Distinct().ToList();
         }
 
-        public List<UserJson> GetUserInfos(long dtl, string userId, IReadOnlyCollection<MediaType> filters)
+        public List<UserJson> GetUserInfos(long dtl, Guid userId, IReadOnlyCollection<MediaType> filters)
         {
             // Get collection instance
             var userInfoCollection = _liteDb.GetCollection<UserInfoRec>(UserInfoCollection);
@@ -53,7 +53,8 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             // Create, if not exists, new index on Id field
             userInfoCollection.EnsureIndex(x => x.Id);
 
-            var userInfoRecs = userInfoCollection.Find(x => x.LastModified > dtl && x.UserId == userId);
+            var userIdStr = userId.ToString("N", CultureInfo.InvariantCulture);
+            var userInfoRecs = userInfoCollection.Find(x => x.LastModified > dtl && x.UserId == userIdStr);
             userInfoRecs = userInfoRecs.Where(x => filters.All(f => f != x.MediaType));
             return userInfoRecs.Select(i => new UserJson { Id = i.ItemId, JsonData = i.Json }).ToList();
         }
@@ -138,11 +139,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
             }
         }
 
-        public void SetUserInfoSync(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, string userId)
+        public void SetUserInfoSync(List<MediaBrowser.Model.Dto.UserItemDataDto> dtos, List<LibItem> itemRefs, Guid userId)
         {
             var newRecs = new List<UserInfoRec>();
             var upRecs = new List<UserInfoRec>();
             var userInfoCollection = _liteDb.GetCollection<UserInfoRec>(UserInfoCollection);
+            var userIdStr = userId.ToString("N", CultureInfo.InvariantCulture);
 
             dtos.ForEach(dto =>
             {
@@ -152,12 +154,12 @@ namespace Jellyfin.Plugin.KodiSyncQueue.Data
                 if (itemref != null)
                 {
                     var sJson = System.Text.Json.JsonSerializer.Serialize(dto, _jsonSerializerOptions);
-                    var oldRec = userInfoCollection.Find(u => u.ItemId == dto.ItemId && u.UserId == userId).FirstOrDefault();
+                    var oldRec = userInfoCollection.Find(u => u.ItemId == dto.ItemId && u.UserId == userIdStr).FirstOrDefault();
                     var newRec = new UserInfoRec
                     {
                         ItemId = dto.ItemId,
                         Json = sJson,
-                        UserId = userId,
+                        UserId = userIdStr,
                         LastModified = DateTimeOffset.Now.ToUnixTimeSeconds(),
                         MediaType = itemref.ItemType
                     };
